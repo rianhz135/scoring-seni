@@ -216,7 +216,7 @@
             <div class="bg-gray-900 py-6 text-center relative">
                 <h2 class="text-2xl font-black text-white tracking-[0.2em]">HASIL KEPUTUSAN PEMENANG</h2>
                 <button onclick="tutupModalPemenang({{ $partai->id_partai }})"
-                    class="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all">
+                    class="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 transition-all">
                     TUTUP
                 </button>
             </div>
