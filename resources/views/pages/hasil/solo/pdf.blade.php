@@ -4,62 +4,48 @@
 <head>
     <title>Laporan Hasil Solo</title>
     <style>
-        /* Pengaturan Kertas & Font Utama */
         @page {
-            margin: 1.5cm;
+            margin: 1cm;
             size: a4 landscape;
         }
 
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 9pt;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 8.5pt;
             color: #333;
-            line-height: 1.3;
+            line-height: 1.1;
         }
 
-        /* Header Laporan */
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
             border-bottom: 2px solid #2c3e50;
+            padding-bottom: 5px;
         }
 
         .header h1 {
             margin: 0;
             text-transform: uppercase;
-            font-size: 16pt;
-            color: #2c3e50;
-            font-weight: bold;
+            font-size: 14pt;
         }
 
-        .header p {
-            margin: 5px 0 0 0;
-            font-size: 9pt;
-            color: #7f8c8d;
-        }
-
-        /* Tabel Utama */
         table.main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
         }
 
-        table.main-table>thead>tr>th {
+        table.main-table th {
             background-color: #f8fafc;
-            font-weight: bold;
-            text-align: center;
             border: 1px solid #cbd5e1;
-            padding: 10px 8px;
-            font-size: 8.5pt;
+            padding: 6px;
+            font-size: 8pt;
             text-transform: uppercase;
-            color: #475569;
         }
 
-        table.main-table>tbody>tr>td {
+        /* Mengecilkan padding td agar tinggi kolom menyusut */
+        table.main-table td {
             border: 1px solid #cbd5e1;
-            padding: 8px;
+            padding: 3px 5px;
             vertical-align: middle;
         }
 
@@ -67,15 +53,25 @@
             text-align: center;
         }
 
-        /* Kotak Komparasi Sudut */
-        .box-sudut {
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin-bottom: 6px;
+        /* Table pembungkus kiri-kanan */
+        table.wrapper-komparasi {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
         }
 
-        .box-sudut:last-child {
-            margin-bottom: 0;
+        table.wrapper-komparasi td {
+            border: none !important;
+            padding: 0 !important;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        /* Kotak Sudut - Diperketat */
+        .box-sudut {
+            padding: 4px 6px;
+            border-radius: 3px;
+            margin: 2px;
         }
 
         .sudut-biru {
@@ -88,63 +84,42 @@
             border: 1px solid #fecaca;
         }
 
-        /* Inner Table (Trik agar sejajar di DomPDF) */
+        /* Inner Table untuk Nama & Total */
         table.inner-table {
             width: 100%;
-            border: none;
-            margin: 0;
-            padding: 0;
+            border-collapse: collapse;
         }
 
         table.inner-table td {
-            border: none;
-            padding: 0;
-            vertical-align: middle;
+            border: none !important;
+            padding: 0 !important;
         }
 
-        .td-info {
-            width: 75%;
-            text-align: left;
-        }
-
-        .td-total {
-            width: 25%;
-            text-align: right;
-        }
-
-        /* Tipografi dalam Kotak */
         .nama {
             font-weight: bold;
-            font-size: 10pt;
+            font-size: 9pt;
             text-transform: uppercase;
+            color: #1e293b;
         }
 
         .kontingen {
-            font-size: 8pt;
+            font-size: 7pt;
             color: #64748b;
-            margin-bottom: 4px;
-            display: block;
             font-style: italic;
+            display: block;
+            margin-bottom: 2px;
         }
 
         .stats {
-            font-size: 7.5pt;
+            font-size: 6.5pt;
             color: #475569;
-            letter-spacing: -0.2px;
         }
 
         .total-nilai {
-            font-size: 16pt;
-            font-weight: bold;
-            letter-spacing: -0.5px;
-        }
-
-        .name-total {
-            font-size: 10pt;
+            font-size: 13pt;
             font-weight: bold;
         }
 
-        /* Warna Teks */
         .text-biru {
             color: #0369a1;
         }
@@ -153,22 +128,13 @@
             color: #b91c1c;
         }
 
-        /* Mode Diskualifikasi */
-        .label-disq {
-            text-decoration: line-through;
-            color: #dc2626;
-        }
-
         .badge-disq {
-            display: inline-block;
             background: #fee2e2;
             color: #b91c1c;
-            padding: 3px 6px;
+            padding: 1px 4px;
             border: 1px solid #fca5a5;
-            font-size: 7.5pt;
+            font-size: 7pt;
             font-weight: bold;
-            margin-top: 4px;
-            border-radius: 3px;
         }
     </style>
 </head>
@@ -176,17 +142,17 @@
 <body>
     <div class="header">
         <h1>Rekapitulasi Hasil Pertandingan Solo</h1>
-        <p>Dicetak pada: {{ date('d F Y H:i') }}</p>
+        <p>Cetak: {{ date('d/m/Y H:i') }}</p>
     </div>
 
     <table class="main-table">
         <thead>
             <tr>
-                <th style="width: 4%;">No</th>
-                <th style="width: 8%;">Partai</th>
-                <th style="width: 15%;">Kelas</th>
-                <th style="width: 60%;">Komparasi Nilai Sudut</th>
-                <th style="width: 13%;">Pemenang</th>
+                <th style="width: 30px;">No</th>
+                <th style="width: 50px;">Partai</th>
+                <th style="width: 100px;">Kelas</th>
+                <th>Komparasi Nilai Sudut</th>
+                <th style="width: 100px;">Pemenang</th>
             </tr>
         </thead>
         <tbody>
@@ -198,88 +164,89 @@
                     $merah =
                         $partai->detail_peserta->firstWhere('sudut', 'Merah') ??
                         $partai->detail_peserta->firstWhere('sudut', 'merah');
-
                     $isDisqBiru = ($biru->is_disqualifikasi ?? ($biru->is_disqulifikasi ?? 0)) == 1;
                     $isDisqMerah = ($merah->is_disqualifikasi ?? ($merah->is_disqulifikasi ?? 0)) == 1;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center font-bold" style="font-size: 11pt;">{{ $partai->no_partai }}</td>
-                    <td class="text-center" style="font-size: 8.5pt;">{{ $partai->kelas->label_kelas ?? '-' }}</td>
-
-                    {{-- KOLOM KOMPARASI --}}
+                    <td class="text-center font-bold">{{ $partai->no_partai }}</td>
+                    <td class="text-center">{{ $partai->kelas->label_kelas ?? '-' }}</td>
                     <td>
-                        {{-- BLOK BIRU --}}
-                        @if ($biru)
-                            <div class="box-sudut sudut-biru">
-                                <table class="inner-table">
-                                    <tr>
-                                        <td class="td-info">
-                                            <span class="nama text-biru {{ $isDisqBiru ? 'label-disq' : '' }}">
-                                                {{ $biru->peserta->nama ?? ($biru->peserta->nama_peserta ?? $biru->peserta->nama_lengkap) }}
-                                            </span>
-                                            <span class="kontingen">({{ $biru->peserta->kontingen }})</span>
+                        <table class="wrapper-komparasi">
+                            <tr>
+                                {{-- SUDUT BIRU --}}
+                                <td class="td-kiri">
+                                    @if ($biru)
+                                        <div class="box-sudut sudut-biru">
+                                            <table class="inner-table">
+                                                <tr>
+                                                    <td>
+                                                        <span class="nama text-biru">
+                                                            {{-- Mencari nama di berbagai kemungkinan kolom --}}
+                                                            {{ $biru->peserta->nama ?? ($biru->peserta->nama_peserta ?? ($biru->peserta->nama_lengkap ?? 'Tanpa Nama')) }}
+                                                        </span>
+                                                        <span
+                                                            class="kontingen">({{ $biru->peserta->kontingen ?? '-' }})</span>
+                                                        @if ($isDisqBiru)
+                                                            <span class="badge-disq">DISQ</span>
+                                                        @else
+                                                            <div class="stats">
+                                                                M: {{ number_format($biru->nilai_median, 2) }} |
+                                                                D: {{ $biru->nilai_deviasi }} |
+                                                                H: {{ number_format($biru->hukuman_ketua, 1) }}
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td style="text-align: right; width: 45px; vertical-align: middle;">
+                                                        @if (!$isDisqBiru)
+                                                            <span
+                                                                class="total-nilai text-biru">{{ number_format($biru->total_nilai, 3) }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    @endif
+                                </td>
 
-                                            @if ($isDisqBiru)
-                                                <span class="badge-disq">DISKUALIFIKASI</span>
-                                            @else
-                                                <div class="stats">
-                                                    MED: <b>{{ number_format($biru->nilai_median, 3) }}</b> |
-                                                    DEV: <b>{{ $biru->nilai_deviasi }}</b> |
-                                                    HUK: <b>{{ number_format($biru->hukuman_ketua, 2) }}</b>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="td-total">
-                                            @if (!$isDisqBiru)
-                                                <span class="name-total text-merah">Total Nilai</span><br>
-                                                <span
-                                                    class="total-nilai text-biru">{{ number_format($biru->total_nilai, 3) }}</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        @endif
-
-                        {{-- BLOK MERAH --}}
-                        @if ($merah)
-                            <div class="box-sudut sudut-merah">
-                                <table class="inner-table">
-                                    <tr>
-                                        <td class="td-info">
-                                            <span class="nama text-merah {{ $isDisqMerah ? 'label-disq' : '' }}">
-                                                {{ $merah->peserta->nama ?? ($merah->peserta->nama_peserta ?? $merah->peserta->nama_lengkap) }}
-                                            </span>
-                                            <span class="kontingen">({{ $merah->peserta->kontingen }})</span>
-
-                                            @if ($isDisqMerah)
-                                                <span class="badge-disq">DISKUALIFIKASI</span>
-                                            @else
-                                                <div class="stats">
-                                                    MED: <b>{{ number_format($merah->nilai_median, 3) }}</b> |
-                                                    DEV: <b>{{ $merah->nilai_deviasi }}</b> |
-                                                    HUK: <b>{{ number_format($merah->hukuman_ketua, 2) }}</b>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="td-total">
-                                            @if (!$isDisqMerah)
-                                                <span class="name-total text-merah">Total Nilai</span><br>
-                                                <span
-                                                    class="total-nilai text-merah">{{ number_format($merah->total_nilai, 3) }}</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        @endif
+                                {{-- SUDUT MERAH --}}
+                                <td class="td-kanan">
+                                    @if ($merah)
+                                        <div class="box-sudut sudut-merah">
+                                            <table class="inner-table">
+                                                <tr>
+                                                    <td>
+                                                        <span class="nama text-merah">
+                                                            {{-- Mencari nama di berbagai kemungkinan kolom --}}
+                                                            {{ $merah->peserta->nama ?? ($merah->peserta->nama_peserta ?? ($merah->peserta->nama_lengkap ?? 'Tanpa Nama')) }}
+                                                        </span>
+                                                        <span
+                                                            class="kontingen">({{ $merah->peserta->kontingen ?? '-' }})</span>
+                                                        @if ($isDisqMerah)
+                                                            <span class="badge-disq">DISQ</span>
+                                                        @else
+                                                            <div class="stats">
+                                                                M: {{ number_format($merah->nilai_median, 2) }} |
+                                                                D: {{ $merah->nilai_deviasi }} |
+                                                                H: {{ number_format($merah->hukuman_ketua, 1) }}
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td style="text-align: right; width: 45px; vertical-align: middle;">
+                                                        @if (!$isDisqMerah)
+                                                            <span
+                                                                class="total-nilai text-merah">{{ number_format($merah->total_nilai, 3) }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
                     </td>
-
-                    {{-- KOLOM PEMENANG --}}
-                    <td class="text-center">
-                        <span style="font-size: 8pt; color: #94a3b8; font-style: italic;">(Proses Rekap)</span>
-                    </td>
+                    <td class="text-center"><small style="color: #999 italic">Selesai</small></td>
                 </tr>
             @endforeach
         </tbody>
