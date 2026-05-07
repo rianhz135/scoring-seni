@@ -1,0 +1,148 @@
+@extends('layouts.dewan')
+
+@section('content')
+    {{-- Background khusus Display dibuat gelap agar tidak menyilaukan penonton --}}
+    <style>
+        body { background-color: #0f172a; /* Slate 900 */ }
+    </style>
+
+    @php
+        // 1. CARI SUDUT YANG SEDANG AKTIF BERTANDING
+        // Logika: Cari peserta yang status_mulai-nya 1 (sedang bertanding). 
+        // Jika belum ada yang mulai, otomatis tampilkan sudut Biru terlebih dahulu sebagai default.
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first() ?? $partai->detail_peserta->first();
+        
+        // 2. TENTUKAN TEMA WARNA OTOMATIS BERDASARKAN SUDUT
+        $isMerah = $aktif && strtolower($aktif->sudut) == 'merah';
+        $bgWarna = $isMerah ? 'bg-red-600' : 'bg-blue-600';
+        $teksWarna = $isMerah ? 'text-red-100' : 'text-blue-100';
+    @endphp
+
+    <div class="h-[95vh] flex flex-col gap-6">
+        
+        {{-- ========================================== --}}
+        {{-- HEADER: INFO PARTAI & TIMER --}}
+        {{-- ========================================== --}}
+        <div class="flex justify-between items-stretch gap-6 h-32">
+            
+            {{-- Info Pertandingan --}}
+            <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 flex flex-col justify-center flex-1 shadow-lg">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="px-4 py-1.5 bg-primary-600 text-white text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
+                        GELANGGANG {{ $partai->gelanggang ?? 'A' }}
+                    </span>
+                    <span class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
+                        PARTAI #{{ $partai->no_partai }}
+                    </span>
+                    <span class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
+                        {{ $partai->kelas->nama_kelas ?? ($partai->kelas->label_kelas ?? 'KATEGORI SENI') }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Timer Pertandingan --}}
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl px-12 flex flex-col items-center justify-center shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 w-full h-1.5 bg-primary-500"></div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Waktu Pertandingan</p>
+                <div id="display-waktu" class="text-7xl font-black text-white font-mono tracking-tighter leading-none">
+                    03:00
+                </div>
+            </div>
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- IDENTITAS ATLET (SUDUT BIRU / MERAH) --}}
+        {{-- ========================================== --}}
+        <div class="{{ $bgWarna }} rounded-3xl p-8 flex justify-between items-center shadow-xl relative overflow-hidden transition-colors duration-500">
+            {{-- Aksen pattern/garis --}}
+            <div class="absolute top-0 right-0 w-64 h-full bg-white opacity-10 skew-x-12 translate-x-10"></div>
+            
+            <div class="relative z-10">
+                <div class="inline-block px-4 py-1 bg-black/20 backdrop-blur-sm text-white text-sm font-black uppercase tracking-[0.3em] rounded-lg mb-3">
+                    SUDUT {{ strtoupper($aktif->sudut ?? 'BIRU') }}
+                </div>
+                <h2 class="text-4xl font-black text-white uppercase tracking-tight mb-2">
+                    {{ $aktif->peserta->kontingen ?? '-' }}
+                </h2>
+                <p class="text-xl font-bold {{ $teksWarna }} uppercase tracking-wide">
+                    {{ $aktif->peserta->nama_peserta ?? 'NAMA PESERTA KOSONG' }}
+                </p>
+            </div>
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- NILAI JURI 1 - 6 --}}
+        {{-- ========================================== --}}
+        <div class="grid grid-cols-6 gap-4">
+            @for ($i = 1; $i <= 6; $i++)
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden">
+                    <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
+                        <span class="text-sm font-black text-slate-300 uppercase tracking-widest">JURI {{ $i }}</span>
+                    </div>
+                    <div class="py-6 flex items-center justify-center">
+                        <span id="nilai-juri-{{ $i }}" class="text-4xl font-black text-white">0.000</span>
+                    </div>
+                </div>
+            @endfor
+        </div>
+
+        {{-- ========================================== --}}
+        {{-- AKUMULASI (MEDIAN, HUKUMAN, DEVIASI, TOTAL) --}}
+        {{-- ========================================== --}}
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {{-- Sisi Kiri (Median, Hukuman, Standar Deviasi) --}}
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                {{-- Baris Atas Kiri --}}
+                <div class="flex-1 grid grid-cols-2 gap-4">
+                    {{-- Median --}}
+                    <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden">
+                        <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
+                            <span class="text-sm font-black text-slate-300 uppercase tracking-widest">Median</span>
+                        </div>
+                        <div class="flex-1 flex items-center justify-center">
+                            <span id="nilai-median" class="text-5xl font-black text-white">0.000</span>
+                        </div>
+                    </div>
+                    
+                    {{-- Hukuman --}}
+                    <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
+                        {{-- Aksen Merah untuk Hukuman --}}
+                        <div class="absolute top-0 w-full h-1 bg-red-500"></div>
+                        <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
+                            <span class="text-sm font-black text-slate-300 uppercase tracking-widest">Hukuman</span>
+                        </div>
+                        <div class="flex-1 flex items-center justify-center">
+                            <span id="nilai-hukuman" class="text-5xl font-black text-red-500">-0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Baris Bawah Kiri (Standar Deviasi) --}}
+                <div class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden">
+                    <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
+                        <span class="text-sm font-black text-slate-300 uppercase tracking-widest">Standar Deviasi</span>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center">
+                        <span id="nilai-deviasi" class="text-5xl font-black text-white font-mono tracking-widest">0.00000000000000</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Sisi Kanan (Total Nilai Besar) --}}
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden shadow-2xl relative">
+                <div class="absolute top-0 w-full h-2 bg-green-400"></div>
+                <div class="bg-slate-700/50 py-5 text-center border-b border-slate-700">
+                    <span class="text-lg font-black text-slate-300 uppercase tracking-[0.3em]">Total Nilai Akhir</span>
+                </div>
+                <div class="flex-1 flex items-center justify-center bg-slate-900/50">
+                    {{-- Warna hijau terang (#22c55e) sama seperti referensi gambar --}}
+                    <span id="nilai-total" class="text-[8rem] font-black text-green-400 tracking-tighter leading-none shadow-green-400/20 drop-shadow-2xl">
+                        0.000
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+@endsection
