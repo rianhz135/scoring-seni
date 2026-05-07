@@ -151,22 +151,32 @@
                                 </div>
                             </td>
 
-                            {{-- PEMENANG (Sesuai Syarat: Ditutup Sebelum Diklik Tampilkan) --}}
-                            <td class="px-4 py-4 text-center">
-                                <span
-                                    class="inline-block px-3 py-1 rounded bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-bold">
-                                    <svg class="w-3 h-3 inline-block mr-1 mb-0.5" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                    BELUM DIUMUMKAN
-                                </span>
+                            {{-- PEMENANG --}}
+                            <td class="px-4 py-4 text-center" id="col-pemenang-{{ $partai->id_partai }}">
+                                @php
+                                    $pemenang = $partai->detail_peserta->firstWhere('is_pemenang', 1);
+                                @endphp
+
+                                @if ($pemenang)
+                                    <div
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg {{ strtolower($pemenang->sudut) == 'biru' ? 'bg-blue-600' : 'bg-red-600' }} text-white text-[10px] font-black shadow-sm">
+                                        <svg class="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                        {{ strtoupper($pemenang->sudut) }}
+                                    </div>
+                                @else
+                                    <span
+                                        class="inline-block px-3 py-1 rounded bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-bold">
+                                        BELUM DIUMUMKAN
+                                    </span>
+                                @endif
                             </td>
 
                             {{-- AKSI --}}
                             <td class="px-4 py-4 text-center">
-                                <button type="button"
+                                <button type="button" onclick="tetapkanPemenang({{ $partai->id_partai }})"
                                     class="bg-gray-900 hover:bg-black text-white text-[10px] font-bold px-3 py-2 rounded-xl transition-all shadow-md w-full">
                                     TAMPILKAN PEMENANG
                                 </button>
@@ -196,4 +206,198 @@
             </div>
         </div>
     </div>
+
+    <div id="modal-pemenang"
+        class="fixed inset-0 z-50 hidden bg-gray-900/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-[2.5rem] shadow-2xl max-w-4xl w-full overflow-hidden transform scale-95 transition-all">
+
+            {{-- Header --}}
+            <div class="bg-gray-900 py-6 text-center relative">
+                <h2 class="text-2xl font-black text-white tracking-[0.2em]">HASIL KEPUTUSAN PEMENANG</h2>
+                <button onclick="tutupModalPemenang()" class="absolute right-6 top-6 text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                {{-- KOLOM PEMENANG --}}
+                <div class="border-2 border-yellow-400 rounded-[2rem] p-6 relative bg-yellow-50/30">
+                    <div
+                        class="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 px-6 py-1 rounded-full text-xs font-black tracking-widest">
+                        PEMENANG</div>
+
+                    <div class="text-center mb-6 pt-2">
+                        <div id="win-sudut-label"
+                            class="inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3">SUDUT -</div>
+                        <h3 id="win-nama" class="text-xl font-black text-gray-900 leading-tight uppercase">Nama Pemenang
+                        </h3>
+                        <p id="win-kontingen" class="text-xs font-bold text-gray-500 uppercase">Kontingen</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-yellow-200">
+                            <span class="text-xs font-bold text-gray-400 uppercase">Total Nilai</span>
+                            <span id="win-total" class="text-2xl font-black text-green-600">0.000</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-white p-2 rounded-lg border border-gray-100">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Median</p>
+                                <p id="win-median" class="text-xs font-black">0.000</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-gray-100">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Hukuman</p>
+                                <p id="win-hukuman" class="text-xs font-black text-red-500">0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-gray-100 overflow-hidden">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Deviasi</p>
+                                <p id="win-deviasi" class="text-[9px] font-black truncate">0.000</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- KOLOM KALAH / PESERTA LAIN --}}
+                <div class="border-2 border-gray-200 rounded-[2rem] p-6 relative">
+                    <div
+                        class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-200 text-gray-600 px-6 py-1 rounded-full text-xs font-black tracking-widest">
+                        PESERTA LAIN</div>
+
+                    <div class="text-center mb-6 pt-2">
+                        <div id="lose-sudut-label"
+                            class="inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3">SUDUT -</div>
+                        <h3 id="lose-nama" class="text-xl font-black text-gray-500 leading-tight uppercase">Nama Peserta
+                        </h3>
+                        <p id="lose-kontingen" class="text-xs font-bold text-gray-400 uppercase">Kontingen</p>
+                    </div>
+
+                    <div class="space-y-3 opacity-60">
+                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <span class="text-xs font-bold text-gray-400 uppercase">Total Nilai</span>
+                            <span id="lose-total" class="text-2xl font-black text-gray-600">0.000</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Median</p>
+                                <p id="lose-median" class="text-xs font-black">0.000</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Hukuman</p>
+                                <p id="lose-hukuman" class="text-xs font-black text-red-400">0.00</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 overflow-hidden">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Deviasi</p>
+                                <p id="lose-deviasi" class="text-[9px] font-black truncate">0.000</p>
+                            </div>
+                        </div>
+                        <div id="lose-disq-badge"
+                            class="hidden text-center text-red-600 font-black text-xs tracking-tighter bg-red-100 py-1 rounded-md">
+                            TERDISKUALIFIKASI</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function tetapkanPemenang(idPartai) {
+            Swal.fire({
+                title: 'Kalkulasi Pemenang...',
+                text: 'Sistem sedang memproses nilai tertinggi dan deviasi.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Tembak API
+            fetch(`/admin/hasil/solo/${idPartai}/tetapkan-pemenang`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // PENTING: Tutup loading Swal
+                    Swal.close();
+
+                    if (data.status === 'success') {
+                        // Cek apakah ada pemenangnya (untuk antisipasi jika dua-duanya DISQ)
+                        if (data.winner) {
+                            const win = data.winner;
+                            const lose = data.loser;
+
+                            // Isi Pemenang
+                            document.getElementById('win-nama').innerText = win.nama;
+                            document.getElementById('win-kontingen').innerText = win.kontingen;
+                            document.getElementById('win-sudut-label').innerText = "SUDUT " + win.sudut;
+                            document.getElementById('win-sudut-label').className =
+                                `inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3 ${win.sudut === 'BIRU' ? 'bg-blue-600' : 'bg-red-600'}`;
+                            document.getElementById('win-total').innerText = win.total;
+                            document.getElementById('win-median').innerText = win.median;
+                            document.getElementById('win-hukuman').innerText = win.hukuman;
+                            document.getElementById('win-deviasi').innerText = win.deviasi;
+
+                            // Isi Kalah
+                            if (lose) {
+                                document.getElementById('lose-nama').innerText = lose.nama;
+                                document.getElementById('lose-kontingen').innerText = lose.kontingen;
+                                document.getElementById('lose-sudut-label').innerText = "SUDUT " + lose.sudut;
+                                document.getElementById('lose-sudut-label').className =
+                                    `inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3 ${lose.sudut === 'BIRU' ? 'bg-blue-600' : 'bg-red-600'}`;
+                                document.getElementById('lose-total').innerText = lose.total;
+                                document.getElementById('lose-median').innerText = lose.median;
+                                document.getElementById('lose-hukuman').innerText = lose.hukuman;
+                                document.getElementById('lose-deviasi').innerText = lose.deviasi;
+
+                                // Show Disq badge if any
+                                const disqBadge = document.getElementById('lose-disq-badge');
+                                if (lose.is_disq) disqBadge.classList.remove('hidden');
+                                else disqBadge.classList.add('hidden');
+                            }
+
+                            // Tampilkan Modal
+                            const modal = document.getElementById('modal-pemenang');
+                            modal.classList.remove('hidden');
+
+                            // Update UI Tabel secara dinamis (tanpa refresh)
+                            const colPemenang = document.getElementById(`col-pemenang-${idPartai}`);
+                            const colorClass = data.winner.sudut.toLowerCase() === 'biru' ? 'bg-blue-600' :
+                            'bg-red-600';
+                            colPemenang.innerHTML = `
+                                <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${colorClass} text-white text-[10px] font-black shadow-sm">
+                                    <svg class="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                    ${data.winner.sudut}
+                                </div>
+                            `;
+
+                        } else {
+                            // Jika kedua peserta terkena diskualifikasi
+                            Swal.fire('Info', data.message || 'Tidak ada pemenang yang sah', 'info');
+                        }
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.close();
+                    Swal.fire('Error', 'Gagal memproses data pemenang', 'error');
+                    console.error(error);
+                });
+        }
+
+        function tutupModalPemenang() {
+            const modal = document.getElementById('modal-pemenang');
+            modal.classList.add('hidden');
+        }
+    </script>
 @endsection
