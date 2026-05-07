@@ -66,7 +66,6 @@
                                 </span>
                             </td>
 
-                            {{-- KOMPARASI NILAI SUDUT --}}
                             <td class="px-4 py-4">
                                 <div class="flex flex-col gap-2">
 
@@ -77,7 +76,6 @@
                                             <div class="flex-1">
                                                 <p
                                                     class="text-[11px] font-black {{ $disqBiru == 1 ? 'text-red-700 line-through' : 'text-blue-700' }} leading-tight">
-                                                    {{-- Coba cek nama, jika kosong cek nama_peserta, jika kosong cek nama_lengkap --}}
                                                     {{ $biru->peserta->nama ?? ($biru->peserta->nama_peserta ?? ($biru->peserta->nama_lengkap ?? 'Nama Tidak Ditemukan')) }}
                                                 </p>
                                                 <p
@@ -99,12 +97,17 @@
                                                     <span>DEV: <b>{{ $biru->nilai_deviasi ?? 0 }}</b></span>
                                                     <span class="text-red-500">HUK:
                                                         <b>{{ number_format($biru->hukuman_ketua ?? 0, 2) }}</b></span>
+
+                                                    {{-- WAKTU TAMPIL BIRU FORMAT MENIT:DETIK --}}
+                                                    <span class="text-gray-700">WAKTU:
+                                                        <b>{{ gmdate('i:s', $biru->waktu_tampil ?? 0) }}</b></span>
                                                 </div>
                                                 <div class="text-right min-w-[70px]">
                                                     <p class="text-[8px] text-blue-400 font-bold uppercase leading-none">
                                                         TOTAL</p>
                                                     <p class="text-sm font-black text-blue-900 leading-tight">
-                                                        {{ number_format($biru->total_nilai ?? 0, 3) }}</p>
+                                                        {{ number_format($biru->total_nilai ?? 0, 3) }}
+                                                    </p>
                                                 </div>
                                             @endif
                                         </div>
@@ -137,12 +140,17 @@
                                                     <span>DEV: <b>{{ $merah->nilai_deviasi ?? 0 }}</b></span>
                                                     <span class="text-red-500">HUK:
                                                         <b>{{ number_format($merah->hukuman_ketua ?? 0, 2) }}</b></span>
+
+                                                    {{-- WAKTU TAMPIL MERAH FORMAT MENIT:DETIK --}}
+                                                    <span class="text-gray-700">WAKTU:
+                                                        <b>{{ gmdate('i:s', $merah->waktu_tampil ?? 0) }}</b></span>
                                                 </div>
                                                 <div class="text-right min-w-[70px]">
                                                     <p class="text-[8px] text-red-400 font-bold uppercase leading-none">
                                                         TOTAL</p>
                                                     <p class="text-sm font-black text-red-900 leading-tight">
-                                                        {{ number_format($merah->total_nilai ?? 0, 3) }}</p>
+                                                        {{ number_format($merah->total_nilai ?? 0, 3) }}
+                                                    </p>
                                                 </div>
                                             @endif
                                         </div>
@@ -242,7 +250,7 @@
                             <span class="text-xs font-bold text-gray-400 uppercase">Total Nilai</span>
                             <span id="win-total" class="text-2xl font-black text-green-600">0.000</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="grid grid-cols-4 gap-2 text-center">
                             <div class="bg-white p-2 rounded-lg border border-gray-100">
                                 <p class="text-[9px] font-bold text-gray-400 uppercase">Median</p>
                                 <p id="win-median" class="text-xs font-black">0.000</p>
@@ -254,6 +262,11 @@
                             <div class="bg-white p-2 rounded-lg border border-gray-100 overflow-hidden">
                                 <p class="text-[9px] font-bold text-gray-400 uppercase">Deviasi</p>
                                 <p id="win-deviasi" class="text-[9px] font-black truncate">0.000</p>
+                            </div>
+                            {{-- TAMBAHAN KOTAK WAKTU --}}
+                            <div class="bg-white p-2 rounded-lg border border-gray-100 overflow-hidden">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Waktu</p>
+                                <p id="win-waktu" class="text-xs font-black text-blue-600">00:00</p>
                             </div>
                         </div>
                     </div>
@@ -278,7 +291,7 @@
                             <span class="text-xs font-bold text-gray-400 uppercase">Total Nilai</span>
                             <span id="lose-total" class="text-2xl font-black text-gray-600">0.000</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="grid grid-cols-4 gap-2 text-center">
                             <div class="bg-gray-50 p-2 rounded-lg border border-gray-100">
                                 <p class="text-[9px] font-bold text-gray-400 uppercase">Median</p>
                                 <p id="lose-median" class="text-xs font-black">0.000</p>
@@ -290,6 +303,10 @@
                             <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 overflow-hidden">
                                 <p class="text-[9px] font-bold text-gray-400 uppercase">Deviasi</p>
                                 <p id="lose-deviasi" class="text-[9px] font-black truncate">0.000</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 overflow-hidden">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase">Waktu</p>
+                                <p id="lose-waktu" class="text-xs font-black text-gray-600">00:00</p>
                             </div>
                         </div>
                         <div id="lose-disq-badge"
@@ -341,6 +358,7 @@
                             document.getElementById('win-median').innerText = win.median;
                             document.getElementById('win-hukuman').innerText = win.hukuman; // Fix Undefined
                             document.getElementById('win-deviasi').innerText = win.deviasi;
+                            document.getElementById('win-waktu').innerText = win.waktu;
 
                             // --- UPDATE BAGIAN PESERTA LAIN (KALAH) ---
                             if (lose) {
@@ -355,6 +373,7 @@
                                 document.getElementById('lose-median').innerText = lose.median;
                                 document.getElementById('lose-hukuman').innerText = lose.hukuman; // Fix Undefined
                                 document.getElementById('lose-deviasi').innerText = lose.deviasi;
+                                document.getElementById('lose-waktu').innerText = lose.waktu;
 
                                 // Handle Badge Disq
                                 const disqBadge = document.getElementById('lose-disq-badge');

@@ -155,6 +155,7 @@ class SoloController extends Controller
             'median' => number_format($p->nilai_median, 3, '.', ''),
             'hukuman' => number_format($p->hukuman_ketua ?? 0, 2, '.', ''),
             'deviasi' => $p->nilai_deviasi,
+            'waktu' => gmdate('i:s', $p->waktu_tampil ?? 0),
             'is_disq' => (($p->is_disqualifikasi ?? $p->is_disqulifikasi ?? 0) == 1)
         ];
     }

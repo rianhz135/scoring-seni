@@ -370,25 +370,22 @@
         });
     </script>
     <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
-            window.Echo.channel('display-pengumuman-solo')
-                .listen('TampilkanPemenangSolo', (e) => {
-                    // console.log("Sinyal Diterima dari Reverb:", e);
-                    // console.log("Perintah Action:", e.action);
-                    // JIKA PERINTAHNYA TUTUP
-                    if (e.action === 'close') {
-                        Swal.close();
-                        return;
-                    }
+    document.addEventListener('DOMContentLoaded', () => {
+        window.Echo.channel('display-pengumuman-solo')
+            .listen('TampilkanPemenangSolo', (e) => {
+                // JIKA PERINTAHNYA TUTUP
+                if (e.action === 'close') {
+                    Swal.close();
+                    return;
+                }
 
+                // JIKA PERINTAHNYA TAMPILKAN
+                if (e.winner && e.loser) {
+                    const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
 
-                    // JIKA PERINTAHNYA TAMPILKAN
-                    if (e.winner && e.loser) {
-                        const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
-
-                        Swal.fire({
-                            title: 'KEPUTUSAN PEMENANG',
-                            html: `
+                    Swal.fire({
+                        title: 'KEPUTUSAN PEMENANG',
+                        html: `
     <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
         
         <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
@@ -405,23 +402,32 @@
                 </div>
                 <div style="text-align: right; border-left: 2px solid #f3f4f6; padding-left: 30px;">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">MEDIAN: ${e.winner.median}</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569;">DEV: ${e.winner.deviasi}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">DEV: ${e.winner.deviasi}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; margin-bottom: 5px;">HUK: ${e.winner.hukuman}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #2563eb;">WAKTU: ${e.winner.waktu}</div>
                 </div>
             </div>
         </div>
 
-        <div style="width: 100%; max-width: 600px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
+        <div style="width: 100%; max-width: 650px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
             <div style="background: #e2e8f0; color: #64748b; padding: 5px 15px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.7rem; margin-bottom: 10px;">PESERTA LAIN</div>
             
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <div style="color: ${!isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1rem;">SUDUT ${e.loser.sudut}</div>
                     <div style="font-size: 1.8rem; font-weight: 900; color: #475569; text-transform: uppercase; margin: 5px 0;">${e.loser.nama}</div>
-                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold;">${e.loser.kontingen}</div>
+                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold; margin-bottom: 10px;">${e.loser.kontingen}</div>
+                    
+                    <div style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: bold; color: #64748b; background: #fff; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <span>MED: ${e.loser.median}</span>
+                        <span>DEV: ${e.loser.deviasi}</span>
+                        <span style="color: #ef4444;">HUK: ${e.loser.hukuman}</span>
+                        <span style="color: #2563eb;">WAKTU: ${e.loser.waktu}</span>
+                    </div>
                 </div>
-                <div style="text-align: right;">
+                <div style="text-align: right; padding-left: 20px;">
                     <span style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; display: block;">TOTAL</span>
-                    <span style="font-size: 2.2rem; font-weight: 900; color: #94a3b8;">${e.loser.total}</span>
+                    <span style="font-size: 2rem; font-weight: 600; color: #94a3b8; line-height: 1;">${e.loser.total}</span>
                 </div>
             </div>
             
@@ -429,14 +435,14 @@
         </div>
     </div>
     `,
-                            width: '95%',
-                            padding: '1em',
-                            backdrop: `rgba(15, 23, 42, 0.95)`,
-                            showConfirmButton: false,
-                            allowOutsideClick: false
-                        });
-                    }
-                });
-        });
-    </script>
+                        width: '95%',
+                        padding: '1em',
+                        backdrop: `rgba(15, 23, 42, 0.95)`,
+                        showConfirmButton: false,
+                        allowOutsideClick: false
+                    });
+                }
+            });
+    });
+</script>
 @endsection
