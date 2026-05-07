@@ -136,6 +136,32 @@
             font-size: 7pt;
             font-weight: bold;
         }
+
+        .badge-pemenang {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 8pt;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .bg-pemenang-biru {
+            background-color: #2563eb;
+        }
+
+        /* Biru yang lebih solid untuk PDF */
+        .bg-pemenang-merah {
+            background-color: #dc2626;
+        }
+
+        /* Merah yang lebih solid untuk PDF */
+        .text-muted {
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 8pt;
+        }
     </style>
 </head>
 
@@ -246,7 +272,21 @@
                             </tr>
                         </table>
                     </td>
-                    <td class="text-center"><small style="color: #999 italic">Selesai</small></td>
+                    <td class="text-center">
+                        @php
+                            // Mencari peserta yang memiliki status is_pemenang = 1
+                            $pemenang = $partai->detail_peserta->firstWhere('is_pemenang', 1);
+                        @endphp
+
+                        @if ($pemenang)
+                            <span
+                                class="badge-pemenang {{ strtolower($pemenang->sudut) == 'biru' ? 'bg-pemenang-biru' : 'bg-pemenang-merah' }}">
+                                {{ strtoupper($pemenang->sudut) }}
+                            </span>
+                        @else
+                            <span class="text-muted">BELUM DITETAPKAN</span>
+                        @endif
+                    </td>
                 </tr>
             @endforeach
         </tbody>
