@@ -215,11 +215,9 @@
             {{-- Header --}}
             <div class="bg-gray-900 py-6 text-center relative">
                 <h2 class="text-2xl font-black text-white tracking-[0.2em]">HASIL KEPUTUSAN PEMENANG</h2>
-                <button onclick="tutupModalPemenang()" class="absolute right-6 top-6 text-gray-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
-                    </svg>
+                <button onclick="tutupModalPemenang({{ $partai->id_partai }})"
+                    class="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all">
+                    TUTUP
                 </button>
             </div>
 
@@ -314,7 +312,6 @@
                 }
             });
 
-            // Tembak API
             fetch(`/admin/hasil/solo/${idPartai}/tetapkan-pemenang`, {
                     method: 'POST',
                     headers: {
@@ -325,39 +322,41 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // PENTING: Tutup loading Swal
                     Swal.close();
 
                     if (data.status === 'success') {
-                        // Cek apakah ada pemenangnya (untuk antisipasi jika dua-duanya DISQ)
                         if (data.winner) {
                             const win = data.winner;
                             const lose = data.loser;
 
-                            // Isi Pemenang
+                            // --- UPDATE BAGIAN PEMENANG ---
                             document.getElementById('win-nama').innerText = win.nama;
                             document.getElementById('win-kontingen').innerText = win.kontingen;
                             document.getElementById('win-sudut-label').innerText = "SUDUT " + win.sudut;
+                            // Update Warna Label Pemenang
                             document.getElementById('win-sudut-label').className =
                                 `inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3 ${win.sudut === 'BIRU' ? 'bg-blue-600' : 'bg-red-600'}`;
+
                             document.getElementById('win-total').innerText = win.total;
                             document.getElementById('win-median').innerText = win.median;
-                            document.getElementById('win-hukuman').innerText = win.hukuman;
+                            document.getElementById('win-hukuman').innerText = win.hukuman; // Fix Undefined
                             document.getElementById('win-deviasi').innerText = win.deviasi;
 
-                            // Isi Kalah
+                            // --- UPDATE BAGIAN PESERTA LAIN (KALAH) ---
                             if (lose) {
                                 document.getElementById('lose-nama').innerText = lose.nama;
                                 document.getElementById('lose-kontingen').innerText = lose.kontingen;
                                 document.getElementById('lose-sudut-label').innerText = "SUDUT " + lose.sudut;
+                                // Update Warna Label Kalah (Harus beda dengan pemenang)
                                 document.getElementById('lose-sudut-label').className =
                                     `inline-block px-4 py-1 rounded-lg text-white font-black text-sm mb-3 ${lose.sudut === 'BIRU' ? 'bg-blue-600' : 'bg-red-600'}`;
+
                                 document.getElementById('lose-total').innerText = lose.total;
                                 document.getElementById('lose-median').innerText = lose.median;
-                                document.getElementById('lose-hukuman').innerText = lose.hukuman;
+                                document.getElementById('lose-hukuman').innerText = lose.hukuman; // Fix Undefined
                                 document.getElementById('lose-deviasi').innerText = lose.deviasi;
 
-                                // Show Disq badge if any
+                                // Handle Badge Disq
                                 const disqBadge = document.getElementById('lose-disq-badge');
                                 if (lose.is_disq) disqBadge.classList.remove('hidden');
                                 else disqBadge.classList.add('hidden');
@@ -367,22 +366,17 @@
                             const modal = document.getElementById('modal-pemenang');
                             modal.classList.remove('hidden');
 
-                            // Update UI Tabel secara dinamis (tanpa refresh)
+                            // Update Lencana di Kolom Tabel (Tanpa Refresh)
                             const colPemenang = document.getElementById(`col-pemenang-${idPartai}`);
-                            const colorClass = data.winner.sudut.toLowerCase() === 'biru' ? 'bg-blue-600' :
-                            'bg-red-600';
+                            const colorClass = win.sudut === 'BIRU' ? 'bg-blue-600' : 'bg-red-600';
                             colPemenang.innerHTML = `
-                                <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${colorClass} text-white text-[10px] font-black shadow-sm">
-                                    <svg class="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                    ${data.winner.sudut}
-                                </div>
-                            `;
-
-                        } else {
-                            // Jika kedua peserta terkena diskualifikasi
-                            Swal.fire('Info', data.message || 'Tidak ada pemenang yang sah', 'info');
+                    <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${colorClass} text-white text-[10px] font-black shadow-sm">
+                        <svg class="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        ${win.sudut}
+                    </div>
+                `;
                         }
                     } else {
                         Swal.fire('Error', data.message, 'error');
@@ -390,14 +384,25 @@
                 })
                 .catch(error => {
                     Swal.close();
-                    Swal.fire('Error', 'Gagal memproses data pemenang', 'error');
+                    Swal.fire('Error', 'Gagal memproses data. Cek koneksi atau database.', 'error');
                     console.error(error);
                 });
         }
 
-        function tutupModalPemenang() {
+        function tutupModalPemenang(idPartai) {
+            // console.log("Tombol Tutup diklik, ID Partai:", idPartai);
+            // 1. Tutup modal di Admin
             const modal = document.getElementById('modal-pemenang');
             modal.classList.add('hidden');
+
+            // 2. Beritahu server untuk menyuruh Display tutup (Reverb)
+            fetch(`/admin/hasil/solo/${idPartai}/tutup-display`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            });
         }
     </script>
 @endsection

@@ -169,7 +169,8 @@
                     </div>
                     <div class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden">
                         <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
-                            <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Standar Deviasi</span>
+                            <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Standar
+                                Deviasi</span>
                         </div>
                         <div class="flex-1 flex items-center justify-center">
                             {{-- TANGKAP KEMUNGKINAN NAMA KOLOM DEVIASI --}}
@@ -366,6 +367,76 @@
                     }, 500);
                 });
             }
+        });
+    </script>
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            window.Echo.channel('display-pengumuman-solo')
+                .listen('TampilkanPemenangSolo', (e) => {
+                    // console.log("Sinyal Diterima dari Reverb:", e);
+                    // console.log("Perintah Action:", e.action);
+                    // JIKA PERINTAHNYA TUTUP
+                    if (e.action === 'close') {
+                        Swal.close();
+                        return;
+                    }
+
+
+                    // JIKA PERINTAHNYA TAMPILKAN
+                    if (e.winner && e.loser) {
+                        const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
+
+                        Swal.fire({
+                            title: 'KEPUTUSAN PEMENANG',
+                            html: `
+    <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
+        
+        <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div style="background: #fbbf24; color: #000; padding: 8px 25px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 1rem; margin-bottom: 20px; letter-spacing: 2px;">PEMENANG</div>
+            
+            <div style="color: ${isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px;">SUDUT ${e.winner.sudut}</div>
+            <div style="font-size: 4rem; font-weight: 900; line-height: 1; margin: 15px 0; color: #1e293b; text-transform: uppercase;">${e.winner.nama}</div>
+            <div style="font-size: 1.8rem; color: #64748b; font-weight: bold; margin-bottom: 25px;">${e.winner.kontingen}</div>
+            
+            <div style="background: #fff; border-radius: 20px; padding: 25px; border: 2px solid #fde68a; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span style="font-size: 1.2rem; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 5px;">TOTAL NILAI</span>
+                    <span style="font-size: 5rem; font-weight: 900; color: #10b981; line-height: 1;">${e.winner.total}</span>
+                </div>
+                <div style="text-align: right; border-left: 2px solid #f3f4f6; padding-left: 30px;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">MEDIAN: ${e.winner.median}</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569;">DEV: ${e.winner.deviasi}</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="width: 100%; max-width: 600px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
+            <div style="background: #e2e8f0; color: #64748b; padding: 5px 15px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.7rem; margin-bottom: 10px;">PESERTA LAIN</div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="color: ${!isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1rem;">SUDUT ${e.loser.sudut}</div>
+                    <div style="font-size: 1.8rem; font-weight: 900; color: #475569; text-transform: uppercase; margin: 5px 0;">${e.loser.nama}</div>
+                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold;">${e.loser.kontingen}</div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; display: block;">TOTAL</span>
+                    <span style="font-size: 2.2rem; font-weight: 900; color: #94a3b8;">${e.loser.total}</span>
+                </div>
+            </div>
+            
+            ${e.loser.is_disq ? '<div style="margin-top: 15px; background: #fee2e2; color: #ef4444; text-align: center; font-weight: 900; border-radius: 12px; padding: 8px; font-size: 1rem; border: 1px solid #fecaca;">TERDISKUALIFIKASI</div>' : ''}
+        </div>
+    </div>
+    `,
+                            width: '95%',
+                            padding: '1em',
+                            backdrop: `rgba(15, 23, 42, 0.95)`,
+                            showConfirmButton: false,
+                            allowOutsideClick: false
+                        });
+                    }
+                });
         });
     </script>
 @endsection

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Partai; // Pastikan Model Partai dipanggil
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini ditambahkan di atas
+use App\Events\TampilkanPemenangSolo;
 
 
 
@@ -106,10 +107,20 @@ class SoloController extends Controller
                 \Illuminate\Support\Facades\DB::table('detail_peserta_tanding')->where('id_detail', $winner->id_detail)->update(['is_pemenang' => 1]);
             }
 
+            // Siapkan data yang sudah diformat untuk API dan Broadcast Display
+            $winData = $this->formatResult($winner);
+            $loseData = $this->formatResult($loser);
+
+            // ----> TRIGGER WEBSOCKET REVERB KE LAYAR DISPLAY <----
+            // Menggunakan fully-qualified name agar tidak error jika lupa import 'use' di atas file
+            if (class_exists(\App\Events\TampilkanPemenangSolo::class)) {
+                broadcast(new \App\Events\TampilkanPemenangSolo($id, $winData, $loseData, 'show'));
+            }
+
             return response()->json([
                 'status' => 'success',
-                'winner' => $this->formatResult($winner),
-                'loser' => $this->formatResult($loser)
+                'winner' => $winData,
+                'loser' => $loseData
             ]);
 
         } catch (\Exception $e) {
@@ -117,20 +128,34 @@ class SoloController extends Controller
         }
     }
 
+    public function tutupDisplay($id)
+    {
+        // Kirim event dengan action 'close'
+        broadcast(new \App\Events\TampilkanPemenangSolo($id, null, null, 'close'));
+        return response()->json(['status' => 'success']);
+    }
+
     // Helper untuk merapikan data JSON
-    private function formatResult($p)
+    protected function formatResult($p)
     {
         if (!$p)
             return null;
+
+        // Pastikan relasi peserta dimuat
+        $peserta = $p->peserta;
+
         return [
-            'nama' => $p->peserta->nama ?? $p->peserta->nama_lengkap,
-            'sudut' => strtoupper($p->sudut),
-            'kontingen' => $p->peserta->kontingen,
-            'total' => number_format($p->total_nilai, 3),
-            'median' => number_format($p->nilai_median, 3),
+            // 1. Perbaikan Nama NULL (Cek semua kemungkinan kolom nama)
+            'nama' => $peserta->nama ?? $peserta->nama_lengkap ?? $peserta->nama_peserta ?? 'NAMA TIDAK DITEMUKAN',
+            'kontingen' => $peserta->kontingen ?? '-',
+            'sudut' => strtoupper($p->sudut), // Pastikan KAPITAL untuk perbandingan di JS
+
+            // 2. Perbaikan Hukuman Undefined (Gunakan key 'hukuman' agar match dengan JS)
+            'total' => number_format($p->total_nilai, 3, '.', ''),
+            'median' => number_format($p->nilai_median, 3, '.', ''),
+            'hukuman' => number_format($p->hukuman_ketua ?? 0, 2, '.', ''),
             'deviasi' => $p->nilai_deviasi,
-            'hukuman' => number_format($p->hukuman_ketua, 2),
-            'is_disq' => ($p->is_disqualifikasi ?? $p->is_disqulifikasi ?? 0) == 1
+            'is_disq' => (($p->is_disqualifikasi ?? $p->is_disqulifikasi ?? 0) == 1)
         ];
     }
 }
