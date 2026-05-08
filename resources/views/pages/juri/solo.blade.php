@@ -82,7 +82,7 @@
                         </div>
                         <div class="flex-1 border-l border-white/20 pl-4 min-w-0">
                             <p class="text-2xl font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
-                                SUDUT {{ $sudutDb }} &bull; PARTAI #{{ $partai->no_partai }}
+                                SUDUT {{ $sudutDb }} &bull; PARTAI #{{ $partai->no_partai }} &bull; KATEGORI SOLO
                             </p>
                             <h1 class="text-6xl font-black uppercase italic tracking-tight leading-none truncate">
                                 {{ $aktif->peserta->nama_peserta ?? '-' }}

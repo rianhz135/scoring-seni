@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\Peserta\GandaController;
 use App\Http\Controllers\Admin\Peserta\TunggalController;
 use App\Http\Controllers\Admin\Peserta\ReguController;
 use App\Http\Controllers\Admin\Manajemen\KelasController;
+use App\Http\Controllers\Admin\Manajemen\MatchGandaController;
 
 
 /*
@@ -52,7 +53,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         return view('pages.dewan.display', compact('partai'));
     })->name('dewan.display');
     Route::post('/dewan/solo/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'selesai'])->name('dewan.solo.selesai');
+    Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
     Route::post('/dewan/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.refresh.display');
+
+
     // --- 2. DATA MASTER PESERTA (PER KATEGORI) ---
     Route::prefix('peserta')->name('peserta.')->group(function () {
 
@@ -125,6 +129,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/solo/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'toggleStatusInput']);
 
         Route::get('/ganda', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'index'])->name('ganda.index');
+        Route::get('/ganda/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'mulai'])->name('ganda.mulai');
+        Route::post('/ganda/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateHukuman'])->name('ganda.hukuman');
+        Route::post('/ganda/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'diskualifikasi'])->name('ganda.diskualifikasi');
+        Route::post('/ganda/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateTimer'])->name('ganda.update-timer');
+        Route::get('/ganda/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getStatus']);
+        Route::get('/ganda/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getJuriScores']);
+        Route::post('/ganda/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusJuri']);
+        Route::post('/ganda/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusInput']);
+
         Route::get('/tunggal', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'index'])->name('tunggal.index');
         Route::get('/regu', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'index'])->name('regu.index');
         Route::resource('kelas', KelasController::class);
@@ -199,8 +212,48 @@ Route::get('/juri/solo/{no_juri}', function ($no_juri) {
 
 })->name('juri.solo');
 
+// 2. Route Halaman Utama Juri Ganda (Hanya butuh nomor Juri, misal: /juri/ganda/1)
+Route::get('/juri/ganda/{no_juri}', function ($no_juri) {
+
+    // Cari partai yang detailnya SEDANG BERTANDING (status_mulai = 1)
+    $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
+        ->whereHas('detail_peserta', function ($q) {
+            $q->where('status_mulai', 1);
+        })->first();
+
+    $aktif = null;
+    $nilai = null;
+    $sudut = null;
+
+    if ($partai) {
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first();
+        $sudut = strtolower($aktif->sudut);
+
+        // Tarik nilai juri saat ini dari database
+        $nilai = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->where('no_juri', $no_juri)
+            ->first();
+    }
+    $kontrol = null;
+    if ($partai) {
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first();
+
+        // Ambil data kontrol juri spesifik untuk juri ini
+        $kontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')
+            ->where('id_partai', $partai->id_partai)
+            ->where('no_juri', $no_juri)
+            ->first();
+    }
+
+    // Jika tidak ada partai, kirim $partai = null (akan memicu Mode Standby di Blade)
+    return view('pages.juri.ganda', compact('partai', 'aktif', 'sudut', 'no_juri', 'nilai', 'kontrol'));
+
+})->name('juri.ganda');
+
 // Route Simpan Nilai (Tetap)
 Route::post('/juri/solo/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'simpanNilaiJuri'])->name('juri.solo.simpan');
+Route::post('/juri/ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'simpanNilaiJuri'])->name('juri.ganda.simpan');
 
 
 // Route baru untuk Kontrol Dewan Solo
@@ -251,8 +304,57 @@ Route::get('/dewan/solo/{id}/{sudut}', function ($id, $sudut) {
     return view('pages.dewan.solo', compact('partai', 'sudut'));
 })->name('dewan.solo');
 
-// Route untuk Display (biasanya memantau partai yang sedang aktif)
-// Route::get('/dewan/display/{id}', function ($id) {
-//     $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])->findOrFail($id);
-//     return view('pages.dewan.display', compact('partai'));
-// })->name('dewan.display');
+
+//route untuk kontrol dewan ganda
+Route::get('/dewan/ganda/{id}/{sudut}', function ($id, $sudut) {
+    // 1. Ambil data partai dan peserta (Eager Loading)
+    $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])->findOrFail($id);
+
+    $sudutDb = ucfirst($sudut);
+    // Untuk Ganda, kita ambil id_detail pertama dari pasangan tersebut sebagai anchor nilai
+    $aktif = $partai->detail_peserta->where('sudut', $sudutDb)->first();
+
+    if ($aktif) {
+        // --- LOGIKA 1: Auto-Generate Input Nilai Juri (6 Juri) ---
+        $jumlahJuri = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->count();
+
+        if ($jumlahJuri < 6) {
+            $dataJuri = [];
+            for ($i = 1; $i <= 6; $i++) {
+                $dataJuri[] = [
+                    'id_detail' => $aktif->id_detail,
+                    'no_juri' => $i,
+                    'nilai_a' => 0.00,
+                    'nilai_b' => 0.00,
+                    'nilai_c' => 0.00,
+                    'skor_akhir_juri' => 9.10, // Default Ganda (sama dengan Solo)
+                ];
+            }
+            \Illuminate\Support\Facades\DB::table('input_nilai_juri')->insert($dataJuri);
+        }
+
+        // --- LOGIKA 2: Auto-Generate Kontrol Juri (6 Juri) ---
+        // Kontrol juri biasanya per ID Partai agar Dewan bisa melihat status ke-6 juri secara global
+        $jumlahKontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')
+            ->where('id_partai', $id)
+            ->count();
+
+        if ($jumlahKontrol < 6) {
+            $dataKontrol = [];
+            for ($i = 1; $i <= 6; $i++) {
+                $dataKontrol[] = [
+                    'id_partai' => $id,
+                    'no_juri' => $i,
+                    'is_on' => 0,
+                    'status_input' => 'Proses',
+                ];
+            }
+            \Illuminate\Support\Facades\DB::table('status_kontrol_juri')->insert($dataKontrol);
+        }
+    }
+
+    // Mengarahkan ke view dewan ganda
+    return view('pages.dewan.ganda', compact('partai', 'sudut'));
+})->name('dewan.ganda');

@@ -42,6 +42,10 @@
                             PARTAI #{{ $partai->no_partai }}
                         </span>
                         <span
+                            class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em] border border-slate-600">
+                            {{ $partai->kategori->nama_kategori ?? 'KATEGORI KOSONG' }}
+                        </span>
+                        <span
                             class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
                             {{ $partai->kelas->nama_kelas ?? ($partai->kelas->label_kelas ?? 'KATEGORI SENI') }}
                         </span>
@@ -70,8 +74,20 @@
                     <h2 class="text-4xl font-black text-white uppercase tracking-tight mb-2">
                         {{ $aktif->peserta->kontingen ?? '-' }}
                     </h2>
+
+                    {{-- PERBAIKAN: LOOPING NAMA PESERTA UNTUK GANDA/REGU --}}
                     <p class="text-3xl font-bold {{ $teksWarna }} uppercase tracking-wide">
-                        {{ $aktif->peserta->nama_peserta ?? 'NAMA PESERTA KOSONG' }}
+                        @php
+                            // Ambil seluruh peserta di sudut dan partai yang sama
+                            $anggotaTim = $partai->detail_peserta->where('sudut', $aktif->sudut);
+                        @endphp
+
+                        @foreach ($anggotaTim as $anggota)
+                            {{ $anggota->peserta->nama_peserta ?? ($anggota->peserta->nama ?? 'NAMA PESERTA KOSONG') }}
+                            @if (!$loop->last)
+                                &
+                            @endif
+                        @endforeach
                     </p>
                 </div>
             </div>
@@ -204,8 +220,8 @@
         </div>
 
         <script>
-            let localSeconds = parseInt(document.getElementById('display-timer').getAttribute('data-seconds')) || 0;
-            let isTimerRunning = (document.getElementById('display-timer').getAttribute('data-running') == '1');
+            let localSeconds = parseInt(document.getElementById('display-timer')?.getAttribute('data-seconds')) || 0;
+            let isTimerRunning = (document.getElementById('display-timer')?.getAttribute('data-running') == '1');
             let displayInterval;
 
             function formatTime(totalSeconds) {
@@ -230,13 +246,27 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 if (window.Echo) {
-                    // Gunakan fallback 0 jika id_partai kosong agar JS tidak crash
+                    // 1. GUNAKAN PHP UNTUK MENDETEKSI JENIS KATEGORI (SOLO/GANDA/REGU)
+                    @php
+                        $namaKategori = strtolower($partai->kategori->nama_kategori ?? '');
+                        $jenisChannel = 'solo'; // Default
+                        if (str_contains($namaKategori, 'ganda')) {
+                            $jenisChannel = 'ganda';
+                        } elseif (str_contains($namaKategori, 'regu')) {
+                            $jenisChannel = 'regu';
+                        }
+                    @endphp
+
                     const partaiId = "{{ $partai->id_partai ?? 0 }}";
-                    const channelName = `partai.solo.${partaiId}`;
+                    const channelName = `partai.{{ $jenisChannel }}.${partaiId}`;
                     const channel = window.Echo.channel(channelName);
 
-                    // 1. MENDENGARKAN TIMER
-                    channel.listen('TimerSoloUpdated', function(e) {
+                    console.log("Display terhubung ke Channel:", channelName);
+
+                    // ==========================================
+                    // FUNGSI HANDLER TIMER
+                    // ==========================================
+                    function prosesSinyalTimer(e) {
                         localSeconds = parseInt(e.waktu);
                         updateDisplayTimer();
 
@@ -251,13 +281,18 @@
                             isTimerRunning = false;
                             if (typeof displayInterval !== 'undefined') clearInterval(displayInterval);
                         }
-                    });
+                    }
 
-                    // 2. MENDENGARKAN KONTROL JURI (ON/OFF & MEDIAN)
-                    // MENDENGARKAN SEMUA KONTROL DARI DEWAN (JURI ON/OFF, MEDIAN, DEVIASI, TOTAL, HUKUMAN)
-                    channel.listen('ToggleKontrolJuri', function(e) {
+                    channel.listen('TimerSoloUpdated', prosesSinyalTimer)
+                        .listen('TimerGandaUpdated', prosesSinyalTimer)
+                        .listen('TimerReguUpdated', prosesSinyalTimer);
+
+
+                    // ==========================================
+                    // FUNGSI KONTROL JURI (ON/OFF, HUKUMAN, TOTAL)
+                    // ==========================================
+                    function prosesKontrolJuri(e) {
                         console.log("Sinyal Toggle/Hukuman Masuk:", e);
-                        console.log("Sinyal Toggle/Hukuman/Disq Masuk:", e);
 
                         // 1. Logika ON/OFF Kotak Juri
                         let noJ = e.noJuri || e.no_juri;
@@ -269,18 +304,12 @@
                             }
                         }
 
-                        // 2. Tangkap variabel dengan fallback super aman (menghindari error undefined)
-                        let nMedian = e.median;
-                        if (nMedian === undefined) nMedian = e.nilai_median;
-
-                        let nDeviasi = e.deviasi;
-                        if (nDeviasi === undefined) nDeviasi = e.standar_deviasi;
-
-                        let nTotal = e.totalNilai;
-                        if (nTotal === undefined) nTotal = e.total_nilai;
-
-                        let nHukuman = e.hukuman;
-                        if (nHukuman === undefined) nHukuman = e.hukuman_ketua;
+                        // 2. Tangkap variabel dengan fallback
+                        let nMedian = e.median ?? e.nilai_median;
+                        let nDeviasi = e.deviasi ?? e.standar_deviasi;
+                        let nTotal = e.totalNilai ?? e.total_nilai;
+                        let nHukuman = e.hukuman ?? e.hukuman_ketua;
+                        let isDisq = e.isDisq;
 
                         // 3. Eksekusi Perubahan HTML secara Instan
                         if (nMedian !== undefined && nMedian !== null) {
@@ -295,23 +324,17 @@
 
                         const elTot = document.getElementById('nilai-total');
                         if (elTot) {
-                            // TANGKAP STATUS DISKUALIFIKASI (Parameter ke-10 dari event)
-                            let isDisq = e.isDisq; // Pastikan di Event property-nya bernama $isDisq
-
                             if (isDisq == 1) {
-                                // Tampilan DISKUALIFIKASI
                                 elTot.innerText = "DISKUALIFIKASI";
                                 elTot.classList.remove('text-[10rem]', 'text-green-400', 'shadow-green-400/20');
                                 elTot.classList.add('text-4xl', 'sm:text-5xl', 'md:text-6xl', 'lg:text-[5rem]',
                                     'text-red-500');
                             } else {
-                                // Tampilan Normal (Kembalikan nilai asli)
-                                elTot.classList.remove('text-4xl', 'sm:text-5xl', 'md:text-6xl',
-                                    'lg:text-[5rem]', 'text-red-500');
+                                elTot.classList.remove('text-4xl', 'sm:text-5xl', 'md:text-6xl', 'lg:text-[5rem]',
+                                    'text-red-500');
                                 elTot.classList.add('text-[10rem]', 'text-green-400', 'shadow-green-400/20');
-
-                                if (e.totalNilai !== undefined && e.totalNilai !== null) {
-                                    elTot.innerText = parseFloat(e.totalNilai).toFixed(3);
+                                if (nTotal !== undefined && nTotal !== null) {
+                                    elTot.innerText = parseFloat(nTotal).toFixed(3);
                                 }
                             }
                         }
@@ -320,25 +343,49 @@
                             const elHukuman = document.getElementById('nilai-hukuman');
                             if (elHukuman) elHukuman.innerText = "-" + parseFloat(nHukuman).toFixed(2);
                         }
-                    });
+                    }
 
-                    // 4. PENDENGAR NILAI INDIVIDU DARI JURI
-                    // MENDENGARKAN NILAI MASUK DARI TABLET JURI
+                    // Daftarkan semua kemungkinan nama Event kontrol juri
+                    channel.listen('ToggleKontrolJuri', prosesKontrolJuri)
+                        .listen('ToggleKontrolJuriGanda', prosesKontrolJuri);
+
+
+                    // ==========================================
+                    // FUNGSI PENDENGAR NILAI INDIVIDU DARI JURI
+                    // ==========================================
                     channel.listen('UpdateNilaiJuri', (e) => {
-
-                        // Update Kotak Angka Juri di Display
                         const elNilaiJuri = document.getElementById(`nilai-juri-${e.noJuri}`);
                         if (elNilaiJuri) {
-                            // Gunakan toFixed(2) agar seragam (misal 9.90)
                             elNilaiJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
-
-                            // Animasi kedip hijau saat update otomatis
                             elNilaiJuri.classList.add('text-green-400');
                             setTimeout(() => {
                                 elNilaiJuri.classList.remove('text-green-400');
                             }, 500);
                         }
+                    });
+                    // Jika ada event juri ganda:
+                    channel.listen('UpdateNilaiJuriGanda', (e) => {
+                        const elNilaiJuri = document.getElementById(`nilai-juri-${e.noJuri}`);
+                        if (elNilaiJuri) {
+                            elNilaiJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
+                            elNilaiJuri.classList.add('text-green-400');
+                            setTimeout(() => {
+                                elNilaiJuri.classList.remove('text-green-400');
+                            }, 500);
+                        }
+                    });
 
+                    // Tambahkan fungsi untuk menangkap event UpdateHukumanGanda
+                    channel.listen('UpdateHukumanGanda', (e) => {
+                        console.log("Hukuman Masuk:", e);
+
+                        // Update Hukuman
+                        const elHukuman = document.getElementById('nilai-hukuman');
+                        if (elHukuman) elHukuman.innerText = "-" + parseFloat(e.hukuman).toFixed(2);
+
+                        // Update Total Nilai
+                        const elTot = document.getElementById('nilai-total');
+                        if (elTot) elTot.innerText = parseFloat(e.totalNilai).toFixed(3);
                     });
 
                 }
@@ -370,22 +417,22 @@
         });
     </script>
     <script type="module">
-    document.addEventListener('DOMContentLoaded', () => {
-        window.Echo.channel('display-pengumuman-solo')
-            .listen('TampilkanPemenangSolo', (e) => {
-                // JIKA PERINTAHNYA TUTUP
-                if (e.action === 'close') {
-                    Swal.close();
-                    return;
-                }
+        document.addEventListener('DOMContentLoaded', () => {
+            window.Echo.channel('display-pengumuman-solo')
+                .listen('TampilkanPemenangSolo', (e) => {
+                    // JIKA PERINTAHNYA TUTUP
+                    if (e.action === 'close') {
+                        Swal.close();
+                        return;
+                    }
 
-                // JIKA PERINTAHNYA TAMPILKAN
-                if (e.winner && e.loser) {
-                    const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
+                    // JIKA PERINTAHNYA TAMPILKAN
+                    if (e.winner && e.loser) {
+                        const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
 
-                    Swal.fire({
-                        title: 'KEPUTUSAN PEMENANG',
-                        html: `
+                        Swal.fire({
+                            title: 'KEPUTUSAN PEMENANG',
+                            html: `
     <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
         
         <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
@@ -435,14 +482,14 @@
         </div>
     </div>
     `,
-                        width: '95%',
-                        padding: '1em',
-                        backdrop: `rgba(15, 23, 42, 0.95)`,
-                        showConfirmButton: false,
-                        allowOutsideClick: false
-                    });
-                }
-            });
-    });
-</script>
+                            width: '95%',
+                            padding: '1em',
+                            backdrop: `rgba(15, 23, 42, 0.95)`,
+                            showConfirmButton: false,
+                            allowOutsideClick: false
+                        });
+                    }
+                });
+        });
+    </script>
 @endsection
