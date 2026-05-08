@@ -7,9 +7,6 @@
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
     <title>{{ $title ?? 'Admin Panel' }} — DS SMI</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=block" rel="stylesheet">
 
     <style>
         body { margin: 0; padding: 0; }
@@ -63,22 +60,6 @@
 
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    {{-- <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f4ff', 100: '#dde6ff', 200: '#c4d0ff',
-                            400: '#7f93f8', 500: '#5a6ef5', 600: '#4254e8',
-                            700: '#3341cc', 800: '#2a34a4', 900: '#1e2578'
-                        },
-                    },
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
-                },
-            },
-        }
-    </script> --}}
 </head>
 
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
