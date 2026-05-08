@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f4ff;
+  --color-primary-100: #dde6ff;
+  --color-primary-200: #c4d0ff;
+  --color-primary-400: #7f93f8;
+  --color-primary-500: #5a6ef5;
+  --color-primary-600: #4254e8;
+  --color-primary-700: #3341cc;
+  --color-primary-800: #2a34a4;
+  --color-primary-900: #1e2578;
+
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}

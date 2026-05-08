@@ -219,7 +219,8 @@
                                                             <div class="stats">
                                                                 M: {{ number_format($biru->nilai_median, 2) }} |
                                                                 D: {{ $biru->nilai_deviasi }} |
-                                                                H: {{ number_format($biru->hukuman_ketua, 1) }}
+                                                                H: {{ number_format($biru->hukuman_ketua, 1) }} |
+                                                                W: {{ floor(($biru->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($biru->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
                                                             </div>
                                                         @endif
                                                     </td>
@@ -254,7 +255,8 @@
                                                             <div class="stats">
                                                                 M: {{ number_format($merah->nilai_median, 2) }} |
                                                                 D: {{ $merah->nilai_deviasi }} |
-                                                                H: {{ number_format($merah->hukuman_ketua, 1) }}
+                                                                H: {{ number_format($merah->hukuman_ketua, 1) }} |
+                                                                W: {{ floor(($merah->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($merah->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
                                                             </div>
                                                         @endif
                                                     </td>

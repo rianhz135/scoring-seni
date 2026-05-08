@@ -62,8 +62,8 @@
     </style>
 
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -78,7 +78,7 @@
                 },
             },
         }
-    </script>
+    </script> --}}
 </head>
 
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">

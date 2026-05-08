@@ -3,7 +3,7 @@
 @section('content')
     <style>
         body {
-            background-color: #0f172a;
+            background-color: #0c1938;
             /* Slate 900 */
         }
     </style>
@@ -418,78 +418,78 @@
     </script>
     <script type="module">
         document.addEventListener('DOMContentLoaded', () => {
+            // --- FUNGSI REUSABLE UNTUK MENAMPILKAN MODAL PEMENANG ---
+            const renderPemenangModal = (e) => {
+                // JIKA PERINTAHNYA TUTUP
+                if (e.action === 'close') {
+                    Swal.close();
+                    return;
+                }
+
+                // JIKA PERINTAHNYA TAMPILKAN
+                if (e.winner && e.loser) {
+                    const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
+
+                    Swal.fire({
+                        title: 'KEPUTUSAN PEMENANG',
+                        html: `
+                    <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
+                        <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                            <div style="background: #fbbf24; color: #000; padding: 8px 25px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 1rem; margin-bottom: 20px; letter-spacing: 2px;">PEMENANG</div>
+                            <div style="color: ${isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px;">SUDUT ${e.winner.sudut}</div>
+                            <div style="font-size: 4rem; font-weight: 900; line-height: 1; margin: 15px 0; color: #1e293b; text-transform: uppercase;">${e.winner.nama}</div>
+                            <div style="font-size: 1.8rem; color: #64748b; font-weight: bold; margin-bottom: 25px;">${e.winner.kontingen}</div>
+                            <div style="background: #fff; border-radius: 20px; padding: 25px; border: 2px solid #fde68a; display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <span style="font-size: 1.2rem; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 5px;">TOTAL NILAI</span>
+                                    <span style="font-size: 5rem; font-weight: 900; color: #10b981; line-height: 1;">${e.winner.total}</span>
+                                </div>
+                                <div style="text-align: right; border-left: 2px solid #f3f4f6; padding-left: 30px;">
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">MEDIAN: ${e.winner.median}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">DEV: ${e.winner.deviasi}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; margin-bottom: 5px;">HUK: ${e.winner.hukuman}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #2563eb;">WAKTU: ${e.winner.waktu}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 100%; max-width: 650px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
+                            <div style="background: #e2e8f0; color: #64748b; padding: 5px 15px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.7rem; margin-bottom: 10px;">PESERTA LAIN</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="color: ${!isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1rem;">SUDUT ${e.loser.sudut}</div>
+                                    <div style="font-size: 1.8rem; font-weight: 900; color: #475569; text-transform: uppercase; margin: 5px 0;">${e.loser.nama}</div>
+                                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold; margin-bottom: 10px;">${e.loser.kontingen}</div>
+                                    <div style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: bold; color: #64748b; background: #fff; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                        <span>MED: ${e.loser.median}</span>
+                                        <span>DEV: ${e.loser.deviasi}</span>
+                                        <span style="color: #ef4444;">HUK: ${e.loser.hukuman}</span>
+                                        <span style="color: #2563eb;">WAKTU: ${e.loser.waktu}</span>
+                                    </div>
+                                </div>
+                                <div style="text-align: right; padding-left: 20px;">
+                                    <span style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; display: block;">TOTAL</span>
+                                    <span style="font-size: 2rem; font-weight: 600; color: #94a3b8; line-height: 1;">${e.loser.total}</span>
+                                </div>
+                            </div>
+                            ${e.loser.is_disq ? '<div style="margin-top: 15px; background: #fee2e2; color: #ef4444; text-align: center; font-weight: 900; border-radius: 12px; padding: 8px; font-size: 1rem; border: 1px solid #fecaca;">TERDISKUALIFIKASI</div>' : ''}
+                        </div>
+                    </div>`,
+                        width: '95%',
+                        padding: '1em',
+                        backdrop: `rgba(15, 23, 42, 0.95)`,
+                        showConfirmButton: false,
+                        allowOutsideClick: false
+                    });
+                }
+            };
+
+            // 1. LISTEN UNTUK SOLO
             window.Echo.channel('display-pengumuman-solo')
-                .listen('TampilkanPemenangSolo', (e) => {
-                    // JIKA PERINTAHNYA TUTUP
-                    if (e.action === 'close') {
-                        Swal.close();
-                        return;
-                    }
+                .listen('TampilkanPemenangSolo', renderPemenangModal);
 
-                    // JIKA PERINTAHNYA TAMPILKAN
-                    if (e.winner && e.loser) {
-                        const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
-
-                        Swal.fire({
-                            title: 'KEPUTUSAN PEMENANG',
-                            html: `
-    <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
-        
-        <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <div style="background: #fbbf24; color: #000; padding: 8px 25px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 1rem; margin-bottom: 20px; letter-spacing: 2px;">PEMENANG</div>
-            
-            <div style="color: ${isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px;">SUDUT ${e.winner.sudut}</div>
-            <div style="font-size: 4rem; font-weight: 900; line-height: 1; margin: 15px 0; color: #1e293b; text-transform: uppercase;">${e.winner.nama}</div>
-            <div style="font-size: 1.8rem; color: #64748b; font-weight: bold; margin-bottom: 25px;">${e.winner.kontingen}</div>
-            
-            <div style="background: #fff; border-radius: 20px; padding: 25px; border: 2px solid #fde68a; display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <span style="font-size: 1.2rem; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 5px;">TOTAL NILAI</span>
-                    <span style="font-size: 5rem; font-weight: 900; color: #10b981; line-height: 1;">${e.winner.total}</span>
-                </div>
-                <div style="text-align: right; border-left: 2px solid #f3f4f6; padding-left: 30px;">
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">MEDIAN: ${e.winner.median}</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">DEV: ${e.winner.deviasi}</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; margin-bottom: 5px;">HUK: ${e.winner.hukuman}</div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: #2563eb;">WAKTU: ${e.winner.waktu}</div>
-                </div>
-            </div>
-        </div>
-
-        <div style="width: 100%; max-width: 650px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
-            <div style="background: #e2e8f0; color: #64748b; padding: 5px 15px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.7rem; margin-bottom: 10px;">PESERTA LAIN</div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="color: ${!isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1rem;">SUDUT ${e.loser.sudut}</div>
-                    <div style="font-size: 1.8rem; font-weight: 900; color: #475569; text-transform: uppercase; margin: 5px 0;">${e.loser.nama}</div>
-                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold; margin-bottom: 10px;">${e.loser.kontingen}</div>
-                    
-                    <div style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: bold; color: #64748b; background: #fff; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                        <span>MED: ${e.loser.median}</span>
-                        <span>DEV: ${e.loser.deviasi}</span>
-                        <span style="color: #ef4444;">HUK: ${e.loser.hukuman}</span>
-                        <span style="color: #2563eb;">WAKTU: ${e.loser.waktu}</span>
-                    </div>
-                </div>
-                <div style="text-align: right; padding-left: 20px;">
-                    <span style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; display: block;">TOTAL</span>
-                    <span style="font-size: 2rem; font-weight: 600; color: #94a3b8; line-height: 1;">${e.loser.total}</span>
-                </div>
-            </div>
-            
-            ${e.loser.is_disq ? '<div style="margin-top: 15px; background: #fee2e2; color: #ef4444; text-align: center; font-weight: 900; border-radius: 12px; padding: 8px; font-size: 1rem; border: 1px solid #fecaca;">TERDISKUALIFIKASI</div>' : ''}
-        </div>
-    </div>
-    `,
-                            width: '95%',
-                            padding: '1em',
-                            backdrop: `rgba(15, 23, 42, 0.95)`,
-                            showConfirmButton: false,
-                            allowOutsideClick: false
-                        });
-                    }
-                });
+            // 2. LISTEN UNTUK GANDA (Tambahan Baru)
+            window.Echo.channel('display-pengumuman-ganda')
+                .listen('TampilkanPemenangGanda', renderPemenangModal);
         });
     </script>
 @endsection

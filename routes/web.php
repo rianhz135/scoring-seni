@@ -154,7 +154,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/solo/export-pdf', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'exportPdf'])->name('solo.export-pdf');
         Route::post('/solo/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tetapkanPemenang'])->name('solo.tetapkan-pemenang');
         Route::post('/solo/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tutupDisplay'])->name('solo.tutup-display');
+
+
         Route::get('/ganda', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'index'])->name('ganda.index');
+        Route::get('/ganda/export-pdf', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'exportPdf'])->name('ganda.export-pdf');
+        Route::post('/ganda/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tetapkanPemenang'])->name('ganda.tetapkan-pemenang');
+        Route::post('/ganda/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tutupDisplay'])->name('ganda.tutup-display');
+
         Route::get('/tunggal', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'index'])->name('tunggal.index');
         Route::get('/regu', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'index'])->name('regu.index');
     });
