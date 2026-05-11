@@ -92,7 +92,7 @@
                 </div>
             </div>
 
-            {{-- MENGAMBIL DATA JURI DARI DATABASE (SAMA PERSIS SEPERTI DEWAN) --}}
+            {{-- MENGAMBIL DATA JURI DARI DATABASE --}}
             @php
                 $juriDb = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
                     ->where('id_detail', $aktif->id_detail ?? 0)
@@ -100,13 +100,12 @@
                     ->get()
                     ->keyBy('no_juri');
 
-                // Deteksi Otomatis untuk Nilai Dasar (Tunggal/Regu = 9.90, Solo/Ganda = 9.10)
-                $namaKategori = strtolower($partai->kelas->nama_kelas ?? ($partai->kelas->label_kelas ?? ''));
-                if (str_contains($namaKategori, 'tunggal') || str_contains($namaKategori, 'regu')) {
-                    $baseScore = 9.9;
-                } else {
-                    $baseScore = 9.1;
-                }
+                // PERBAIKAN 1: Cek nama kategori dari relasi 'kategori', BUKAN 'kelas'
+                $namaKategori = strtolower($partai->kategori->nama_kategori ?? '');
+
+                // Deteksi Otomatis untuk Nilai Dasar dan Rumus
+                $isTunggalRegu = str_contains($namaKategori, 'tunggal') || str_contains($namaKategori, 'regu');
+                $baseScore = $isTunggalRegu ? 9.9 : 9.1;
             @endphp
 
             {{-- NILAI JURI 1 - 6 --}}
@@ -122,16 +121,22 @@
                 @for ($i = 1; $i <= 6; $i++)
                     @php
                         // Cek apakah kotak juri harus disembunyikan (ON/OFF)
-                        // Jika is_on = 0 (OFF), maka tambahkan class 'hidden'
                         $isOn = isset($kontrolDb[$i]) ? $kontrolDb[$i]->is_on : 1;
                         $isHidden = $isOn == 0 ? 'hidden' : '';
 
-                        // RUMUS KALKULASI PERSIS SEPERTI HALAMAN DEWAN
+                        // Ambil nilai masing-masing kolom
                         $nilaiA = $juriDb[$i]->nilai_a ?? 0;
                         $nilaiB = $juriDb[$i]->nilai_b ?? 0;
                         $nilaiC = $juriDb[$i]->nilai_c ?? 0;
 
-                        $totalNilaiJuri = $baseScore + $nilaiA + $nilaiB + $nilaiC;
+                        // PERBAIKAN 2: Pisahkan Rumus Tunggal/Regu dengan Solo/Ganda
+                        if ($isTunggalRegu) {
+                            // Rumus Tunggal & Regu: 9.90 - Kesalahan (A) + Kemantapan (B)
+                            $totalNilaiJuri = $baseScore - $nilaiA + $nilaiB;
+                        } else {
+                            // Rumus Solo & Ganda: 9.10 + A + B + C
+                            $totalNilaiJuri = $baseScore + $nilaiA + $nilaiB + $nilaiC;
+                        }
                     @endphp
 
                     <div id="box-juri-{{ $i }}"
@@ -141,7 +146,9 @@
                                 {{ $i }}</span>
                         </div>
                         <div class="py-6 flex items-center justify-center">
-                            <span id="nilai-juri-{{ $i }}" class="text-5xl font-black text-white">
+                            <span id="nilai-juri-{{ $i }}"
+                                class="text-5xl font-black text-white font-mono transition-all duration-300 ease-out inline-block transform">
+                                {{-- Ubah angka 3 menjadi 2 di sini --}}
                                 {{ number_format((float) $totalNilaiJuri, 2, '.', '') }}
                             </span>
                         </div>
@@ -246,14 +253,16 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 if (window.Echo) {
-                    // 1. GUNAKAN PHP UNTUK MENDETEKSI JENIS KATEGORI (SOLO/GANDA/REGU)
                     @php
-                        $namaKategori = strtolower($partai->kategori->nama_kategori ?? '');
+                        $namaKategoriDb = strtolower($partai->kelas->nama_kelas ?? ($partai->kategori->nama_kategori ?? ''));
                         $jenisChannel = 'solo'; // Default
-                        if (str_contains($namaKategori, 'ganda')) {
+
+                        if (str_contains($namaKategoriDb, 'ganda')) {
                             $jenisChannel = 'ganda';
-                        } elseif (str_contains($namaKategori, 'regu')) {
+                        } elseif (str_contains($namaKategoriDb, 'regu')) {
                             $jenisChannel = 'regu';
+                        } elseif (str_contains($namaKategoriDb, 'tunggal')) {
+                            $jenisChannel = 'tunggal';
                         }
                     @endphp
 
@@ -285,7 +294,8 @@
 
                     channel.listen('TimerSoloUpdated', prosesSinyalTimer)
                         .listen('TimerGandaUpdated', prosesSinyalTimer)
-                        .listen('TimerReguUpdated', prosesSinyalTimer);
+                        .listen('TimerReguUpdated', prosesSinyalTimer)
+                        .listen('.TimerTunggalUpdated', prosesSinyalTimer);
 
 
                     // ==========================================
@@ -304,7 +314,6 @@
                             }
                         }
 
-                        // 2. Tangkap variabel dengan fallback
                         let nMedian = e.median ?? e.nilai_median;
                         let nDeviasi = e.deviasi ?? e.standar_deviasi;
                         let nTotal = e.totalNilai ?? e.total_nilai;
@@ -345,49 +354,59 @@
                         }
                     }
 
-                    // Daftarkan semua kemungkinan nama Event kontrol juri
                     channel.listen('ToggleKontrolJuri', prosesKontrolJuri)
-                        .listen('ToggleKontrolJuriGanda', prosesKontrolJuri);
+                        .listen('ToggleKontrolJuriGanda', prosesKontrolJuri)
+                        .listen('.ToggleKontrolJuriTunggal', prosesKontrolJuri);
 
 
                     // ==========================================
                     // FUNGSI PENDENGAR NILAI INDIVIDU DARI JURI
                     // ==========================================
-                    channel.listen('UpdateNilaiJuri', (e) => {
+                    function animateBoxJuri(e) {
+                        // 1. Update Skor Juri individu
                         const elNilaiJuri = document.getElementById(`nilai-juri-${e.noJuri}`);
                         if (elNilaiJuri) {
                             elNilaiJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
-                            elNilaiJuri.classList.add('text-green-400');
-                            setTimeout(() => {
-                                elNilaiJuri.classList.remove('text-green-400');
-                            }, 500);
                         }
-                    });
-                    // Jika ada event juri ganda:
-                    channel.listen('UpdateNilaiJuriGanda', (e) => {
-                        const elNilaiJuri = document.getElementById(`nilai-juri-${e.noJuri}`);
-                        if (elNilaiJuri) {
-                            elNilaiJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
-                            elNilaiJuri.classList.add('text-green-400');
-                            setTimeout(() => {
-                                elNilaiJuri.classList.remove('text-green-400');
-                            }, 500);
-                        }
-                    });
 
-                    // Tambahkan fungsi untuk menangkap event UpdateHukumanGanda
-                    channel.listen('UpdateHukumanGanda', (e) => {
+                        // 2. Update Statistik (Hanya jika data statistik dikirim/milik Tunggal)
+                        if (e.median !== undefined && e.median !== null) {
+                            const elMed = document.getElementById('nilai-median');
+                            const elDev = document.getElementById('nilai-deviasi');
+                            const elTot = document.getElementById('nilai-total');
+
+                            if (elMed) elMed.innerText = parseFloat(e.median).toFixed(3);
+                            if (elDev) elDev.innerText = parseFloat(e.deviasi).toFixed(15);
+
+                            if (elTot && e.isDisq != 1) {
+                                // PAKSA PARSE FLOAT untuk menghilangkan angka juri yang nyelip di depan
+                                let scoreFinal = parseFloat(e.totalNilai);
+                                elTot.textContent = scoreFinal.toFixed(3);
+                            }
+                        }
+                    }
+
+                    // Telinga pendengar tetap seperti ini (Sudah benar)
+                    channel.listen('UpdateNilaiJuri', animateBoxJuri)
+                        .listen('UpdateNilaiJuriGanda', animateBoxJuri)
+                        .listen('.UpdateNilaiJuriTunggal', animateBoxJuri);
+
+
+                    // ==========================================
+                    // FUNGSI PENDENGAR HUKUMAN DEWAN
+                    // ==========================================
+                    function prosesUpdateHukuman(e) {
                         console.log("Hukuman Masuk:", e);
-
-                        // Update Hukuman
                         const elHukuman = document.getElementById('nilai-hukuman');
                         if (elHukuman) elHukuman.innerText = "-" + parseFloat(e.hukuman).toFixed(2);
 
-                        // Update Total Nilai
                         const elTot = document.getElementById('nilai-total');
                         if (elTot) elTot.innerText = parseFloat(e.totalNilai).toFixed(3);
-                    });
+                    }
 
+                    channel.listen('UpdateHukuman', prosesUpdateHukuman)
+                        .listen('UpdateHukumanGanda', prosesUpdateHukuman)
+                        .listen('.UpdateHukumanTunggal', prosesUpdateHukuman);
                 }
             });
         </script>
@@ -398,21 +417,27 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (window.Echo) {
-                // Kita mendengarkan instruksi global dari gelanggang A 
-                // (Jika dinamis, Anda bisa ganti 'A' dengan variabel gelanggang)
-                const globalChannel = window.Echo.channel('gelanggang.global.A');
+                console.log("Layar Display Siap! Mendengarkan semua kategori di Gelanggang A...");
 
-                globalChannel.listen('RefreshDisplay', (e) => {
+                // Fungsi reusable agar tidak ngetik ulang
+                const eksekusiRefresh = (e) => {
                     console.log("Sinyal Pergantian Partai Diterima! Merefresh layar...");
-
-                    // Efek visual sedikit sebelum refresh agar lebih halus
                     document.body.style.opacity = 0;
                     document.body.style.transition = "opacity 0.5s ease";
-
                     setTimeout(() => {
                         window.location.reload();
                     }, 500);
+                };
+
+                // Pasang 3 antena sekaligus untuk memantau Tunggal, Ganda, dan Solo
+                const daftarKategori = ['tunggal', 'ganda', 'solo'];
+                daftarKategori.forEach(kategori => {
+                    window.Echo.channel(`gelanggang.global.${kategori}.A`)
+                        .listen('RefreshDisplay', eksekusiRefresh);
                 });
+
+            } else {
+                console.error("Echo belum siap di Display!");
             }
         });
     </script>
@@ -420,65 +445,103 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- FUNGSI REUSABLE UNTUK MENAMPILKAN MODAL PEMENANG ---
             const renderPemenangModal = (e) => {
-                // JIKA PERINTAHNYA TUTUP
                 if (e.action === 'close') {
                     Swal.close();
                     return;
                 }
 
-                // JIKA PERINTAHNYA TAMPILKAN
                 if (e.winner && e.loser) {
                     const isBiruWin = e.winner.sudut.toUpperCase() === 'BIRU';
 
+                    // Warna background full layar (Biru gelap atau Merah gelap)
+                    const bgLayar = isBiruWin ? '#1d4ed8' : '#b91c1c';
+                    // Warna teks untuk Sudut Pemenang di dalam kotak putih
+                    const textColor = isBiruWin ? '#2563eb' : '#dc2626';
+
                     Swal.fire({
-                        title: 'KEPUTUSAN PEMENANG',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        background: bgLayar,
+                        backdrop: bgLayar,
+                        customClass: {
+                            popup: 'swal-fullscreen'
+                        },
                         html: `
-                    <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px; align-items: center; text-align: left;">
-                        <div style="width: 100%; max-width: 800px; border: 8px solid #fbbf24; border-radius: 35px; padding: 30px; background: #fffbeb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-                            <div style="background: #fbbf24; color: #000; padding: 8px 25px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 1rem; margin-bottom: 20px; letter-spacing: 2px;">PEMENANG</div>
-                            <div style="color: ${isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1.8rem; letter-spacing: 1px;">SUDUT ${e.winner.sudut}</div>
-                            <div style="font-size: 4rem; font-weight: 900; line-height: 1; margin: 15px 0; color: #1e293b; text-transform: uppercase;">${e.winner.nama}</div>
-                            <div style="font-size: 1.8rem; color: #64748b; font-weight: bold; margin-bottom: 25px;">${e.winner.kontingen}</div>
-                            <div style="background: #fff; border-radius: 20px; padding: 25px; border: 2px solid #fde68a; display: flex; align-items: center; justify-content: space-between;">
-                                <div>
-                                    <span style="font-size: 1.2rem; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 5px;">TOTAL NILAI</span>
+                    <style>
+                        .swal-fullscreen {
+                            width: 100vw !important;
+                            height: 100vh !important;
+                            max-width: 100% !important;
+                            margin: 0 !important;
+                            border-radius: 0 !important;
+                            padding: 0 !important;
+                            display: flex !important;
+                            flex-direction: column !important;
+                            overflow: hidden !important;
+                        }
+                        .swal2-container {
+                            padding: 0 !important;
+                        }
+                        .swal2-html-container {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            height: 100%;
+                            overflow: hidden !important; 
+                        }
+                    </style>
+                    
+                    <div style="height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; background-color: ${bgLayar}; overflow: hidden;">
+                        
+                        <h1 style="color: #fde047; font-size: 2.2rem; font-weight: 900; margin-bottom: 25px; margin-top: 0; letter-spacing: 3px; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">KEPUTUSAN PEMENANG</h1>
+                        
+                        <div style="width: 100%; max-width: 800px; background: #ffffff; border-radius: 30px; padding: 30px 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative; border: 6px solid #fcd34d;">
+                            
+                            <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: #fcd34d; color: #92400e; padding: 8px 40px; border-radius: 50px; font-weight: 900; font-size: 1.2rem; letter-spacing: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">PEMENANG</div>
+                            
+                            <div style="color: ${textColor}; font-weight: 900; font-size: 1.6rem; letter-spacing: 2px; margin-top: 10px; text-align: center;">SUDUT ${e.winner.sudut}</div>
+                            <div style="font-size: 4rem; font-weight: 900; line-height: 1; margin: 10px 0; color: #0f172a; text-transform: uppercase; text-align: center;">${e.winner.nama}</div>
+                            <div style="font-size: 1.5rem; color: #64748b; font-weight: bold; margin-bottom: 25px; text-align: center;">${e.winner.kontingen}</div>
+                            
+                            <div style="background: #f8fafc; border-radius: 20px; padding: 20px 30px; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="text-align: left;">
+                                    <span style="font-size: 1.2rem; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 2px;">TOTAL NILAI</span>
                                     <span style="font-size: 5rem; font-weight: 900; color: #10b981; line-height: 1;">${e.winner.total}</span>
                                 </div>
-                                <div style="text-align: right; border-left: 2px solid #f3f4f6; padding-left: 30px;">
-                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">MEDIAN: ${e.winner.median}</div>
-                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 5px;">DEV: ${e.winner.deviasi}</div>
-                                    <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; margin-bottom: 5px;">HUK: ${e.winner.hukuman}</div>
+                                <div style="text-align: right; border-left: 3px solid #e2e8f0; padding-left: 30px;">
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 4px;">MEDIAN: ${e.winner.median}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #475569; margin-bottom: 4px;">DEV: ${e.winner.deviasi}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444; margin-bottom: 4px;">HUK: ${e.winner.hukuman}</div>
                                     <div style="font-size: 1.2rem; font-weight: bold; color: #2563eb;">WAKTU: ${e.winner.waktu}</div>
                                 </div>
                             </div>
                         </div>
-                        <div style="width: 100%; max-width: 650px; border: 2px solid #e2e8f0; border-radius: 25px; padding: 20px; background: #f8fafc; opacity: 0.9;">
-                            <div style="background: #e2e8f0; color: #64748b; padding: 5px 15px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.7rem; margin-bottom: 10px;">PESERTA LAIN</div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                        <div style="width: 100%; max-width: 700px; margin-top: 25px; background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px 30px; border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                            <div style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); padding: 6px 20px; border-radius: 50px; display: inline-block; font-weight: 900; font-size: 0.8rem; margin-bottom: 15px; letter-spacing: 2px;">PESERTA LAIN</div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; text-align: left;">
                                 <div>
-                                    <div style="color: ${!isBiruWin ? '#2563eb' : '#dc2626'}; font-weight: 900; font-size: 1rem;">SUDUT ${e.loser.sudut}</div>
-                                    <div style="font-size: 1.8rem; font-weight: 900; color: #475569; text-transform: uppercase; margin: 5px 0;">${e.loser.nama}</div>
-                                    <div style="font-size: 1rem; color: #94a3b8; font-weight: bold; margin-bottom: 10px;">${e.loser.kontingen}</div>
-                                    <div style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: bold; color: #64748b; background: #fff; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <div style="font-weight: 900; font-size: 1.2rem; opacity: 0.9; color: #fde047;">SUDUT ${e.loser.sudut}</div>
+                                    <div style="font-size: 2rem; font-weight: 900; text-transform: uppercase; margin: 2px 0;">${e.loser.nama}</div>
+                                    <div style="font-size: 1rem; font-weight: bold; opacity: 0.8; margin-bottom: 12px;">${e.loser.kontingen}</div>
+                                    
+                                    <div style="display: flex; gap: 15px; font-size: 0.9rem; font-weight: bold; background: rgba(0,0,0,0.3); padding: 8px 20px; border-radius: 12px;">
                                         <span>MED: ${e.loser.median}</span>
                                         <span>DEV: ${e.loser.deviasi}</span>
-                                        <span style="color: #ef4444;">HUK: ${e.loser.hukuman}</span>
-                                        <span style="color: #2563eb;">WAKTU: ${e.loser.waktu}</span>
+                                        <span style="color: #fca5a5;">HUK: ${e.loser.hukuman}</span>
+                                        <span style="color: #93c5fd;">WAKTU: ${e.loser.waktu}</span>
                                     </div>
                                 </div>
                                 <div style="text-align: right; padding-left: 20px;">
-                                    <span style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; display: block;">TOTAL</span>
-                                    <span style="font-size: 2rem; font-weight: 600; color: #94a3b8; line-height: 1;">${e.loser.total}</span>
+                                    <span style="font-size: 1rem; font-weight: bold; opacity: 0.8; display: block; margin-bottom: 2px;">TOTAL</span>
+                                    <span style="font-size: 3.5rem; font-weight: 900; line-height: 1;">${e.loser.total}</span>
                                 </div>
                             </div>
-                            ${e.loser.is_disq ? '<div style="margin-top: 15px; background: #fee2e2; color: #ef4444; text-align: center; font-weight: 900; border-radius: 12px; padding: 8px; font-size: 1rem; border: 1px solid #fecaca;">TERDISKUALIFIKASI</div>' : ''}
+                            ${e.loser.is_disq ? '<div style="margin-top: 15px; background: rgba(220, 38, 38, 0.9); color: white; text-align: center; font-weight: 900; border-radius: 12px; padding: 10px; font-size: 1.2rem; letter-spacing: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">TERDISKUALIFIKASI</div>' : ''}
                         </div>
-                    </div>`,
-                        width: '95%',
-                        padding: '1em',
-                        backdrop: `rgba(15, 23, 42, 0.95)`,
-                        showConfirmButton: false,
-                        allowOutsideClick: false
+
+                    </div>
+                    `
                     });
                 }
             };
@@ -487,9 +550,13 @@
             window.Echo.channel('display-pengumuman-solo')
                 .listen('TampilkanPemenangSolo', renderPemenangModal);
 
-            // 2. LISTEN UNTUK GANDA (Tambahan Baru)
+            // 2. LISTEN UNTUK GANDA
             window.Echo.channel('display-pengumuman-ganda')
                 .listen('TampilkanPemenangGanda', renderPemenangModal);
+
+            // 3. LISTEN UNTUK TUNGGAL
+            window.Echo.channel('display-pengumuman-tunggal')
+                .listen('TampilkanPemenangTunggal', renderPemenangModal);
         });
     </script>
 @endsection

@@ -498,15 +498,13 @@
                 }
 
                 // 2. PENDENGAR GLOBAL (Agar tablet Juri ikut ter-refresh saat Dewan klik "Mulai")
-                window.Echo.channel('gelanggang.global.A')
-                    .listen('RefreshDisplay', (e) => {
-                        console.log("Sinyal Pertandingan Baru! Merefresh tablet juri...");
-                        document.body.style.opacity = 0;
-                        document.body.style.transition = "opacity 0.5s ease";
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 500);
-                    });
+                window.Echo.channel('gelanggang.global.ganda.A')
+                        .listen('RefreshDisplay', (e) => {
+                            console.log("Sinyal Pertandingan Baru! Reloading...");
+                            document.body.style.opacity = 0;
+                            document.body.style.transition = "opacity 0.5s ease";
+                            setTimeout(() => window.location.reload(), 500);
+                        });
 
             } else {
                 console.error("Laravel Echo / Reverb tidak terdeteksi!");

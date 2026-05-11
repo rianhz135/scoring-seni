@@ -43,18 +43,15 @@
             $isOn = isset($kontrol) ? $kontrol->is_on : 1;
         @endphp
 
-        {{-- ---------------------------------------------------- --}}
-        {{-- MODAL FULLSCREEN: MUNCUL JIKA IS_ON == 0 --}}
-        {{-- ---------------------------------------------------- --}}
-       {{-- ---------------------------------------------------- --}}
-        {{-- MODAL FULLSCREEN: DIKONTROL OLEH JS & REVERB --}}
-        {{-- ---------------------------------------------------- --}}
-        <div id="modal-standby" class="fixed inset-0 z-40 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-300 {{ $isOn == 1 ? 'hidden' : '' }}">
+        <div id="modal-standby"
+            class="fixed inset-0 z-40 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-300 {{ $isOn == 1 ? 'hidden' : '' }}">
             <div class="flex flex-col items-center text-center">
-                <div id="bg-modal-juri" class="px-8 py-3 rounded-full border mb-6 shadow-inner animate-pulse {{ strtolower($sudut) == 'biru' ? 'bg-blue-600 border-blue-500' : 'bg-red-600 border-red-500' }}">
+                <div id="bg-modal-juri"
+                    class="px-8 py-3 rounded-full border mb-6 shadow-inner animate-pulse {{ strtolower($sudut) == 'biru' ? 'bg-blue-600 border-blue-500' : 'bg-red-600 border-red-500' }}">
                     <h2 class="text-3xl font-black text-white tracking-[0.2em] mb-0">JURI {{ $no_juri }}</h2>
                 </div>
-                <h1 class="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none mb-4 drop-shadow-lg">
+                <h1
+                    class="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none mb-4 drop-shadow-lg">
                     PERTANDINGAN<br>BELUM DIMULAI
                 </h1>
                 <p id="teks-sudut-modal" class="text-slate-400 text-lg md:text-xl font-bold tracking-widest uppercase">
@@ -179,51 +176,56 @@
     @endif
 
     {{-- FLOATING CONTROL BUTTONS (kanan bawah) --}}
-<div class="fixed bottom-4 right-4 flex gap-2 z-50">
+    <div class="fixed bottom-4 right-4 flex gap-2 z-50">
 
-    {{-- Zoom In --}}
-    <button onclick="zoomIn()"
-        class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl shadow-lg flex items-center justify-center transition-all">
-        <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6M11 8v6" />
-        </svg>
-    </button>
+        {{-- Zoom In --}}
+        <button onclick="zoomIn()"
+            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl shadow-lg flex items-center justify-center transition-all">
+            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6M11 8v6" />
+            </svg>
+        </button>
 
-    {{-- Zoom Out --}}
-    <button onclick="zoomOut()"
-        class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-        <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6" />
-        </svg>
-    </button>
+        {{-- Zoom Out --}}
+        <button onclick="zoomOut()"
+            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
+            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6" />
+            </svg>
+        </button>
 
-    {{-- Fullscreen / Exit Fullscreen --}}
-    <button onclick="toggleFullscreen()" id="btn-fullscreen"
-        class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-        <svg id="icon-enter-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
-        </svg>
-        <svg id="icon-exit-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M8 3v3a1 1 0 0 1-1 1H4M21 8h-3a1 1 0 0 1-1-1V4M4 16h3a1 1 0 0 1 1 1v3M16 21v-3a1 1 0 0 1 1-1h3" />
-        </svg>
-    </button>
+        {{-- Fullscreen / Exit Fullscreen --}}
+        <button onclick="toggleFullscreen()" id="btn-fullscreen"
+            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
+            <svg id="icon-enter-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+            </svg>
+            <svg id="icon-exit-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 hidden" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 3v3a1 1 0 0 1-1 1H4M21 8h-3a1 1 0 0 1-1-1V4M4 16h3a1 1 0 0 1 1 1v3M16 21v-3a1 1 0 0 1 1-1h3" />
+            </svg>
+        </button>
 
-    {{-- Refresh --}}
-    <button onclick="window.location.reload()"
-        class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-amber-500 hover:bg-amber-400 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-        <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0 1 15-3.87M20 15a9 9 0 0 1-15 3.87" />
-        </svg>
-    </button>
+        {{-- Refresh --}}
+        <button onclick="window.location.reload()"
+            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-amber-500 hover:bg-amber-400 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
+            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0 1 15-3.87M20 15a9 9 0 0 1-15 3.87" />
+            </svg>
+        </button>
 
-</div>
+    </div>
 
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script>
@@ -452,7 +454,7 @@
 
             // Mulai mendengarkan Reverb
             if (window.Echo) {
-                
+
                 // 1. PENDENGAR SPESIFIK PARTAI (Hanya aktif jika ada ID Partai)
                 if (partaiId != "0") {
                     window.Echo.channel(`partai.solo.${partaiId}`)
@@ -476,7 +478,7 @@
                 }
 
                 // 2. PENDENGAR GLOBAL (Agar tablet Juri ikut ter-refresh saat Dewan klik "Mulai")
-                window.Echo.channel('gelanggang.global.A')
+                window.Echo.channel('gelanggang.global.solo.A')
                     .listen('RefreshDisplay', (e) => {
                         console.log("Sinyal Pertandingan Baru! Merefresh tablet juri...");
                         document.body.style.opacity = 0;

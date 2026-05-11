@@ -51,7 +51,7 @@ class MatchGandaController extends Controller
             ]);
 
         // 4. Refresh Layar Display
-        broadcast(new \App\Events\RefreshDisplay('A'));
+        broadcast(new \App\Events\RefreshDisplay('ganda.A'));
 
         // 5. Lempar ke halaman dewan ganda
         return redirect()->route('dewan.ganda', ['id' => $id, 'sudut' => $sudut]);
@@ -67,7 +67,7 @@ class MatchGandaController extends Controller
             ->update(['status_mulai' => 2]);
 
         // 2. Tembakkan Alarm agar Layar Display kembali ke MODE STANDBY
-        broadcast(new \App\Events\RefreshDisplay('A'));
+        broadcast(new \App\Events\RefreshDisplay('ganda.A'));
 
         // 3. Kembalikan operator ke halaman Manajemen Ganda (PERBAIKAN DI SINI)
         return redirect()->route('admin.manajemen.ganda.index')
@@ -490,6 +490,17 @@ class MatchGandaController extends Controller
                 'message' => $e->getMessage(),
                 'line' => $e->getLine()
             ], 500);
+        }
+    }
+
+    public function triggerRefreshDisplay()
+    {
+        try {
+            // Ingat, gunakan 'ganda.A'
+            broadcast(new \App\Events\RefreshDisplay('ganda.A'));
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 }

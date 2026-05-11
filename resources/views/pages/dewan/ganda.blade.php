@@ -466,7 +466,7 @@
             // Tampilkan loading di cursor agar UI terasa responsif
             document.body.style.cursor = 'wait';
 
-            fetch("{{ route('admin.dewan.refresh.display') }}", {
+            fetch("{{ route('admin.dewan.ganda.refresh') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -845,6 +845,7 @@
             }) // Ditangkap Request $request di PHP
         }).catch(err => console.error("Gagal toggle juri:", err));
     }
+
     // ==========================================
     // 3. FUNGSI KONTROL DEWAN (OPTIMISTIC UI)
     // ==========================================

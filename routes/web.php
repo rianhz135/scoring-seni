@@ -54,7 +54,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     })->name('dewan.display');
     Route::post('/dewan/solo/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'selesai'])->name('dewan.solo.selesai');
     Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
-    Route::post('/dewan/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.refresh.display');
+    Route::post('/dewan/tunggal/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'selesai'])->name('dewan.tunggal.selesai');
+    // Route::post('/dewan/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.refresh.display');
+    // Hapus route refresh yang lama, ganti dengan 3 route ini:
+    Route::post('/dewan/solo/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.solo.refresh');
+
+    Route::post('/dewan/ganda/refresh-display', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'triggerRefreshDisplay'])->name('dewan.ganda.refresh');
+
+    Route::post('/dewan/tunggal/refresh-display', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'triggerRefreshDisplay'])->name('dewan.tunggal.refresh');
 
 
     // --- 2. DATA MASTER PESERTA (PER KATEGORI) ---
@@ -139,6 +146,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/ganda/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusInput']);
 
         Route::get('/tunggal', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'index'])->name('tunggal.index');
+        Route::get('/tunggal/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'mulai'])->name('tunggal.mulai');
+        Route::post('/tunggal/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateHukuman'])->name('tunggal.hukuman');
+        Route::post('/tunggal/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'diskualifikasi'])->name('tunggal.diskualifikasi');
+        Route::post('/tunggal/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateTimer'])->name('tunggal.update-timer');
+        Route::get('/tunggal/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getStatus']);
+        Route::get('/tunggal/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getJuriScores']);
+        Route::post('/tunggal/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusJuriTunggal']);
+        Route::post('/tunggal/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusInput']);
+
         Route::get('/regu', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'index'])->name('regu.index');
         Route::resource('kelas', KelasController::class);
         Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('admin.manajemen.kelas.destroy');
@@ -162,6 +178,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/ganda/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tutupDisplay'])->name('ganda.tutup-display');
 
         Route::get('/tunggal', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'index'])->name('tunggal.index');
+        Route::get('/tunggal/export-pdf', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'exportPdf'])->name('tunggal.export-pdf');
+        Route::post('/tunggal/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tetapkanPemenang'])->name('tunggal.tetapkan-pemenang');
+        Route::post('/tunggal/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tutupDisplay'])->name('tunggal.tutup-display');
+
+
         Route::get('/regu', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'index'])->name('regu.index');
     });
 
@@ -257,9 +278,59 @@ Route::get('/juri/ganda/{no_juri}', function ($no_juri) {
 
 })->name('juri.ganda');
 
+Route::get('/juri/tunggal/{no_juri}', function ($no_juri) {
+
+    // 1. Cari partai TUNGGAL yang detailnya SEDANG BERTANDING (status_mulai = 1)
+    $partai = \App\Models\Partai::with(['kelas', 'kategori', 'detail_peserta.peserta'])
+        ->whereHas('kategori', function ($q) {
+            $q->where('nama_kategori', 'LIKE', '%TUNGGAL%');
+        })
+        ->whereHas('detail_peserta', function ($q) {
+            $q->where('status_mulai', 1);
+        })->first();
+
+    $aktif = null;
+    $inputJuri = null; // Menggunakan nama inputJuri agar sesuai dengan file blade tunggal
+    $sudut = null;
+    $kontrol = null;
+
+    if ($partai) {
+        // 2. Ambil detail peserta yang sedang tampil
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first();
+        $sudut = strtolower($aktif->sudut ?? '');
+
+        // 3. Tarik nilai juri (Nilai A & Nilai B) dari database
+        $inputJuri = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->where('no_juri', $no_juri)
+            ->first();
+
+        // 4. Ambil data kontrol juri (ON/OFF) spesifik untuk juri ini
+        $kontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')
+            ->where('id_partai', $partai->id_partai)
+            ->where('no_juri', $no_juri)
+            ->first();
+    }
+
+    // Mengarah ke view tunggal yang baru saja didesain
+    return view('pages.juri.tunggal', compact(
+        'partai',
+        'aktif',
+        'sudut',
+        'no_juri',
+        'inputJuri',
+        'kontrol'
+    ));
+
+})->name('juri.tunggal');
+
 // Route Simpan Nilai (Tetap)
 Route::post('/juri/solo/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'simpanNilaiJuri'])->name('juri.solo.simpan');
 Route::post('/juri/ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'simpanNilaiJuri'])->name('juri.ganda.simpan');
+// Route POST untuk menerima nilai dari tablet Juri Tunggal
+Route::post('/juri/tunggal/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'inputNilaiJuri'])->name('juri.tunggal.input-nilai');
+Route::post('/juri/tunggal/simpan-nilai/{id_detail}/{no_juri}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'simpanNilaiJuri'])->name('juri.tunggal.simpan-nilai-final');
+Route::post('/juri/tunggal/selesai/{id_partai}/{sudut}', [TunggalController::class, 'selesai'])->name('juri.tunggal.selesai');
 
 
 // Route baru untuk Kontrol Dewan Solo
@@ -364,3 +435,49 @@ Route::get('/dewan/ganda/{id}/{sudut}', function ($id, $sudut) {
     // Mengarahkan ke view dewan ganda
     return view('pages.dewan.ganda', compact('partai', 'sudut'));
 })->name('dewan.ganda');
+
+Route::get('/dewan/tunggal/{id}/{sudut}', function ($id, $sudut) {
+    // Mengambil data partai untuk ditampilkan di kontrol dewan
+    $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])->findOrFail($id);
+    // --- TAMBAHAN LOGIKA AUTO-GENERATE JURI ---
+    $sudutDb = ucfirst($sudut);
+    $aktif = $partai->detail_peserta->where('sudut', $sudutDb)->first();
+
+    if ($aktif) {
+        // Cek apakah data juri untuk id_detail ini sudah ada?
+        $jumlahJuri = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->count();
+
+        // Jika belum ada 6 juri, buatkan defaultnya
+        if ($jumlahJuri < 6) {
+            $dataJuri = [];
+            for ($i = 1; $i <= 6; $i++) {
+                $dataJuri[] = [
+                    'id_detail' => $aktif->id_detail,
+                    'no_juri' => $i,
+                    'nilai_a' => 0.00,
+                    'nilai_b' => 0.00,
+                    'skor_akhir_juri' => 9.90, // Nilai default solo
+                ];
+            }
+            \Illuminate\Support\Facades\DB::table('input_nilai_juri')->insert($dataJuri);
+        }
+
+        // --- LOGIKA 2: Auto-Generate Kontrol Juri ---
+        $jumlahKontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')->where('id_partai', $id)->count();
+        if ($jumlahKontrol < 6) {
+            $dataKontrol = [];
+            for ($i = 1; $i <= 6; $i++) {
+                $dataKontrol[] = [
+                    'id_partai' => $id, // Menggunakan id_partai sesuai skema Anda
+                    'no_juri' => $i,
+                    'is_on' => 0, // 0 = OFF (Merah) defaultnya
+                    'status_input' => 'Proses', // Default Proses (Oranye)
+                ];
+            }
+            \Illuminate\Support\Facades\DB::table('status_kontrol_juri')->insert($dataKontrol);
+        }
+    }
+    return view('pages.dewan.tunggal', compact('partai', 'sudut'));
+})->name('dewan.tunggal');

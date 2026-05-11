@@ -456,7 +456,7 @@
             // Tampilkan loading di cursor agar UI terasa responsif
             document.body.style.cursor = 'wait';
 
-            fetch("{{ route('admin.dewan.refresh.display') }}", {
+            fetch("{{ route('admin.dewan.solo.refresh') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -871,4 +871,5 @@
             })
         }).catch(err => console.error("Gagal toggle status:", err));
     }
+
 </script>

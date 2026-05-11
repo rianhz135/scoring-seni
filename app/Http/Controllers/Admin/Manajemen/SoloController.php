@@ -56,7 +56,7 @@ class SoloController extends Controller
             ]);
 
         // 4. Refresh Layar Display
-        broadcast(new \App\Events\RefreshDisplay('A'));
+        broadcast(new \App\Events\RefreshDisplay('solo.A'));
 
         // 5. Lempar ke halaman dewan (Gunakan admin.dewan.solo jika pakai prefix admin)
         return redirect()->route('dewan.solo', ['id' => $id, 'sudut' => $sudut]);
@@ -73,7 +73,7 @@ class SoloController extends Controller
             ->update(['status_mulai' => 2]);
 
         // 2. Tembakkan Alarm agar Layar Display kembali ke MODE STANDBY
-        broadcast(new \App\Events\RefreshDisplay('A'));
+        broadcast(new \App\Events\RefreshDisplay('solo.A'));
 
         // 3. Kembalikan operator ke halaman Manajemen Solo
         // (Pastikan nama route-nya sesuai dengan yang ada di web.php Anda)
@@ -526,7 +526,7 @@ class SoloController extends Controller
     public function triggerRefreshDisplay()
     {
         // Sesuaikan 'A' dengan gelanggang Anda jika sistem multi-gelanggang
-        broadcast(new \App\Events\RefreshDisplay('A'));
+        broadcast(new \App\Events\RefreshDisplay('solo.A'));
 
         return response()->json([
             'status' => 'success',

@@ -3,9 +3,9 @@
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Queue\SerializesModels;
 
 class RefreshDisplay implements ShouldBroadcastNow
@@ -14,14 +14,15 @@ class RefreshDisplay implements ShouldBroadcastNow
 
     public $gelanggang;
 
-    public function __construct($gelanggang = 'A')
+    public function __construct($gelanggang)
     {
+        // Akan menerima 'tunggal.A', 'ganda.A', atau 'solo.A'
         $this->gelanggang = $gelanggang;
     }
 
     public function broadcastOn()
     {
-        // Channel global untuk seluruh gelanggang (Bisa disesuaikan jika ada Gelanggang B, C, dst)
+        // Hasil akhir misal: gelanggang.global.tunggal.A
         return new Channel('gelanggang.global.' . $this->gelanggang);
     }
 }
