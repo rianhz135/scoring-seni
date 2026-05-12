@@ -33,13 +33,17 @@
                 <tbody class="divide-y divide-gray-50">
                     @forelse ($partais as $index => $partai)
                         @php
-                            // Ambil data sudut biru dan merah
-                            $biru =
-                                $partai->detail_peserta->firstWhere('sudut', 'Biru') ??
-                                $partai->detail_peserta->firstWhere('sudut', 'biru');
-                            $merah =
-                                $partai->detail_peserta->firstWhere('sudut', 'Merah') ??
-                                $partai->detail_peserta->firstWhere('sudut', 'merah');
+                            // 1. Ambil SEMUA data peserta per sudut (Bisa 1, 2, atau 3 orang)
+                            $semuaBiru = $partai->detail_peserta->filter(
+                                fn($item) => strtolower($item->sudut) == 'biru',
+                            );
+                            $semuaMerah = $partai->detail_peserta->filter(
+                                fn($item) => strtolower($item->sudut) == 'merah',
+                            );
+
+                            // 2. Ambil peserta pertama sebagai "Anchor" untuk baca nilai & diskualifikasi
+                            $biru = $semuaBiru->first();
+                            $merah = $semuaMerah->first();
 
                             // Cek status diskualifikasi (fallback antisipasi typo di database)
                             $disqBiru = $biru ? $biru->is_disqualifikasi ?? ($biru->is_disqulifikasi ?? 0) : 0;
@@ -61,7 +65,6 @@
                             <td class="px-4 py-4">
                                 <span
                                     class="inline-block px-2 py-1 rounded bg-primary-50 text-primary-700 text-[10px] font-bold border border-primary-100 whitespace-nowrap">
-                                    {{-- Mengambil langsung dari kolom label_kelas sesuai Model RefKelas --}}
                                     {{ $partai->kelas->label_kelas ?? '-' }}
                                 </span>
                             </td>
@@ -76,7 +79,10 @@
                                             <div class="flex-1">
                                                 <p
                                                     class="text-[11px] font-black {{ $disqBiru == 1 ? 'text-red-700 line-through' : 'text-blue-700' }} leading-tight">
-                                                    {{ $biru->peserta->nama ?? ($biru->peserta->nama_peserta ?? ($biru->peserta->nama_lengkap ?? 'Nama Tidak Ditemukan')) }}
+                                                    {{-- MENGGABUNGKAN SEMUA NAMA PESERTA BIRU DENGAN & --}}
+                                                    {{ $semuaBiru->map(function ($item) {
+                                                            return $item->peserta->nama ?? ($item->peserta->nama_peserta ?? ($item->peserta->nama_lengkap ?? '-'));
+                                                        })->implode(' & ') }}
                                                 </p>
                                                 <p
                                                     class="text-[9px] {{ $disqBiru == 1 ? 'text-red-500' : 'text-blue-500' }} font-bold uppercase">
@@ -97,8 +103,6 @@
                                                     <span>DEV: <b>{{ $biru->nilai_deviasi ?? 0 }}</b></span>
                                                     <span class="text-red-500">HUK:
                                                         <b>{{ number_format($biru->hukuman_ketua ?? 0, 2) }}</b></span>
-
-                                                    {{-- WAKTU TAMPIL BIRU FORMAT MENIT:DETIK --}}
                                                     <span class="text-gray-700">WAKTU:
                                                         <b>{{ gmdate('i:s', $biru->waktu_tampil ?? 0) }}</b></span>
                                                 </div>
@@ -120,7 +124,10 @@
                                             <div class="flex-1">
                                                 <p
                                                     class="text-[11px] font-black {{ $disqMerah == 1 ? 'text-red-700 line-through' : 'text-red-700' }} leading-tight">
-                                                    {{ $merah->peserta->nama ?? ($merah->peserta->nama_peserta ?? ($merah->peserta->nama_lengkap ?? 'Nama Tidak Ditemukan')) }}
+                                                    {{-- MENGGABUNGKAN SEMUA NAMA PESERTA MERAH DENGAN & --}}
+                                                    {{ $semuaMerah->map(function ($item) {
+                                                            return $item->peserta->nama ?? ($item->peserta->nama_peserta ?? ($item->peserta->nama_lengkap ?? '-'));
+                                                        })->implode(' & ') }}
                                                 </p>
                                                 <p class="text-[9px] text-red-500 font-bold uppercase">
                                                     {{ $merah->peserta->kontingen ?? '-' }}
@@ -140,8 +147,6 @@
                                                     <span>DEV: <b>{{ $merah->nilai_deviasi ?? 0 }}</b></span>
                                                     <span class="text-red-500">HUK:
                                                         <b>{{ number_format($merah->hukuman_ketua ?? 0, 2) }}</b></span>
-
-                                                    {{-- WAKTU TAMPIL MERAH FORMAT MENIT:DETIK --}}
                                                     <span class="text-gray-700">WAKTU:
                                                         <b>{{ gmdate('i:s', $merah->waktu_tampil ?? 0) }}</b></span>
                                                 </div>
@@ -193,7 +198,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400 font-medium">
-                                Belum ada pertandingan Solo yang selesai.
+                                Belum ada pertandingan yang selesai.
                             </td>
                         </tr>
                     @endforelse

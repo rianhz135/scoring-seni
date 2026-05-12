@@ -211,13 +211,16 @@
                                             <table class="inner-table">
                                                 <tr>
                                                     <td>
-                                                        @foreach ($detailBiru as $db)
-                                                            <span class="nama text-biru" style="display:block;">
-                                                                {{ $db->peserta->nama ?? ($db->peserta->nama_peserta ?? 'Tanpa Nama') }}
-                                                            </span>
-                                                        @endforeach
+                                                        {{-- NAMA ATLET BIRU (GABUNG DENGAN &) --}}
+                                                        <span class="nama text-biru" style="display:block;">
+                                                            {{ $detailBiru->map(function ($db) {
+                                                                    return $db->peserta->nama ?? ($db->peserta->nama_peserta ?? 'Tanpa Nama');
+                                                                })->implode(' & ') }}
+                                                        </span>
+
                                                         <span
                                                             class="kontingen">({{ $biru->peserta->kontingen ?? '-' }})</span>
+
                                                         {{-- Stats Nilai --}}
                                                         @if ($isDisqBiru)
                                                             <span class="badge-disq">DISQ</span>
@@ -226,7 +229,8 @@
                                                                 M: {{ number_format($biru->nilai_median, 2) }} |
                                                                 D: {{ $biru->nilai_deviasi }} |
                                                                 H: {{ number_format($biru->hukuman_ketua, 1) }} |
-                                                                W: {{ floor(($biru->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($biru->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
+                                                                W:
+                                                                {{ floor(($biru->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($biru->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
                                                             </div>
                                                         @endif
                                                     </td>
@@ -249,12 +253,12 @@
                                             <table class="inner-table">
                                                 <tr>
                                                     <td>
-                                                        {{-- Daftar Nama Atlet Ganda --}}
-                                                        @foreach ($detailMerah as $dm)
-                                                            <span class="nama text-merah" style="display:block;">
-                                                                {{ $dm->peserta->nama ?? ($dm->peserta->nama_peserta ?? 'Tanpa Nama') }}
-                                                            </span>
-                                                        @endforeach
+                                                        {{-- NAMA ATLET MERAH (GABUNG DENGAN &) --}}
+                                                        <span class="nama text-merah" style="display:block;">
+                                                            {{ $detailMerah->map(function ($dm) {
+                                                                    return $dm->peserta->nama ?? ($dm->peserta->nama_peserta ?? 'Tanpa Nama');
+                                                                })->implode(' & ') }}
+                                                        </span>
 
                                                         <span
                                                             class="kontingen">({{ $merah->peserta->kontingen ?? '-' }})</span>
@@ -267,7 +271,8 @@
                                                                 M: {{ number_format($merah->nilai_median, 2) }} |
                                                                 D: {{ $merah->nilai_deviasi }} |
                                                                 H: {{ number_format($merah->hukuman_ketua, 1) }} |
-                                                                W: {{ floor(($merah->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($merah->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
+                                                                W:
+                                                                {{ floor(($merah->waktu_tampil ?? 0) / 60) }}:{{ str_pad(($merah->waktu_tampil ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}
                                                             </div>
                                                         @endif
                                                     </td>

@@ -20,11 +20,18 @@
             <div
                 class="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-transparent to-transparent">
             </div>
+
             <div
                 class="animate-pulse bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-2xl relative z-10">
                 <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri ?? '-' }}</h2>
                 <div class="w-24 h-2 bg-slate-200 rounded-full mx-auto mb-6"></div>
-                <p class="text-xl text-slate-500 font-medium">Menunggu pertandingan Tunggal dimulai...</p>
+
+                {{-- PERBAIKAN DI SINI: Mengambil nama kategori secara dinamis --}}
+                <p class="text-xl text-slate-500 font-medium">
+                    Menunggu pertandingan
+                    <span class="font-bold text-slate-700">Tunggal</span>
+                    dimulai...
+                </p>
             </div>
         </div>
     @else
@@ -65,7 +72,7 @@
             <div class="flex gap-3 shrink-0">
                 {{-- Sisi kiri: Info Juri & Nama Peserta --}}
                 <div
-                    class="{{ strtolower($sudut) == 'biru' ? 'bg-blue-600' : 'bg-red-600' }} rounded-2xl px-6 py-5 shadow-lg flex items-center text-white relative overflow-hidden flex-1">
+                    class="active-status-bar {{ strtolower($sudut) == 'biru' ? 'bg-blue-600' : 'bg-red-600' }} rounded-2xl px-6 py-5 shadow-lg flex items-center text-white relative overflow-hidden flex-1">
                     <div class="absolute top-0 right-0 w-40 h-full bg-white/10 skew-x-12 translate-x-10"></div>
                     <div class="relative z-10 flex items-center gap-4 w-full">
                         <div
@@ -74,11 +81,17 @@
                             <h2 class="text-5xl font-black uppercase italic leading-none">{{ $no_juri }}</h2>
                         </div>
                         <div class="flex-1 border-l border-white/20 pl-4 min-w-0">
-                            <p class="text-xl font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
-                                SUDUT {{ $sudutDb }} &bull; PARTAI #{{ $partai->no_partai }} &bull; TUNGGAL
+                            <p class="text-xl font-black uppercase tracking-[0.2em] opacity-90 mb-1 leading-tight">
+                                SUDUT {{ $sudutDb }} &bull; PT #{{ $partai->no_partai }} &bull; TUNGGAL &bull;
+                                <span class="text-yellow-300">
+                                    {{-- Menampilkan Kontingen di samping kategori TUNGGAL --}}
+                                    {{ $partai->detail_peserta->where('sudut', $sudutDb)->first()->peserta->kontingen ?? '-' }}
+                                </span>
                             </p>
                             <h1 class="text-5xl font-black uppercase italic tracking-tight leading-none truncate">
+
                                 {{ $aktif->peserta->nama_peserta ?? '-' }}
+
                             </h1>
                         </div>
                     </div>
@@ -188,33 +201,31 @@
 
             {{-- BARIS 3: TOMBOL KIRIM / SIMPAN KE DEWAN --}}
             <div class="shrink-0">
-                @if ($isLocked)
-                    <button disabled
-                        class="w-full bg-slate-400 text-white font-black text-3xl py-5 rounded-2xl shadow-lg flex items-center justify-center gap-3 cursor-not-allowed">
-                        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        NILAI TELAH TERKUNCI
-                    </button>
-                @else
-                    {{-- UBAH ONCLICK MENJADI simpanKeServer() --}}
-                    <button onclick="simpanKeServer()"
-                        class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-3xl py-5 rounded-2xl shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-4">
-                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        KIRIM NILAI KE DEWAN
-                    </button>
-                @endif
+                {{-- TOMBOL AKTIF (Disembunyikan jika isLocked = true) --}}
+                <button id="btn-kirim-aktif" onclick="simpanKeServer()"
+                    class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-3xl py-5 rounded-2xl shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-4 {{ $isLocked ? 'hidden' : '' }}">
+                    <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    SELESAI DAN KUNCI NILAI
+                </button>
+
+                {{-- TOMBOL TERKUNCI (Disembunyikan jika isLocked = false) --}}
+                <button id="btn-kirim-terkunci" disabled
+                    class="w-full bg-slate-400 text-white font-black text-3xl py-5 rounded-2xl shadow-lg flex items-center justify-center gap-3 cursor-not-allowed {{ $isLocked ? '' : 'hidden' }}">
+                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    NILAI TELAH TERKUNCI
+                </button>
             </div>
 
         </div>
     @endif
 
-    {{-- PERBAIKAN: z-[100] agar selalu di atas layar hitam/terkunci --}}
-    <div style="position:fixed; bottom:1rem; right:1rem; display:flex; gap:0.5rem; z-index:99999;">
+    {{-- PERBAIKAN: Posisi di Kiri, Susunan Vertikal, z-index maksimal --}}
+    <div style="position:fixed; bottom:1rem; left:1rem; display:flex; flex-direction:column; gap:0.5rem; z-index:99999;">
 
         {{-- Zoom In --}}
         <button onclick="zoomIn()"
@@ -363,17 +374,23 @@
                                 }
 
                                 // 3. Kunci/Buka layar jika Dewan memproses/menyelesaikan (REALTIME TANPA RELOAD)
+                                // 3. Kunci/Buka layar jika Dewan memproses/menyelesaikan (REALTIME)
                                 if (statusAkses) {
                                     const statusBaru = statusAkses.trim().toLowerCase();
-                                    const overlayKunci = document.getElementById(
-                                        'overlay-kunci'); // Tangkap elemennya
+                                    const overlayKunci = document.getElementById('overlay-kunci');
+
+                                    // TANGKAP KEDUA TOMBOL
+                                    const btnAktif = document.getElementById('btn-kirim-aktif');
+                                    const btnTerkunci = document.getElementById('btn-kirim-terkunci');
 
                                     if (statusBaru === 'proses' && isLocked === true) {
-                                        console.log("Akses dibuka. (Tanpa Reload)");
+                                        console.log("Akses dibuka.");
                                         isLocked = false;
 
-                                        // SEMBUNYIKAN LAYAR TERKUNCI
+                                        // Sembunyikan overlay & Munculkan tombol aktif
                                         if (overlayKunci) overlayKunci.classList.add('hidden');
+                                        if (btnAktif) btnAktif.classList.remove('hidden');
+                                        if (btnTerkunci) btnTerkunci.classList.add('hidden');
 
                                         Swal.fire({
                                             toast: true,
@@ -386,11 +403,13 @@
                                     }
 
                                     if (statusBaru === 'selesai' && isLocked === false) {
-                                        console.log("Akses dikunci. (Tanpa Reload)");
+                                        console.log("Akses dikunci.");
                                         isLocked = true;
 
-                                        // MUNCULKAN LAYAR TERKUNCI
+                                        // Munculkan overlay & Munculkan tombol terkunci
                                         if (overlayKunci) overlayKunci.classList.remove('hidden');
+                                        if (btnAktif) btnAktif.classList.add('hidden');
+                                        if (btnTerkunci) btnTerkunci.classList.remove('hidden');
 
                                         Swal.fire({
                                             toast: true,

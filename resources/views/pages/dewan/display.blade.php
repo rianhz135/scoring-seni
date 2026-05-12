@@ -294,7 +294,7 @@
 
                     channel.listen('TimerSoloUpdated', prosesSinyalTimer)
                         .listen('TimerGandaUpdated', prosesSinyalTimer)
-                        .listen('TimerReguUpdated', prosesSinyalTimer)
+                        .listen('.TimerReguUpdated', prosesSinyalTimer)
                         .listen('.TimerTunggalUpdated', prosesSinyalTimer);
 
 
@@ -356,7 +356,8 @@
 
                     channel.listen('ToggleKontrolJuri', prosesKontrolJuri)
                         .listen('ToggleKontrolJuriGanda', prosesKontrolJuri)
-                        .listen('.ToggleKontrolJuriTunggal', prosesKontrolJuri);
+                        .listen('.ToggleKontrolJuriTunggal', prosesKontrolJuri)
+                        .listen('.ToggleKontrolJuriRegu', prosesKontrolJuri);
 
 
                     // ==========================================
@@ -389,7 +390,8 @@
                     // Telinga pendengar tetap seperti ini (Sudah benar)
                     channel.listen('UpdateNilaiJuri', animateBoxJuri)
                         .listen('UpdateNilaiJuriGanda', animateBoxJuri)
-                        .listen('.UpdateNilaiJuriTunggal', animateBoxJuri);
+                        .listen('.UpdateNilaiJuriTunggal', animateBoxJuri)
+                        .listen('.UpdateNilaiJuriRegu', animateBoxJuri);
 
 
                     // ==========================================
@@ -406,7 +408,8 @@
 
                     channel.listen('UpdateHukuman', prosesUpdateHukuman)
                         .listen('UpdateHukumanGanda', prosesUpdateHukuman)
-                        .listen('.UpdateHukumanTunggal', prosesUpdateHukuman);
+                        .listen('.UpdateHukumanTunggal', prosesUpdateHukuman)
+                        .listen('.UpdateHukumanRegu', prosesUpdateHukuman);
                 }
             });
         </script>
@@ -429,8 +432,8 @@
                     }, 500);
                 };
 
-                // Pasang 3 antena sekaligus untuk memantau Tunggal, Ganda, dan Solo
-                const daftarKategori = ['tunggal', 'ganda', 'solo'];
+                // Pasang 4 antena sekaligus untuk memantau Tunggal, Ganda, regu, dan Solo
+                const daftarKategori = ['tunggal', 'ganda', 'solo', 'regu'];
                 daftarKategori.forEach(kategori => {
                     window.Echo.channel(`gelanggang.global.${kategori}.A`)
                         .listen('RefreshDisplay', eksekusiRefresh);
@@ -557,6 +560,10 @@
             // 3. LISTEN UNTUK TUNGGAL
             window.Echo.channel('display-pengumuman-tunggal')
                 .listen('TampilkanPemenangTunggal', renderPemenangModal);
+
+            // 4. LISTEN UNTUK REGU
+            window.Echo.channel('display-pengumuman-regu')
+                .listen('TampilkanPemenangRegu', renderPemenangModal);
         });
     </script>
 @endsection

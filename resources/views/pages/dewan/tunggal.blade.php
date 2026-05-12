@@ -737,7 +737,7 @@
                 if (elA && e.nilaiA !== undefined) {
                     elA.innerText = "-" + parseFloat(e.nilaiA).toFixed(2);
                     // Efek kedip merah saat pengurangan bertambah
-                    elA.classList.add('scale-110', 'text-red-700');
+                    // elA.classList.add('scale-110', 'text-red-700');
                     setTimeout(() => elA.classList.remove('scale-110', 'text-red-700'), 300);
                 }
 
@@ -746,7 +746,7 @@
                 if (elB && e.nilaiB !== undefined) {
                     elB.innerText = "+" + parseFloat(e.nilaiB).toFixed(2);
                     // Efek kedip biru saat kemantapan bertambah
-                    elB.classList.add('scale-110', 'text-blue-800');
+                    // elB.classList.add('scale-110', 'text-blue-800');
                     setTimeout(() => elB.classList.remove('scale-110', 'text-blue-800'), 300);
                 }
 
