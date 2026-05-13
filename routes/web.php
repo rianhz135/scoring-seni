@@ -13,45 +13,56 @@ use App\Http\Controllers\Admin\Peserta\ReguController;
 use App\Http\Controllers\Admin\Manajemen\KelasController;
 use App\Http\Controllers\Admin\Manajemen\MatchGandaController;
 
+use App\Http\Controllers\Auth\LoginController;
 
+Route::get('/login', [LoginController::class, 'index'])->name('login');
+
+Route::post('/login', [LoginController::class, 'authenticate'])->name('login.process');
+
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
+Route::get('/dewan/display', function () {
+
+    $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
+        ->whereHas('detail_peserta', function ($q) {
+            $q->where('status_mulai', 1);
+        })
+        ->first();
+
+    return view('pages.dewan.display', compact('partai'));
+
+})->name('dewan.display');
 
 Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
+    return redirect()->route('login');
 });
 Route::get('/dewan', function () {
     return view('pages.dewan.index');
 });
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')->group(function () {
 
     // --- 1. DASHBOARD & PROFILE ---
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 
-    // Route untuk cek tampilan Dewan Solo/Ganda secara langsung
-    // Route::get('/dewan/solo', function () {
-    //     return view('pages.dewan.solo');
-    // })->name('admin.dewan.solo.test');
-
-    // Route::get('/juri/solo', function () {
-    //     return view('pages.juri.solo');
-    // })->name('juri.solo.test');
 
     // ROUTE UNTUK LAYAR DISPLAY PROYEKTOR / PENONTON
-    Route::get('/dewan/display', function () {
-        // Layar akan otomatis mencari partai yang SEDANG BERTANDING (status_mulai = 1)
-        $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
-            ->whereHas('detail_peserta', function ($q) {
-                $q->where('status_mulai', 1);
-            })
-            ->first(); // Mengambil 1 partai aktif
+    // Route::get('/dewan/display', function () {
+    //     // Layar akan otomatis mencari partai yang SEDANG BERTANDING (status_mulai = 1)
+    //     $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
+    //         ->whereHas('detail_peserta', function ($q) {
+    //             $q->where('status_mulai', 1);
+    //         })
+    //         ->first(); // Mengambil 1 partai aktif
 
-        return view('pages.dewan.display', compact('partai'));
-    })->name('dewan.display');
+    //     return view('pages.dewan.display', compact('partai'));
+    // })->name('dewan.display');
 
     Route::post('/dewan/solo/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'selesai'])->name('dewan.solo.selesai');
     Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
@@ -166,6 +177,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/regu/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusJuriRegu']);
         Route::post('/regu/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusInput']);
 
+        // Route untuk menjalankan partai pool dari halaman manajemen
+        Route::post('/pool/{id_partai}/mulai/{id_detail}', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'mulai'])->name('pool.mulai');
+
         Route::resource('kelas', KelasController::class);
         Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('admin.manajemen.kelas.destroy');
         Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('admin.manajemen.kelas.update');
@@ -212,7 +226,15 @@ Route::get('/api/cek-partai-aktif', function () {
         'id_detail' => $aktif ? $aktif->id_detail : null
     ]);
 });
+Route::middleware(['auth', 'juri'])->group(function () {
 
+    Route::get('/juri/dashboard', function () {
+
+        return view('pages.juri.dashboard');
+
+    })->name('juri.dashboard');
+
+});
 // 2. Route Halaman Utama Juri (Hanya butuh nomor Juri, misal: /juri/solo/1)
 Route::get('/juri/solo/{no_juri}', function ($no_juri) {
 
@@ -383,9 +405,60 @@ Route::get('/juri/regu/{no_juri}', function ($no_juri) {
 
 })->name('juri.regu');
 
+Route::get('/juri/solo-ganda/{no_juri}', function ($no_juri) {
+
+    // 1. Cari partai SOLO atau GANDA yang detailnya SEDANG BERTANDING (status_mulai = 1)
+    $partai = \App\Models\Partai::with(['kelas', 'kategori', 'detail_peserta.peserta'])
+        ->whereHas('kategori', function ($q) {
+            $q->where('nama_kategori', 'LIKE', '%SOLO%')
+                ->orWhere('nama_kategori', 'LIKE', '%GANDA%');
+        })
+        ->whereHas('detail_peserta', function ($q) {
+            $q->where('status_mulai', 1);
+        })->first();
+
+    $aktif = null;
+    $nilai = null; // Variabel nilai untuk menampung skor dari database
+    $sudut = null;
+    $kontrol = null;
+
+    if ($partai) {
+        // 2. Ambil detail peserta yang sedang tampil (status_mulai = 1)
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first();
+
+        // Meskipun sistem pool/netral, variabel sudut tetap diambil untuk kebutuhan identifikasi di DB jika ada
+        $sudut = strtolower($aktif->sudut ?? '');
+
+        // 3. Tarik nilai juri (Nilai A, B, C) dari database berdasarkan id_detail peserta yang aktif
+        $nilai = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->where('no_juri', $no_juri)
+            ->first();
+
+        // 4. Ambil data kontrol juri (ON/OFF & Status Input) spesifik untuk juri ini
+        $kontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')
+            ->where('id_partai', $partai->id_partai)
+            ->where('no_juri', $no_juri)
+            ->first();
+    }
+
+    // Mengarah ke view solo_ganda (Netral/Tanpa Warna Sudut Dominan)
+    return view('pages.juri.solo_ganda', compact(
+        'partai',
+        'aktif',
+        'sudut',
+        'no_juri',
+        'nilai',
+        'kontrol'
+    ));
+
+})->name('juri.solo-ganda');
+
 // Route Simpan Nilai (Tetap)
 Route::post('/juri/solo/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'simpanNilaiJuri'])->name('juri.solo.simpan');
 Route::post('/juri/ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'simpanNilaiJuri'])->name('juri.ganda.simpan');
+Route::post('/juri/solo-ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'simpanNilaiPool'])
+    ->name('juri.solo-ganda.simpan');
 
 Route::post('/juri/tunggal/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'inputNilaiJuri'])->name('juri.tunggal.input-nilai');
 Route::post('/juri/regu/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'inputNilaiJuri'])->name('juri.regu.input-nilai');
@@ -588,3 +661,24 @@ Route::get('/dewan/regu/{id}/{sudut}', function ($id, $sudut) {
     }
     return view('pages.dewan.regu', compact('partai', 'sudut'));
 })->name('dewan.regu');
+
+Route::prefix('dewan')->name('dewan.')->group(function () {
+    // Rute Pool Baru (Tanpa parameter {sudut})
+    Route::get('/pool/{id_partai}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'index'])->name('pool.index');
+    // 2. Rute Diskualifikasi (Tambahkan ini)
+    Route::post('/pool/{id}/diskualifikasi/{id_detail}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'diskualifikasi'])->name('pool.diskualifikasi');
+
+    // 3. Rute Selesai (Tambahkan ini)
+    Route::post('/pool/{id}/selesai/{id_detail}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'selesai'])->name('pool.selesai');
+
+    Route::post('/pool/update-hukuman', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'updateHukuman'])->name('pool.update-hukuman');
+    Route::post('/pool/{id}/diskualifikasi/{id_detail}', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'diskualifikasi'])
+        ->name('pool.diskualifikasi');
+    Route::post('/pool/update-timer/{id}/{id_detail}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'updateTimer'])->name('pool.update-timer');
+    Route::post('/pool/hukuman/{id}/{id_detail}', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'updateHukuman'])->name('pool.hukuman');
+    Route::post('/pool/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'toggleJuri'])
+        ->name('pool.toggle-juri');
+    Route::post('/pool/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'toggleStatusInput'])
+        ->name('pool.toggle-status-input');
+});
+

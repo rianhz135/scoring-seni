@@ -8,24 +8,57 @@
         }
     </style>
 
-    {{-- CEK APAKAH ADA PARTAI YANG SEDANG BERTANDING --}}
     @if (!$partai)
         {{-- TAMPILAN MODE STANDBY (ISTIRAHAT / BELUM MULAI) --}}
-        <div class="h-[95vh] flex flex-col items-center justify-center">
-            <div class="animate-pulse bg-slate-800/80 border border-slate-700 rounded-3xl p-12 text-center shadow-2xl">
-                <h1 class="text-6xl font-black text-slate-300 tracking-widest mb-4">MODE STANDBY</h1>
-                <p class="text-2xl text-slate-500 uppercase tracking-widest">Menunggu Pertandingan Dimulai oleh Operator</p>
+        <div class="h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden">
+
+            {{-- Logo / Gambar --}}
+            <div class="mb-4 flex justify-center">
+                <img src="{{ asset('smi.png') }}" alt="SMI Logo"
+                    class="h-[220px] md:h-[300px] w-auto object-contain opacity-90">
             </div>
+
+            {{-- Box Standby --}}
+            <div
+                class="animate-pulse bg-slate-800/80 border border-slate-700 rounded-3xl px-8 py-6 text-center shadow-2xl backdrop-blur-sm max-w-4xl w-full">
+                <h1 class="text-4xl md:text-5xl font-black text-slate-300 tracking-widest mb-2">
+                    MODE STANDBY
+                </h1>
+                <p class="text-base md:text-xl text-slate-500 uppercase tracking-widest">
+                    Menunggu Pertandingan Dimulai oleh Operator
+                </p>
+            </div>
+
         </div>
     @else
-        {{-- JIKA ADA YANG BERTANDING, JALANKAN LOGIKA INI --}}
         @php
-            // Cari sudut yang status_mulai-nya 1 (sedang bertanding).
+            // 1. Ambil peserta aktif
             $aktif = $partai->detail_peserta->where('status_mulai', 1)->first() ?? $partai->detail_peserta->first();
-            // Tentukan tema warna
-            $isMerah = $aktif && strtolower($aktif->sudut) == 'merah';
-            $bgWarna = $isMerah ? 'bg-red-600' : 'bg-blue-600';
-            $teksWarna = $isMerah ? 'text-red-100' : 'text-blue-100';
+            $sudutCek = $aktif->sudut ?? '';
+
+            // 2. Logika Penentuan Warna & Filter Anggota (Battle vs Pool)
+            if (!empty($sudutCek)) {
+                // --- SISTEM BATTLE (MERAH / BIRU) ---
+                // Filter anggota tim berdasarkan SUDUT
+                $anggotaTim = $partai->detail_peserta->where('sudut', $aktif->sudut);
+
+                if (strtolower($sudutCek) == 'merah') {
+                    $hexWarna = '#dc2626'; // Merah (Red-600)
+                    $labelIdentitas = 'SUDUT MERAH';
+                    $teksWarna = 'text-red-100';
+                } else {
+                    $hexWarna = '#2563eb'; // Biru (Blue-600)
+                    $labelIdentitas = 'SUDUT BIRU';
+                    $teksWarna = 'text-blue-100';
+                }
+            } else {
+                // --- SISTEM POOL (HIJAU / NO URUT) ---
+                // Filter anggota tim berdasarkan NO URUT
+                $anggotaTim = $partai->detail_peserta->where('no_urut', $aktif->no_urut);
+                $hexWarna = '#059669'; // Hijau (Emerald-600)
+                $labelIdentitas = 'NO TAMPIL ' . ($aktif->no_urut ?? '-');
+                $teksWarna = 'text-emerald-50';
+            }
         @endphp
         <div class="h-[95vh] flex flex-col gap-6">
             {{-- HEADER: INFO PARTAI & TIMER --}}
@@ -51,6 +84,7 @@
                         </span>
                     </div>
                 </div>
+
                 {{-- Bagian Timer di Display --}}
                 <div
                     class="bg-slate-800 border border-slate-700 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
@@ -62,33 +96,43 @@
                 </div>
             </div>
 
-            {{-- IDENTITAS ATLET (SUDUT BIRU / MERAH) --}}
-            <div
-                class="{{ $bgWarna }} rounded-3xl p-8 flex justify-between items-center shadow-xl relative overflow-hidden transition-colors duration-500">
-                <div class="absolute top-0 right-0 w-64 h-full bg-white opacity-10 skew-x-12 translate-x-10"></div>
-                <div class="relative z-10">
+            {{-- IDENTITAS ATLET --}}
+            <div style="background-color: {{ $hexWarna }} !important;"
+                class="rounded-3xl p-8 flex justify-between items-center shadow-2xl ring-4 ring-white/10 border border-white/10 relative overflow-hidden transition-all duration-500 mt-6 min-h-[160px]">
+
+                {{-- Dekorasi Background (Garis Putih Transparan) --}}
+                <div class="absolute top-0 right-0 w-64 h-full bg-white/10 skew-x-12 translate-x-16"></div>
+
+                <div class="relative z-20 w-full">
+                    {{-- Badge Label (Sudut / No Urut) --}}
                     <div
-                        class="inline-block px-4 py-1 bg-black/20 backdrop-blur-sm text-white text-sm font-black uppercase tracking-[0.3em] rounded-lg mb-3">
-                        SUDUT {{ strtoupper($aktif->sudut ?? 'BIRU') }}
+                        class="inline-block px-5 py-1.5 bg-slate-700 backdrop-blur-md text-white text-lg font-black uppercase tracking-[0.3em] rounded-xl mb-4 border border-white/20">
+                        {{ $labelIdentitas }}
                     </div>
-                    <h2 class="text-4xl font-black text-white uppercase tracking-tight mb-2">
-                        {{ $aktif->peserta->kontingen ?? '-' }}
-                    </h2>
 
-                    {{-- PERBAIKAN: LOOPING NAMA PESERTA UNTUK GANDA/REGU --}}
-                    <p class="text-3xl font-bold {{ $teksWarna }} uppercase tracking-wide">
-                        @php
-                            // Ambil seluruh peserta di sudut dan partai yang sama
-                            $anggotaTim = $partai->detail_peserta->where('sudut', $aktif->sudut);
-                        @endphp
+                    <div class="flex justify-between items-end w-full">
+                        <div>
+                            <h2 class="text-5xl font-black text-white uppercase tracking-tight mb-2 drop-shadow-md">
+                                {{ $aktif->peserta->kontingen ?? '-' }}
+                            </h2>
 
-                        @foreach ($anggotaTim as $anggota)
-                            {{ $anggota->peserta->nama_peserta ?? ($anggota->peserta->nama ?? 'NAMA PESERTA KOSONG') }}
-                            @if (!$loop->last)
-                                &
-                            @endif
-                        @endforeach
-                    </p>
+                            <p class="text-4xl font-bold {{ $teksWarna }} uppercase tracking-wide drop-shadow-sm">
+                                @foreach ($anggotaTim as $anggota)
+                                    {{ $anggota->peserta->nama_peserta ?? ($anggota->peserta->nama ?? 'NAMA KOSONG') }}
+                                    @if (!$loop->last)
+                                        &
+                                    @endif
+                                @endforeach
+                            </p>
+                        </div>
+
+                        <div class="opacity-20">
+                            <svg class="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -295,7 +339,8 @@
                     channel.listen('TimerSoloUpdated', prosesSinyalTimer)
                         .listen('TimerGandaUpdated', prosesSinyalTimer)
                         .listen('.TimerReguUpdated', prosesSinyalTimer)
-                        .listen('.TimerTunggalUpdated', prosesSinyalTimer);
+                        .listen('.TimerTunggalUpdated', prosesSinyalTimer)
+                        .listen('.TimerPoolUpdated', prosesSinyalTimer);
 
 
                     // ==========================================
@@ -357,7 +402,9 @@
                     channel.listen('ToggleKontrolJuri', prosesKontrolJuri)
                         .listen('ToggleKontrolJuriGanda', prosesKontrolJuri)
                         .listen('.ToggleKontrolJuriTunggal', prosesKontrolJuri)
-                        .listen('.ToggleKontrolJuriRegu', prosesKontrolJuri);
+                        .listen('.ToggleKontrolJuriRegu', prosesKontrolJuri)
+                        .listen('.ToggleKontrolJuriPool', prosesKontrolJuri)
+                        .listen('UpdateDisqPool', prosesKontrolJuri);
 
 
                     // ==========================================
@@ -391,7 +438,8 @@
                     channel.listen('UpdateNilaiJuri', animateBoxJuri)
                         .listen('UpdateNilaiJuriGanda', animateBoxJuri)
                         .listen('.UpdateNilaiJuriTunggal', animateBoxJuri)
-                        .listen('.UpdateNilaiJuriRegu', animateBoxJuri);
+                        .listen('.UpdateNilaiJuriRegu', animateBoxJuri)
+                        .listen('.UpdateNilaiJuriPool', animateBoxJuri);
 
 
                     // ==========================================
@@ -409,7 +457,8 @@
                     channel.listen('UpdateHukuman', prosesUpdateHukuman)
                         .listen('UpdateHukumanGanda', prosesUpdateHukuman)
                         .listen('.UpdateHukumanTunggal', prosesUpdateHukuman)
-                        .listen('.UpdateHukumanRegu', prosesUpdateHukuman);
+                        .listen('.UpdateHukumanRegu', prosesUpdateHukuman)
+                        .listen('.UpdateHukumanPool', prosesUpdateHukuman);
                 }
             });
         </script>

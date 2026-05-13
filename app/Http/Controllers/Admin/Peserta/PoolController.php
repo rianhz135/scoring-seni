@@ -45,7 +45,7 @@ class PoolController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'no_partai' => 'required|string|unique:partai,no_partai',
+            'no_partai' => 'required|string',
             'id_kategori' => 'required',
             'id_kelas' => 'required',
             'peserta.*.nama' => 'required|string',

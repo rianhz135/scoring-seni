@@ -219,7 +219,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6" />
             </svg>
         </button>
-
+        {{-- Home --}}
+        <a href="{{ url('/juri/dashboard') }}"
+            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
+            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m4-8v8m-7 0h10a2 2 0 002-2v-6" />
+            </svg>
+        </a>
         {{-- Fullscreen / Exit Fullscreen --}}
         <button onclick="toggleFullscreen()" id="btn-fullscreen"
             class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
@@ -499,12 +507,12 @@
 
                 // 2. PENDENGAR GLOBAL (Agar tablet Juri ikut ter-refresh saat Dewan klik "Mulai")
                 window.Echo.channel('gelanggang.global.ganda.A')
-                        .listen('RefreshDisplay', (e) => {
-                            console.log("Sinyal Pertandingan Baru! Reloading...");
-                            document.body.style.opacity = 0;
-                            document.body.style.transition = "opacity 0.5s ease";
-                            setTimeout(() => window.location.reload(), 500);
-                        });
+                    .listen('RefreshDisplay', (e) => {
+                        console.log("Sinyal Pertandingan Baru! Reloading...");
+                        document.body.style.opacity = 0;
+                        document.body.style.transition = "opacity 0.5s ease";
+                        setTimeout(() => window.location.reload(), 500);
+                    });
 
             } else {
                 console.error("Laravel Echo / Reverb tidak terdeteksi!");

@@ -88,27 +88,50 @@
 
 @push('scripts')
     <script>
+        // 1. Fungsi Utama untuk merubah Tab
         function changeTab(tabName) {
-            // 1. Sembunyikan semua konten Tab
+            // Sembunyikan semua konten Tab
             document.querySelectorAll('.tab-content').forEach(el => {
                 el.classList.remove('block');
                 el.classList.add('hidden');
             });
 
-            // 2. Reset status aktif semua tombol menu Tab menjadi abu-abu (Tidak Aktif)
+            // Reset status aktif semua tombol menu Tab menjadi abu-abu (Tidak Aktif)
             document.querySelectorAll('.tab-btn').forEach(el => {
                 el.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
                 el.classList.add('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'hover:text-gray-900');
             });
 
-            // 3. Tampilkan Tab konten yang diklik
-            document.getElementById('content-' + tabName).classList.remove('hidden');
-            document.getElementById('content-' + tabName).classList.add('block');
+            // Tampilkan Tab konten yang diklik
+            const targetContent = document.getElementById('content-' + tabName);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+                targetContent.classList.add('block');
+            }
 
-            // 4. Ubah warna tombol Tab yang dipilih jadi Biru (Aktif)
-            let activeBtn = document.getElementById('btn-' + tabName);
-            activeBtn.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'hover:text-gray-900');
-            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            // Ubah warna tombol Tab yang dipilih jadi Biru (Aktif)
+            const activeBtn = document.getElementById('btn-' + tabName);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'hover:text-gray-900');
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            }
+
+            // --- TAMBAHAN: Simpan pilihan tab ke storage browser ---
+            localStorage.setItem('lastActivePoolTab', tabName);
         }
+
+        // 2. Fungsi untuk menjalankan tab yang tersimpan saat halaman dimuat (Refresh/Redirect)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ambil data tab terakhir dari localStorage
+            const savedTab = localStorage.getItem('lastActivePoolTab');
+
+            if (savedTab) {
+                // Jika ada yang tersimpan, jalankan tab tersebut
+                changeTab(savedTab);
+            } else {
+                // Jika tidak ada (pertama kali buka), jalankan default 'solo'
+                changeTab('solo');
+            }
+        });
     </script>
 @endpush
