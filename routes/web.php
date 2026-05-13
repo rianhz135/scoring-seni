@@ -235,6 +235,7 @@ Route::middleware(['auth', 'juri'])->group(function () {
     })->name('juri.dashboard');
 
 });
+Route::post('/admin/reset/semua', [\App\Http\Controllers\Admin\ResetController::class, 'resetSemua'])->name('admin.reset.semua');
 // 2. Route Halaman Utama Juri (Hanya butuh nomor Juri, misal: /juri/solo/1)
 Route::get('/juri/solo/{no_juri}', function ($no_juri) {
 
