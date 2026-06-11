@@ -22,7 +22,7 @@ class TunggalController extends Controller
                 $q->whereNotNull('sudut');
             })
             ->orderBy('no_partai', 'asc')
-            ->paginate(5);
+            ->paginate(50);
 
         return view('pages.peserta.tunggal.index', compact('partai_tunggal'));
     }

@@ -9,22 +9,38 @@
 
 
     <style>
-        body { margin: 0; padding: 0; }
-        html { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
         /* Sidebar width dikontrol penuh lewat CSS, bukan Tailwind */
-        #sidebar { transition: width 0.3s ease; }
-        #sidebar.collapsed { width: 64px !important; }
+        #sidebar {
+            transition: width 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            width: 64px !important;
+        }
 
         /* Sembunyikan teks saat collapsed */
         #sidebar.collapsed .sidebar-link-text,
         #sidebar.collapsed .sidebar-group-text,
         #sidebar.collapsed .sidebar-chevron,
         #sidebar.collapsed .sidebar-section-label,
-        #sidebar.collapsed #sidebar-brand-text { display: none !important; }
+        #sidebar.collapsed #sidebar-brand-text {
+            display: none !important;
+        }
 
         /* Sembunyikan submenu */
-        #sidebar.collapsed .nav-sub-list { max-height: 0 !important; display: none !important; }
+        #sidebar.collapsed .nav-sub-list {
+            max-height: 0 !important;
+            display: none !important;
+        }
 
         /* Center icon saat collapsed */
         #sidebar.collapsed .sidebar-link,
@@ -36,19 +52,43 @@
         }
 
         /* Topbar & main ikut geser — pakai !important agar kalahkan Tailwind */
-        #topbar { transition: left 0.3s ease; left: 240px !important; }
-        #topbar.collapsed { left: 64px !important; }
+        #topbar {
+            transition: left 0.3s ease;
+            left: 240px !important;
+        }
 
-        #main-wrapper { transition: margin-left 0.3s ease; margin-left: 240px !important; }
-        #main-wrapper.collapsed { margin-left: 64px !important; }
+        #topbar.collapsed {
+            left: 64px !important;
+        }
+
+        #main-wrapper {
+            transition: margin-left 0.3s ease;
+            margin-left: 240px !important;
+        }
+
+        #main-wrapper.collapsed {
+            margin-left: 64px !important;
+        }
 
         /* Dropdown */
-        .nav-sub-list { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-        .nav-sub-list.open { max-height: 400px; }
+        .nav-sub-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .nav-sub-list.open {
+            max-height: 400px;
+        }
 
         /* Chevron */
-        .chevron { transition: transform 0.25s ease; }
-        .chevron.open { transform: rotate(90deg); }
+        .chevron {
+            transition: transform 0.25s ease;
+        }
+
+        .chevron.open {
+            transform: rotate(90deg);
+        }
 
         /* Active link */
         .sidebar-link.active {
@@ -57,6 +97,10 @@
             border-left-color: #4254e8;
         }
     </style>
+    <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-Regular.woff2" as="font"
+        type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-Bold.woff2" as="font"
+        type="font/woff2" crossorigin>
 
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -86,7 +130,7 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const wrapper = document.getElementById('main-wrapper');
-            const topbar  = document.getElementById('topbar');
+            const topbar = document.getElementById('topbar');
             const isCollapsed = sidebar.classList.toggle('collapsed');
             wrapper.classList.toggle('collapsed', isCollapsed);
             topbar.classList.toggle('collapsed', isCollapsed);
@@ -94,9 +138,9 @@
         }
 
         // Restore state sebelum render agar tidak flash
-        (function () {
+        (function() {
             if (localStorage.getItem(STORAGE_KEY) === '1') {
-                ['sidebar', 'main-wrapper', 'topbar'].forEach(function (id) {
+                ['sidebar', 'main-wrapper', 'topbar'].forEach(function(id) {
                     var el = document.getElementById(id);
                     if (el) el.classList.add('collapsed');
                 });
@@ -105,26 +149,35 @@
 
         function toggleSection(id) {
             if (document.getElementById('sidebar').classList.contains('collapsed')) return;
-            var subs    = document.getElementById('subs-' + id);
+            var subs = document.getElementById('subs-' + id);
             var chevron = document.getElementById('chevron-' + id);
-            if (subs)    subs.classList.toggle('open');
+            if (subs) subs.classList.toggle('open');
             if (chevron) chevron.classList.toggle('open');
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const Toast = Swal.mixin({
-                toast: true, position: 'top-end',
-                showConfirmButton: false, timer: 3000, timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
                 didOpen: (toast) => {
                     toast.addEventListener('mouseenter', Swal.stopTimer);
                     toast.addEventListener('mouseleave', Swal.resumeTimer);
                 }
             });
             @if (session('success'))
-                Toast.fire({ icon: 'success', title: "{!! session('success') !!}" });
+                Toast.fire({
+                    icon: 'success',
+                    title: "{!! session('success') !!}"
+                });
             @endif
             @if (session('error'))
-                Toast.fire({ icon: 'error', title: "{!! session('error') !!}" });
+                Toast.fire({
+                    icon: 'error',
+                    title: "{!! session('error') !!}"
+                });
             @endif
         });
     </script>

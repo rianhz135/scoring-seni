@@ -223,7 +223,7 @@
             {{-- Header --}}
             <div class="bg-gray-900 py-6 text-center relative">
                 <h2 class="text-2xl font-black text-white tracking-[0.2em]">HASIL KEPUTUSAN PEMENANG</h2>
-                <button onclick="tutupModalPemenang({{ $partai->id_partai }})"
+                <button onclick="tutupModalPemenang()"
                     class="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 transition-all">
                     TUTUP
                 </button>
@@ -408,20 +408,28 @@
                 });
         }
 
-        function tutupModalPemenang(idPartai) {
-            // console.log("Tombol Tutup diklik, ID Partai:", idPartai);
-            // 1. Tutup modal di Admin
-            const modal = document.getElementById('modal-pemenang');
-            modal.classList.add('hidden');
+        function tutupModalPemenang() {
+            if (!currentActivePartaiId) {
+                document.getElementById('modal-pemenang').classList.add('hidden');
+                return;
+            }
 
-            // 2. Beritahu server untuk menyuruh Display tutup (Reverb)
-            fetch(`/admin/hasil/solo/${idPartai}/tutup-display`, {
+            // 1. Tutup modal secara visual
+            document.getElementById('modal-pemenang').classList.add('hidden');
+            document.getElementById('modal-pemenang').classList.remove('flex');
+
+            // 2. Beritahu server untuk tutup display menggunakan ID yang disimpan
+            fetch(`/admin/hasil/solo/${currentActivePartaiId}/tutup-display`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
             });
+
+            // Reset ID
+            currentActivePartaiId = null;
         }
     </script>
 @endsection

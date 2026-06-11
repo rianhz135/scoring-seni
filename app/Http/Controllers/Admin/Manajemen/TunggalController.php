@@ -25,7 +25,7 @@ class TunggalController extends Controller
                 $q->whereNotNull('sudut');
             })
             ->orderBy('no_partai', 'asc')
-            ->paginate(4); // Silakan ubah angkanya jika ingin menyesuaikan jumlah baris per halaman
+            ->paginate(50); // Silakan ubah angkanya jika ingin menyesuaikan jumlah baris per halaman
 
         return view('pages.manajemen.tunggal.index', compact('partais'));
     }

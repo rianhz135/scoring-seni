@@ -43,8 +43,7 @@ Route::get('/', function () {
 Route::get('/dewan', function () {
     return view('pages.dewan.index');
 });
-Route::middleware(['auth', 'admin'])
-    ->prefix('admin')
+Route::prefix('admin')
     ->name('admin.')->group(function () {
 
     // --- 1. DASHBOARD & PROFILE ---
@@ -68,13 +67,13 @@ Route::middleware(['auth', 'admin'])
     Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
     Route::post('/dewan/tunggal/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'selesai'])->name('dewan.tunggal.selesai');
     Route::post('/dewan/regu/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'selesai'])->name('dewan.regu.selesai');
-
+    Route::post('/dewan/pool/{id}/selesai/{id_detail}', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'selesai'])->name('dewan.pool.selesai');
     // Hapus route refresh yang lama, ganti dengan 3 route ini:
     Route::post('/dewan/solo/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.solo.refresh');
     Route::post('/dewan/ganda/refresh-display', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'triggerRefreshDisplay'])->name('dewan.ganda.refresh');
     Route::post('/dewan/tunggal/refresh-display', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'triggerRefreshDisplay'])->name('dewan.tunggal.refresh');
     Route::post('/dewan/regu/refresh-display', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'triggerRefreshDisplay'])->name('dewan.regu.refresh');
-
+    Route::post('/dewan/pool/refresh', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'triggerRefreshDisplay'])->name('dewan.pool.refresh');
 
     // --- 2. DATA MASTER PESERTA (PER KATEGORI) ---
     Route::prefix('peserta')->name('peserta.')->group(function () {
@@ -226,7 +225,7 @@ Route::get('/api/cek-partai-aktif', function () {
         'id_detail' => $aktif ? $aktif->id_detail : null
     ]);
 });
-Route::middleware(['auth', 'juri'])->group(function () {
+
 
     Route::get('/juri/dashboard', function () {
 
@@ -234,7 +233,7 @@ Route::middleware(['auth', 'juri'])->group(function () {
 
     })->name('juri.dashboard');
 
-});
+
 Route::post('/admin/reset/semua', [\App\Http\Controllers\Admin\ResetController::class, 'resetSemua'])->name('admin.reset.semua');
 // 2. Route Halaman Utama Juri (Hanya butuh nomor Juri, misal: /juri/solo/1)
 Route::get('/juri/solo/{no_juri}', function ($no_juri) {

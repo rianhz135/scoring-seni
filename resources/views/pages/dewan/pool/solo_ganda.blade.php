@@ -662,6 +662,55 @@
             });
         }
 
+        function refreshLayarDisplay() {
+            document.body.style.cursor = 'wait';
+
+            // Ambil data kategori dan gelanggang secara dinamis dari Blade
+            @php
+                $namaKat = strtolower($partai->kategori->nama_kategori ?? '');
+                $jenis = str_contains($namaKat, 'ganda') ? 'ganda' : (str_contains($namaKat, 'regu') ? 'regu' : (str_contains($namaKat, 'tunggal') ? 'tunggal' : 'solo'));
+                $gelanggang = $partai->gelanggang ?? 'A';
+            @endphp
+
+            // Tembak ke rute Pool yang baru kita buat
+            fetch("{{ route('admin.dewan.pool.refresh') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        jenis: '{{ $jenis }}',
+                        gelanggang: '{{ $gelanggang }}'
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.body.style.cursor = 'default';
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Sinyal refresh telah dikirim ke Layar Juri & Display.',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            backdrop: `rgba(0,0,0,0.6)`
+                        });
+                    }
+                })
+                .catch(err => {
+                    document.body.style.cursor = 'default';
+                    console.error('Error:', err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Mengirim Sinyal',
+                        text: 'Pastikan koneksi jaringan/WiFi Anda stabil dan coba lagi.',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'Tutup'
+                    });
+                });
+        }
+
         function toggleJuri(noJuri) {
             const partyId = "{{ $partai->id_partai }}";
             const btn = document.getElementById(`btn-toggle-juri-${noJuri}`);
@@ -743,58 +792,79 @@
                     }
                 @endphp
 
-                const channel = window.Echo.channel(`partai.{{ $jenis }}.{{ $partai->id_partai }}`);
+                // PERBAIKAN TYPO: Menggunakan Blade {{ $jenis }} dan mendefinisikan namaChannel
+                const namaChannel = `partai.{{ $jenis }}.{{ $partai->id_partai }}`;
+                console.log("DEWAN MENDENGARKAN DI CHANNEL:", namaChannel);
+
+                const channel = window.Echo.channel(namaChannel);
 
                 // --- FUNGSI UPDATE UI (Pusat) ---
                 const updateUI = (e) => {
                     console.log("Sinyal Diterima:", e);
 
-                    // 1. Update Skor Juri (jika ada)
-                    if (e.noJuri && e.skorAkhir) {
-                        const elSkorJuri = document.getElementById(`juri-${e.noJuri}-skor-akhir`);
-                        if (elSkorJuri) elSkorJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
+                    // 1. UPDATE RINCIAN NILAI JURI
+                    if (e.noJuri !== undefined && e.noJuri !== null) {
+                        // Skor Akhir
+                        if (e.skorAkhir !== undefined && e.skorAkhir !== null) {
+                            const elSkorJuri = document.getElementById(`juri-${e.noJuri}-skor-akhir`);
+                            if (elSkorJuri) elSkorJuri.innerText = parseFloat(e.skorAkhir).toFixed(2);
+                        }
+
+                        // Nilai A
+                        if (e.nilaiA !== undefined && e.nilaiA !== null) {
+                            const elA = document.getElementById(`juri-${e.noJuri}-nilai-a`);
+                            if (elA) elA.innerText = parseFloat(e.nilaiA).toFixed(2);
+                        }
+
+                        // Nilai B
+                        if (e.nilaiB !== undefined && e.nilaiB !== null) {
+                            const elB = document.getElementById(`juri-${e.noJuri}-nilai-b`);
+                            if (elB) elB.innerText = parseFloat(e.nilaiB).toFixed(2);
+                        }
+
+                        // Nilai C 
+                        if (e.nilaiC !== undefined && e.nilaiC !== null) {
+                            const elC = document.getElementById(`juri-${e.noJuri}-nilai-c`);
+                            if (elC) elC.innerText = parseFloat(e.nilaiC).toFixed(2);
+                        }
                     }
 
-                    // 2. Update Median
+                    // 2. UPDATE REKAPITULASI (MEDIAN, DEVIASI, TOTAL)
                     if (e.median !== null && e.median !== undefined) {
                         const elMed = document.getElementById('display-median');
                         if (elMed) elMed.innerText = parseFloat(e.median).toFixed(3);
                     }
 
-                    // 3. Update Deviasi
                     if (e.deviasi !== null && e.deviasi !== undefined) {
                         const elDev = document.getElementById('display-deviasi');
                         if (elDev) elDev.innerText = parseFloat(e.deviasi).toFixed(15);
                     }
 
-                    // 4. Update Total Nilai
                     if (e.totalNilai !== null && e.totalNilai !== undefined) {
                         const elTot = document.getElementById('display-total-nilai');
                         if (elTot) elTot.innerText = parseFloat(e.totalNilai).toFixed(3);
                     }
 
-                    // 5. Update Status Tombol/Badge (Khusus untuk ToggleKontrol)
-                    if (e.isOn !== undefined) {
+                    // 3. UPDATE STATUS TOMBOL / BADGE KONTROL JURI
+                    if (e.isOn !== undefined || e.statusInput !== undefined) {
                         updateTombolJuri(e);
                     }
                 };
 
-                // --- DAFTAR LISTENER (Semua menunjuk ke fungsi updateUI) ---
+                // --- DAFTAR LISTENER ---
+                channel.listen('.UpdateNilaiJuriPool', updateUI)
+                    .listen('UpdateNilaiJuriPool', updateUI);
 
-                // 1. Listen saat Juri kirim nilai
-                channel.listen('.UpdateNilaiJuriPool', updateUI);
+                channel.listen('.ToggleKontrolJuriPool', updateUI)
+                    .listen('ToggleKontrolJuriPool', updateUI);
 
-                // 2. Listen saat Dewan Toggle ON/OFF atau Selesai/Proses
-                channel.listen('.ToggleKontrolJuriPool', updateUI);
+                channel.listen('.UpdateHukumanPool', updateUI)
+                    .listen('UpdateHukumanPool', updateUI);
 
-                // 3. Listen saat Hukuman berubah
-                channel.listen('.UpdateHukumanPool', updateUI);
-
-
-                // Fungsi tambahan untuk merubah warna tombol secara otomatis
+                // Fungsi merubah warna tombol dan badge otomatis
                 function updateTombolJuri(e) {
                     const btnToggle = document.getElementById(`btn-toggle-juri-${e.noJuri}`);
-                    if (btnToggle) {
+                    if (btnToggle && e.isOn !== undefined) {
                         if (e.isOn == 1) {
                             btnToggle.innerText = 'ON';
                             btnToggle.className =
@@ -805,10 +875,48 @@
                                 'px-5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-sm bg-red-500 text-white';
                         }
                     }
-                    // ... tambahkan logika badge status jika perlu ...
-                }
 
+                    const badgeStatus = document.getElementById(`badge-status-juri-${e.noJuri}`);
+                    if (badgeStatus && e.statusInput !== undefined && e.statusInput !== null) {
+                        badgeStatus.innerText = e.statusInput.toUpperCase();
+                        if (e.statusInput.toLowerCase() === 'selesai') {
+                            badgeStatus.className =
+                                'px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest bg-blue-600 text-white shadow-sm transition-all active:scale-95';
+                        } else {
+                            badgeStatus.className =
+                                'px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest bg-orange-500 text-white shadow-sm transition-all active:scale-95';
+                        }
+                    }
+                }
             }
         });
+
+        function konfirmasiSelesai(event, form) {
+            event.preventDefault(); // Cegah form langsung terkirim
+
+            Swal.fire({
+                title: 'Kunci Hasil Penampilan?',
+                text: "Anda yakin ingin mengakhiri dan menyimpan nilai peserta ini? Tindakan ini akan mereset layar Juri & Display.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a', // Warna hijau
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Simpan & Selesai!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Jika diklik 'Ya', tampilkan loading dan submit form
+                    Swal.fire({
+                        title: 'Menyimpan...',
+                        html: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+                    form.submit(); // Eksekusi form action
+                }
+            });
+        }
     </script>
 @endsection

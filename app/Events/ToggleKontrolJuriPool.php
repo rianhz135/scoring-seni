@@ -12,7 +12,6 @@ class ToggleKontrolJuriPool implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    // 10 Variabel standar agar cocok dengan fungsi prosesKontrolJuri di JS Display
     public $partaiId;
     public $noJuri;
     public $isOn;
@@ -23,26 +22,11 @@ class ToggleKontrolJuriPool implements ShouldBroadcastNow
     public $sudut;
     public $hukuman;
     public $isDisq;
-    
-    // Variabel tambahan untuk menentukan tujuan channel (solo/ganda/regu)
     public $jenis;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(
-        $partaiId, 
-        $noJuri, 
-        $isOn, 
-        $statusInput = null, 
-        $median = null, 
-        $deviasi = null, 
-        $totalNilai = null, 
-        $sudut = null, 
-        $hukuman = null, 
-        $isDisq = null, 
-        $jenis = 'solo'
-    ) {
+    // STRUKTUR 11 PARAMETER PERSIS SEPERTI GANDA
+    public function __construct($partaiId, $noJuri, $isOn, $statusInput, $median = null, $deviasi = null, $totalNilai = null, $sudut = null, $hukuman = 0, $isDisq = 0, $jenis = 'solo')
+    {
         $this->partaiId = $partaiId;
         $this->noJuri = $noJuri;
         $this->isOn = $isOn;
@@ -56,18 +40,11 @@ class ToggleKontrolJuriPool implements ShouldBroadcastNow
         $this->jenis = $jenis;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     */
     public function broadcastOn()
     {
-        // Mengirim secara dinamis ke partai.solo.ID atau partai.ganda.ID, dst.
         return new Channel('partai.' . $this->jenis . '.' . $this->partaiId);
     }
 
-    /**
-     * Nama Event yang akan didengar oleh Laravel Echo dengan awalan titik (.)
-     */
     public function broadcastAs()
     {
         return 'ToggleKontrolJuriPool';

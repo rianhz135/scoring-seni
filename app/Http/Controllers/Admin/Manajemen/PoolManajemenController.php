@@ -89,7 +89,7 @@ class PoolManajemenController extends Controller
                 $jenis = 'tunggal';
 
             // 5. Kirim Sinyal Refresh ke Display
-            broadcast(new \App\Events\RefreshDisplay($jenis . '.' . $id_partai));
+            broadcast(new \App\Events\RefreshDisplay('pool.A'));
 
             DB::commit();
 
@@ -103,5 +103,16 @@ class PoolManajemenController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
+    }
+
+    public function triggerRefreshDisplay()
+    {
+        // Sesuaikan 'A' dengan gelanggang Anda jika sistem multi-gelanggang
+        broadcast(new \App\Events\RefreshDisplay('pool.A'));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sinyal refresh berhasil dikirim ke Layar Display!'
+        ]);
     }
 }

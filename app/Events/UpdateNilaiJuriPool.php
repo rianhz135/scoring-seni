@@ -14,16 +14,18 @@ class UpdateNilaiJuriPool implements ShouldBroadcastNow
 
     public $partaiId;
     public $noJuri;
-    public $skorAkhir;
-    public $median;
-    public $deviasi;
-    public $totalNilai;
+    public $nilaiA, $nilaiB, $nilaiC, $skorAkhir;
+    public $median, $deviasi, $totalNilai;
     public $jenis;
 
-    public function __construct($partaiId, $noJuri, $skorAkhir, $median, $deviasi, $totalNilai, $jenis = 'solo')
+    // URUTAN DISAMAKAN PERSIS DENGAN BATTLE (GANDA)
+    public function __construct($partaiId, $noJuri, $nilaiA, $nilaiB, $nilaiC, $skorAkhir, $median, $deviasi, $totalNilai, $jenis = 'solo')
     {
         $this->partaiId = $partaiId;
         $this->noJuri = $noJuri;
+        $this->nilaiA = $nilaiA;
+        $this->nilaiB = $nilaiB;
+        $this->nilaiC = $nilaiC;
         $this->skorAkhir = $skorAkhir;
         $this->median = $median;
         $this->deviasi = $deviasi;

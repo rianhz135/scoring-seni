@@ -33,7 +33,7 @@
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit"
-                        class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-all">
+                        class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-all cursor-pointer">
                         Logout
                     </button>
                 </form>
@@ -46,7 +46,7 @@
 
             {{-- SOLO --}}
             <button onclick="bukaModal('solo', 'SOLO', '🥋', 'indigo')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left">
+                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
@@ -61,7 +61,7 @@
 
             {{-- GANDA --}}
             <button onclick="bukaModal('ganda', 'GANDA', '👥', 'emerald')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left">
+                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
@@ -76,7 +76,7 @@
 
             {{-- TUNGGAL --}}
             <button onclick="bukaModal('tunggal', 'TUNGGAL', '⚔️', 'orange')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left">
+                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
@@ -91,7 +91,7 @@
 
             {{-- REGU --}}
             <button onclick="bukaModal('regu', 'REGU', '🛡️', 'red')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left">
+                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
@@ -122,7 +122,7 @@
                     </div>
                 </div>
                 <button onclick="tutupModal()"
-                    class="w-10 h-10 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center justify-center transition-all">
+                    class="w-10 h-10 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center justify-center transition-all cursor-pointer">
                     ✕
                 </button>
             </div>
@@ -169,12 +169,21 @@
 
             const w = warnaBg[warna] || warnaBg['indigo'];
 
+            // Looping juri 1-6 (Sesuaikan angka maksimal jika juri Anda berjumlah 5 atau 10)
             for (let i = 1; i <= 6; i++) {
-                const url = `/juri/${kategori}/${i}`;
+                
+                // --- PERBAIKAN STRUKTUR ROUTE DISINI ---
+                let url = `/juri/${kategori}/${i}`;
+                
+                // Jika kategori yang dipilih adalah solo atau ganda, alihkan ke rute gabungan Anda
+                if (kategori === 'solo' || kategori === 'ganda') {
+                    url = `/juri/solo-ganda/${i}`;
+                }
+                // ----------------------------------------
+
                 const btn = document.createElement('a');
                 btn.href = url;
-                btn.className =
-                    `border rounded-2xl py-5 flex flex-col items-center justify-center gap-1 font-black transition-all ${w.normal} ${w.hover}`;
+                btn.className = `border rounded-2xl py-5 flex flex-col items-center justify-center gap-1 font-black transition-all ${w.normal} ${w.hover} cursor-pointer`;
                 btn.innerHTML = `
                     <span class="text-xs uppercase tracking-widest opacity-70">Juri</span>
                     <span class="text-4xl">${i}</span>
@@ -191,7 +200,7 @@
             document.getElementById('modal-juri').classList.remove('flex');
         }
 
-        // Tutup modal jika klik di luar
+        // Tutup modal jika klik di luar modal-content
         document.getElementById('modal-juri').addEventListener('click', function(e) {
             if (e.target === this) tutupModal();
         });

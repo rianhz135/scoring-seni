@@ -303,36 +303,45 @@
             }
         }
 
+        // ----------------------------------------------------
+        // 1. FUNGSI HITUNG & SIMPAN LOKAL
+        // ----------------------------------------------------
         function hitungTotalLokal() {
             const valA = parseFloat(document.getElementById('nilai_a').value) || 0;
             const valB = parseFloat(document.getElementById('nilai_b').value) || 0;
             const valC = parseFloat(document.getElementById('nilai_c').value) || 0;
+
+            // Sesuaikan baseline jika Tunggal/Regu (9.90) atau Solo/Ganda (9.10)
+            // Default ini untuk tampilan lokal, nilai asli tetap dihitung ulang di Server
             const total = 9.10 + valA + valB + valC;
-            document.getElementById('display-total').innerText = total.toFixed(2);
+            const elTotal = document.getElementById('display-total');
+            if (elTotal) elTotal.innerText = total.toFixed(2);
         }
 
         function simpanKeServer() {
-            const valA = document.getElementById('nilai_a').value;
-            const valB = document.getElementById('nilai_b').value;
-            const valC = document.getElementById('nilai_c').value;
+            const valA = document.getElementById('nilai_a').value || 0;
+            const valB = document.getElementById('nilai_b').value || 0;
+            const valC = document.getElementById('nilai_c').value || 0;
             const totalAkhir = (9.10 + parseFloat(valA) + parseFloat(valB) + parseFloat(valC)).toFixed(2);
 
             Swal.fire({
-                title: 'Konfirmasi Nilai',
-                html: `<div class="text-6xl font-black text-indigo-600 my-4">${totalAkhir}</div><p>Kirim nilai sekarang? <br><b>Data tidak dapat diubah setelah dikirim!</b></p>`,
-                icon: 'question',
+                title: 'Kunci & Kirim Nilai?',
+                html: `Anda akan mengirim Total Nilai Akhir: <br><span class="text-4xl font-black text-green-600 font-mono mt-2 inline-block">${totalAkhir}</span><br><br><span class="text-sm text-red-500">Nilai yang sudah dikirim tidak dapat diubah kembali!</span>`,
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'YA, KIRIM!',
-                cancelButtonText: 'BATAL',
                 confirmButtonColor: '#16a34a',
                 cancelButtonColor: '#dc2626',
+                confirmButtonText: 'YA, KIRIM SEKARANG!',
+                cancelButtonText: 'BATAL',
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     const btn = document.getElementById('btn-submit');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = 'MEMPROSES...';
                     btn.disabled = true;
-                    btn.innerText = 'MEMPROSES...';
 
-                    fetch("{{ route('juri.solo-ganda.simpan', ['id_detail' => $aktif->id_detail ?? 0, 'no_juri' => $no_juri]) }}", {
+                    fetch("{{ route('juri.solo-ganda.simpan', ['id_detail' => $aktif->id_detail ?? 0, 'no_juri' => $no_juri ?? 0]) }}", {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -347,54 +356,162 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === 'success') {
+
+                                // KUNCI UI SECARA LOKAL TANPA RELOAD!
+                                updateTampilanJuriPool(1, 'Selesai');
+
                                 Swal.fire({
-                                        icon: 'success',
-                                        title: 'Berhasil',
-                                        text: 'Nilai terkirim!',
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    })
-                                    .then(() => window.location.reload());
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: 'Nilai telah dikirim ke Layar Dewan.',
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    backdrop: `rgba(0,0,0,0.8)`
+                                });
+
                             } else {
+                                btn.innerHTML = originalText;
                                 btn.disabled = false;
-                                btn.innerText = 'KUNCI & KIRIM NILAI SEKARANG';
-                                Swal.fire('Gagal', data.message || 'Terjadi kesalahan', 'error');
+                                Swal.fire('Gagal', data.message || 'Terjadi kesalahan di server', 'error');
                             }
                         })
                         .catch(err => {
+                            btn.innerHTML = originalText;
                             btn.disabled = false;
-                            Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+                            Swal.fire('Koneksi Terputus', 'Gagal mengirim nilai. Periksa WiFi tablet.',
+                                'error');
                         });
                 }
             });
         }
 
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
+        // ----------------------------------------------------
+        // 2. FUNGSI MASTER: MENGUNCI & MEMBUKA FORM JURI
+        // ----------------------------------------------------
+        // Fungsi ini dipisah di luar DOMContentLoaded agar bisa diakses oleh simpanKeServer()
+        function updateTampilanJuriPool(isOn, statusInput) {
+            // A. BUKA/TUTUP MODAL STANDBY (ON/OFF)
+            const modalStandby = document.getElementById('modal-standby');
+            const wrapperForm = document.getElementById('landscape-wrapper'); // ID wrapper utama form
+
+            if (isOn == 1) {
+                if (modalStandby) modalStandby.classList.add('hidden');
+                if (wrapperForm) wrapperForm.classList.remove('pointer-events-none');
+            } else {
+                if (modalStandby) modalStandby.classList.remove('hidden');
+                if (wrapperForm) wrapperForm.classList.add('pointer-events-none');
+            }
+
+            // B. KUNCI / BUKA FORM SESUAI STATUS (SELESAI/PROSES)
+            const btnSubmit = document.getElementById('btn-submit');
+            const statusSaatIni = (statusInput || 'proses').toLowerCase();
+
+            if (statusSaatIni === 'selesai') {
+                // MATIKAN INPUT
+                ['nilai_a', 'nilai_b', 'nilai_c'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.disabled = true;
+                        el.classList.add('cursor-not-allowed', 'bg-gray-200');
+                    }
+                });
+                // UBAH TOMBOL JADI "TERKUNCI"
+                if (btnSubmit) {
+                    btnSubmit.outerHTML = `
+                    <div id="btn-submit" class="w-full bg-slate-400 text-white font-black text-2xl py-6 rounded-2xl shadow-lg flex items-center justify-center gap-3 cursor-not-allowed mt-4">
+                        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        NILAI TELAH TERKUNCI
+                    </div>`;
+                }
+            } else {
+                // NYALAKAN INPUT KEMBALI
+                ['nilai_a', 'nilai_b', 'nilai_c'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.disabled = false;
+                        el.classList.remove('cursor-not-allowed', 'bg-gray-200');
+                    }
+                });
+                // KEMBALIKAN TOMBOL "KIRIM NILAI"
+                if (btnSubmit) {
+                    btnSubmit.outerHTML = `
+                    <button id="btn-submit" onclick="simpanKeServer()" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black text-2xl py-6 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 mt-4">
+                        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        KUNCI & KIRIM NILAI
+                    </button>`;
+                }
+            }
         }
 
-        // --- REVERB LISTENER ---
+        // ----------------------------------------------------
+        // 3. INISIALISASI & LISTENER REVERB
+        // ----------------------------------------------------
         document.addEventListener('DOMContentLoaded', function() {
+            const isOnDb = {{ isset($partai) && isset($kontrol) ? $kontrol->is_on : 0 }};
+            const statusDb = "{{ isset($kontrol) ? $kontrol->status_input : 'Proses' }}";
             const partaiId = "{{ $partai->id_partai ?? 0 }}";
-            const noJuri = "{{ $no_juri }}";
+            const noJuri = "{{ $no_juri ?? 0 }}";
 
-            if (window.Echo && partaiId !== "0") {
-                // Listen untuk ON/OFF dari Dewan
-                window.Echo.channel(`kontrol.juri.${partaiId}`)
-                    .listen('ToggleKontrolJuri', (e) => {
-                        if (e.noJuri == noJuri) {
-                            const modal = document.getElementById('modal-standby');
-                            if (e.isOn == 1) modal.classList.add('hidden');
-                            else modal.classList.remove('hidden');
+            @php
+                $namaKat = strtolower($partai->kategori->nama_kategori ?? '');
+                $jenis = 'solo';
+                if (str_contains($namaKat, 'ganda')) {
+                    $jenis = 'ganda';
+                } elseif (str_contains($namaKat, 'regu')) {
+                    $jenis = 'regu';
+                } elseif (str_contains($namaKat, 'tunggal')) {
+                    $jenis = 'tunggal';
+                }
+            @endphp
 
-                            if (e.statusInput === 'Selesai') window.location.reload();
-                        }
-                    });
+            const jenis = "{{ $jenis }}";
+            const namaGelanggang = "{{ $partai->gelanggang ?? 'A' }}";
 
-                // Listen jika ada refresh global
-                window.Echo.channel('gelanggang.global')
-                    .listen('RefreshDisplay', () => window.location.reload());
+            // Set tampilan awal saat halaman pertama kali dibuka
+            updateTampilanJuriPool(isOnDb, statusDb);
+
+            if (window.Echo) {
+                // A. PENDENGAR KONTROL DEWAN (Tanpa Reload!)
+                if (partaiId !== "0") {
+                    window.Echo.channel(`partai.${jenis}.${partaiId}`)
+                        .listen('.ToggleKontrolJuriPool', (e) => {
+                            if (e.noJuri == noJuri) {
+                                updateTampilanJuriPool(e.isOn, e.statusInput);
+                            }
+                        })
+                        .listen('ToggleKontrolJuriPool', (e) => {
+                            if (e.noJuri == noJuri) {
+                                updateTampilanJuriPool(e.isOn, e.statusInput);
+                            }
+                        });
+                }
+
+                // =================================================================
+                // B. PENDENGAR GLOBAL MULAI (Ini Satu-satunya yang Boleh Me-reload)
+                // =================================================================
+                const eksekusiRefresh = (e) => {
+                    console.log("Sinyal Refresh Diterima! Merefresh tablet juri...");
+                    document.body.style.opacity = 0;
+                    document.body.style.transition = "opacity 0.5s ease";
+                    setTimeout(() => window.location.reload(), 500);
+                };
+
+                // Kita cukup mendengarkan channel pool yang spesifik untuk gelanggang tersebut.
+                // Jika semua pool menggunakan gelanggang 'A', maka ini akan serentak semua.
+                const channelPool = `gelanggang.global.pool.${namaGelanggang}`;
+
+                console.log("JURI MENDENGARKAN REFRESH DI CHANNEL:", channelPool);
+
+                window.Echo.channel(channelPool)
+                    .listen('.RefreshDisplay', eksekusiRefresh)
+                    .listen('RefreshDisplay', eksekusiRefresh);
+
+            } else {
+                console.error("Laravel Echo / Reverb tidak terdeteksi!");
             }
         });
     </script>

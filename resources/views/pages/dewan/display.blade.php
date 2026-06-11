@@ -22,7 +22,7 @@
             <div
                 class="animate-pulse bg-slate-800/80 border border-slate-700 rounded-3xl px-8 py-6 text-center shadow-2xl backdrop-blur-sm max-w-4xl w-full">
                 <h1 class="text-4xl md:text-5xl font-black text-slate-300 tracking-widest mb-2">
-                    MODE STANDBY
+                    STANDBY GELANGANG 1
                 </h1>
                 <p class="text-base md:text-xl text-slate-500 uppercase tracking-widest">
                     Menunggu Pertandingan Dimulai oleh Operator
@@ -68,7 +68,7 @@
                     <div class="flex items-center gap-3 mb-2">
                         <span
                             class="px-4 py-1.5 bg-primary-600 text-white text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
-                            GELANGGANG {{ $partai->gelanggang ?? 'A' }}
+                            GELANGGANG {{ $partai->gelanggang ?? 'A' }} 1
                         </span>
                         <span
                             class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
@@ -98,7 +98,7 @@
 
             {{-- IDENTITAS ATLET --}}
             <div style="background-color: {{ $hexWarna }} !important;"
-                class="rounded-3xl p-8 flex justify-between items-center shadow-2xl ring-4 ring-white/10 border border-white/10 relative overflow-hidden transition-all duration-500 mt-6 min-h-[160px]">
+                class="rounded-3xl p-8 flex justify-between items-center shadow-2xl ring-4 ring-white/10 border border-white/10 relative overflow-hidden transition-all duration-500 min-h-[160px]">
 
                 {{-- Dekorasi Background (Garis Putih Transparan) --}}
                 <div class="absolute top-0 right-0 w-64 h-full bg-white/10 skew-x-12 translate-x-16"></div>
@@ -184,7 +184,8 @@
                     @endphp
 
                     <div id="box-juri-{{ $i }}"
-                        class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden transition-all duration-300 {{ $isHidden }}">
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl flex flex-col overflow-hidden relative transition-all duration-300 {{ $isHidden }}">
+                        <div class="absolute top-0 w-full h-1 bg-yellow-500"></div>
                         <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
                             <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">JURI
                                 {{ $i }}</span>
@@ -204,13 +205,14 @@
             <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 flex flex-col gap-4">
                     <div class="flex-1 grid grid-cols-2 gap-4">
-                        <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden">
+                        <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
+                            <div class="absolute top-0 w-full h-1 bg-blue-500"></div>
                             <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
                                 <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Median</span>
                             </div>
                             <div class="flex-1 flex items-center justify-center">
                                 {{-- Mengambil nilai awal dari database --}}
-                                <span id="nilai-median" class="text-8xl font-black text-white">
+                                <span id="nilai-median" class="text-7xl font-black text-white">
                                     {{ number_format($aktif->nilai_median ?? 0, 3, '.', '') }}
                                 </span>
                             </div>
@@ -227,14 +229,15 @@
                                     $nilaiHukumanDb =
                                         $aktif->hukuman_ketua ?? ($aktif->hukuman ?? ($aktif->nilai_hukuman ?? 0));
                                 @endphp
-                                <span id="nilai-hukuman" class="text-8xl font-black text-red-500">
+                                <span id="nilai-hukuman" class="text-7xl font-black text-red-500">
                                     {{-- Menggunakan abs() agar jika di database sudah minus, tidak jadi dobel minus (--0.50) --}}
                                     -{{ number_format(abs((float) $nilaiHukumanDb), 2, '.', '') }}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden">
+                    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
+                        <div class="absolute top-0 w-full h-1 bg-yellow-500"></div>
                         <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
                             <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Standar
                                 Deviasi</span>
@@ -482,7 +485,7 @@
                 };
 
                 // Pasang 4 antena sekaligus untuk memantau Tunggal, Ganda, regu, dan Solo
-                const daftarKategori = ['tunggal', 'ganda', 'solo', 'regu'];
+                const daftarKategori = ['tunggal', 'ganda', 'solo', 'regu', 'pool'];
                 daftarKategori.forEach(kategori => {
                     window.Echo.channel(`gelanggang.global.${kategori}.A`)
                         .listen('RefreshDisplay', eksekusiRefresh);
