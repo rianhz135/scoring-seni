@@ -71,7 +71,10 @@
                 :active="request()->routeIs('admin.hasil.tunggal.*')">Tunggal</x-admin.sidebar-sublink>
             <x-admin.sidebar-sublink href="{{ route('admin.hasil.regu.index') }}"
                 :active="request()->routeIs('admin.hasil.regu.*')">Regu</x-admin.sidebar-sublink>
+            <x-admin.sidebar-sublink href="{{ route('admin.hasil.pool.index') }}"
+                :active="request()->routeIs('admin.hasil.pool.*')">Pool</x-admin.sidebar-sublink>
         </x-admin.sidebar-group>
+
 
     </nav>
 
@@ -82,7 +85,8 @@
     </div>
     <form action="{{ route('logout') }}" method="POST" class="px-2 mb-3">
         @csrf
-        <x-admin.sidebar-link href="#" class="text-red-500 hover:bg-red-50 hover:text-red-600" icon="logout" onclick="event.preventDefault(); this.closest('form').submit()">
+        <x-admin.sidebar-link href="#" class="text-red-500 hover:bg-red-50 hover:text-red-600" icon="logout"
+            onclick="event.preventDefault(); this.closest('form').submit()">
             Logout
         </x-admin.sidebar-link>
     </form>

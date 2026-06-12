@@ -319,7 +319,10 @@
     </div>
 
     <script>
+        let currentActivePartaiId = null;
+
         function tetapkanPemenang(idPartai) {
+            currentActivePartaiId = idPartai;
             Swal.fire({
                 title: 'Kalkulasi Pemenang...',
                 text: 'Sistem sedang memproses nilai tertinggi dan deviasi.',
@@ -409,26 +412,39 @@
         }
 
         function tutupModalPemenang() {
+            const modal = document.getElementById('modal-pemenang');
+
+            // 1. Tutup modal secara visual secara instan
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            // 2. Cek memori: Jika tidak ada ID yang tersimpan, hentikan script
             if (!currentActivePartaiId) {
-                document.getElementById('modal-pemenang').classList.add('hidden');
                 return;
             }
 
-            // 1. Tutup modal secara visual
-            document.getElementById('modal-pemenang').classList.add('hidden');
-            document.getElementById('modal-pemenang').classList.remove('flex');
+            // 3. Deteksi Kategori secara otomatis dari URL 
+            // (Jadi Anda tidak perlu hardcode '/solo/' terus menerus)
+            let pathArray = window.location.pathname.split('/');
+            let kategori = pathArray[3] || 'solo';
 
-            // 2. Beritahu server untuk tutup display menggunakan ID yang disimpan
-            fetch(`/admin/hasil/solo/${currentActivePartaiId}/tutup-display`, {
+            // 4. Beritahu server untuk tutup display menggunakan ID yang disimpan
+            fetch(`/admin/hasil/${kategori}/${currentActivePartaiId}/tutup-display`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 }
+            }).then(response => {
+                console.log("Sinyal tutup display berhasil dikirim.");
+            }).catch(error => {
+                console.error("Gagal menutup display:", error);
             });
 
-            // Reset ID
+            // 5. Kosongkan kembali memori ID setelah berhasil
             currentActivePartaiId = null;
         }
     </script>

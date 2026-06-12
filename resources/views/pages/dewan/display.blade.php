@@ -205,7 +205,8 @@
             <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 flex flex-col gap-4">
                     <div class="flex-1 grid grid-cols-2 gap-4">
-                        <div class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
+                        <div
+                            class="bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
                             <div class="absolute top-0 w-full h-1 bg-blue-500"></div>
                             <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
                                 <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Median</span>
@@ -236,7 +237,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
+                    <div
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded-3xl flex flex-col overflow-hidden relative">
                         <div class="absolute top-0 w-full h-1 bg-yellow-500"></div>
                         <div class="bg-slate-700/50 py-3 text-center border-b border-slate-700">
                             <span class="text-2xl font-black text-slate-300 uppercase tracking-widest">Standar
@@ -496,6 +498,44 @@
             }
         });
     </script>
+
+    {{-- ======================================================= --}}
+    {{-- MODAL PEMENANG POOL (KHUSUS UNTUK LAYAR DISPLAY) --}}
+    {{-- ======================================================= --}}
+    <div id="modal-pemenang-pool"
+        class="hidden fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-md items-center justify-center p-8">
+        <div
+            class="bg-white rounded-3xl w-full max-w-7xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col transform transition-all">
+
+            {{-- Header Modal Display (Warna Gradasi Fix) --}}
+            <div class="p-8 text-center relative" style="background: linear-gradient(to right, #3730a3, #1d4ed8);">
+                <h2 class="text-5xl font-black text-white uppercase tracking-widest drop-shadow-lg">HASIL KEPUTUSAN PEMENANG
+                </h2>
+            </div>
+
+            {{-- Body Tabel Display --}}
+            <div class="p-0 overflow-x-auto bg-gray-50">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-200 border-b-2 border-gray-300">
+                        <tr class="text-lg font-black text-gray-600 uppercase tracking-widest">
+                            <th class="px-6 py-6 text-center w-32">Rank</th>
+                            <th class="px-6 py-6">Peserta / Kontingen</th>
+                            <th class="px-6 py-6 text-center">Waktu</th>
+                            <th class="px-6 py-6 text-center">Median</th>
+                            <th class="px-6 py-6 text-center">Deviasi</th>
+                            <th class="px-6 py-6 text-center text-red-500">Hukuman</th>
+                            <th class="px-6 py-6 text-right pr-10">Total Skor</th>
+                        </tr>
+                    </thead>
+                    {{-- ID ini yang dicari oleh JavaScript Anda --}}
+                    <tbody id="pool-winner-tbody" class="divide-y-2 divide-gray-100 bg-white">
+                        {{-- OTOMATIS DIISI OLEH JAVASCRIPT REVERB SAAT TOMBOL DIKLIK --}}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
     <script type="module">
         document.addEventListener('DOMContentLoaded', () => {
             // --- FUNGSI REUSABLE UNTUK MENAMPILKAN MODAL PEMENANG ---
@@ -616,6 +656,67 @@
             // 4. LISTEN UNTUK REGU
             window.Echo.channel('display-pengumuman-regu')
                 .listen('TampilkanPemenangRegu', renderPemenangModal);
+
+
         });
+        window.Echo.channel('display-pengumuman-pool')
+            .listen('.TampilkanPemenangPool', (e) => {
+                const modalDisplay = document.getElementById(
+                    'modal-pemenang-pool'); // Pastikan ID ini ada di HTML Display Anda
+
+                if (e.action === 'close') {
+                    if (modalDisplay) {
+                        modalDisplay.classList.add('hidden');
+                        modalDisplay.classList.remove('flex');
+                    }
+                    return;
+                }
+
+                if (e.action === 'show') {
+                    const tbody = document.getElementById(
+                        'pool-winner-tbody'); // Pastikan ID ini ada di HTML Display Anda
+                    if (!tbody) return;
+
+                    tbody.innerHTML = '';
+
+                    // Render ulang data yang dikirim dari controller admin
+                    e.peserta_ranked.forEach(p => {
+                        let rankBadge = `<span class="text-xl font-bold text-gray-400">#${p.rank}</span>`;
+                        let rowClass = "bg-white";
+
+                        if (p.rank === 1) {
+                            rankBadge =
+                                `<span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 text-yellow-700 font-black text-2xl border-4 border-yellow-300 shadow-xl animate-bounce">1</span>`;
+                            rowClass = "bg-yellow-50";
+                        } else if (p.rank === 2) {
+                            rankBadge =
+                                `<span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-700 font-black text-2xl border-4 border-slate-300 shadow-md">2</span>`;
+                        } else if (p.rank === 3) {
+                            rankBadge =
+                                `<span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-800 font-black text-2xl border-4 border-orange-300 shadow-md">3</span>`;
+                        }
+
+                        const tr = `
+                    <tr class="${rowClass} border-b border-gray-200">
+                        <td class="px-6 py-6 text-center">${rankBadge}</td>
+                        <td class="px-6 py-6">
+                            <div class="font-black text-gray-900 uppercase text-2xl tracking-wide">${p.nama}</div>
+                            <div class="text-sm text-gray-500 uppercase mt-1 font-bold tracking-wider">${p.kontingen}</div>
+                        </td>
+                        <td class="px-6 py-6 text-center"><span class="bg-gray-100 px-4 py-2 rounded text-lg font-mono font-bold">${p.waktu}</span></td>
+                        <td class="px-6 py-6 text-center font-bold text-gray-700 text-xl">${p.median}</td>
+                        <td class="px-6 py-6 text-center text-sm text-gray-500 font-mono">${p.deviasi}</td>
+                        <td class="px-6 py-6 text-center text-red-600 font-bold text-xl">-${p.hukuman}</td>
+                        <td class="px-6 py-6 text-right pr-8"><span class="text-4xl font-black text-blue-600">${p.total}</span></td>
+                    </tr>
+                `;
+                        tbody.innerHTML += tr;
+                    });
+
+                    // Munculkan Modal di Display
+                    modalDisplay.classList.remove('hidden');
+                    modalDisplay.classList.add('flex');
+                }
+            });
     </script>
 @endsection

@@ -97,12 +97,16 @@
             border-left-color: #4254e8;
         }
     </style>
+
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-Regular.woff2" as="font"
+        type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-Medium.woff2" as="font"
+        type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-SemiBold.woff2" as="font"
         type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/plus-jakarta-sans/static/PlusJakartaSans-Bold.woff2" as="font"
         type="font/woff2" crossorigin>
-
-    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 

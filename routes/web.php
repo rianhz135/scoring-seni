@@ -46,173 +46,177 @@ Route::get('/dewan', function () {
 Route::prefix('admin')
     ->name('admin.')->group(function () {
 
-    // --- 1. DASHBOARD & PROFILE ---
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+        // --- 1. DASHBOARD & PROFILE ---
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 
 
-    // ROUTE UNTUK LAYAR DISPLAY PROYEKTOR / PENONTON
-    // Route::get('/dewan/display', function () {
-    //     // Layar akan otomatis mencari partai yang SEDANG BERTANDING (status_mulai = 1)
-    //     $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
-    //         ->whereHas('detail_peserta', function ($q) {
-    //             $q->where('status_mulai', 1);
-    //         })
-    //         ->first(); // Mengambil 1 partai aktif
+        // ROUTE UNTUK LAYAR DISPLAY PROYEKTOR / PENONTON
+        // Route::get('/dewan/display', function () {
+        //     // Layar akan otomatis mencari partai yang SEDANG BERTANDING (status_mulai = 1)
+        //     $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])
+        //         ->whereHas('detail_peserta', function ($q) {
+        //             $q->where('status_mulai', 1);
+        //         })
+        //         ->first(); // Mengambil 1 partai aktif
+    
+        //     return view('pages.dewan.display', compact('partai'));
+        // })->name('dewan.display');
+    
+        Route::post('/dewan/solo/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'selesai'])->name('dewan.solo.selesai');
+        Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
+        Route::post('/dewan/tunggal/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'selesai'])->name('dewan.tunggal.selesai');
+        Route::post('/dewan/regu/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'selesai'])->name('dewan.regu.selesai');
+        Route::post('/dewan/pool/{id}/selesai/{id_detail}', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'selesai'])->name('dewan.pool.selesai');
+        // Hapus route refresh yang lama, ganti dengan 3 route ini:
+        Route::post('/dewan/solo/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.solo.refresh');
+        Route::post('/dewan/ganda/refresh-display', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'triggerRefreshDisplay'])->name('dewan.ganda.refresh');
+        Route::post('/dewan/tunggal/refresh-display', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'triggerRefreshDisplay'])->name('dewan.tunggal.refresh');
+        Route::post('/dewan/regu/refresh-display', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'triggerRefreshDisplay'])->name('dewan.regu.refresh');
+        Route::post('/dewan/pool/refresh', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'triggerRefreshDisplay'])->name('dewan.pool.refresh');
 
-    //     return view('pages.dewan.display', compact('partai'));
-    // })->name('dewan.display');
+        // --- 2. DATA MASTER PESERTA (PER KATEGORI) ---
+        Route::prefix('peserta')->name('peserta.')->group(function () {
 
-    Route::post('/dewan/solo/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'selesai'])->name('dewan.solo.selesai');
-    Route::post('/dewan/ganda/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'selesai'])->name('dewan.ganda.selesai');
-    Route::post('/dewan/tunggal/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'selesai'])->name('dewan.tunggal.selesai');
-    Route::post('/dewan/regu/{id}/selesai/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'selesai'])->name('dewan.regu.selesai');
-    Route::post('/dewan/pool/{id}/selesai/{id_detail}', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'selesai'])->name('dewan.pool.selesai');
-    // Hapus route refresh yang lama, ganti dengan 3 route ini:
-    Route::post('/dewan/solo/refresh-display', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'triggerRefreshDisplay'])->name('dewan.solo.refresh');
-    Route::post('/dewan/ganda/refresh-display', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'triggerRefreshDisplay'])->name('dewan.ganda.refresh');
-    Route::post('/dewan/tunggal/refresh-display', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'triggerRefreshDisplay'])->name('dewan.tunggal.refresh');
-    Route::post('/dewan/regu/refresh-display', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'triggerRefreshDisplay'])->name('dewan.regu.refresh');
-    Route::post('/dewan/pool/refresh', [App\Http\Controllers\Admin\Dewan\PoolController::class, 'triggerRefreshDisplay'])->name('dewan.pool.refresh');
+            // Solo
+            Route::prefix('solo')->name('solo.')->group(function () {
+                Route::get('/', [SoloController::class, 'index'])->name('index');
+                Route::get('/create', [SoloController::class, 'create'])->name('create');
+                Route::post('/store', [SoloController::class, 'store'])->name('store');
 
-    // --- 2. DATA MASTER PESERTA (PER KATEGORI) ---
-    Route::prefix('peserta')->name('peserta.')->group(function () {
+                // Menampilkan Form (Method: GET)
+                Route::get('/{id}/edit', [SoloController::class, 'edit'])->name('edit');
 
-        // Solo
-        Route::prefix('solo')->name('solo.')->group(function () {
-            Route::get('/', [SoloController::class, 'index'])->name('index');
-            Route::get('/create', [SoloController::class, 'create'])->name('create');
-            Route::post('/store', [SoloController::class, 'store'])->name('store');
+                // Menyimpan Perubahan (Method: PUT/PATCH)
+                // URL-nya jangan pakai /edit lagi, cukup /{id} saja
+                Route::put('/{id}', [SoloController::class, 'update'])->name('update');
 
-            // Menampilkan Form (Method: GET)
-            Route::get('/{id}/edit', [SoloController::class, 'edit'])->name('edit');
+                Route::delete('/{id}', [SoloController::class, 'destroy'])->name('destroy');
 
-            // Menyimpan Perubahan (Method: PUT/PATCH)
-            // URL-nya jangan pakai /edit lagi, cukup /{id} saja
-            Route::put('/{id}', [SoloController::class, 'update'])->name('update');
+            });
+            Route::prefix('pool')->name('pool.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'index'])->name('index');
+                Route::get('/create', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'create'])->name('create');
+                Route::post('/store', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'store'])->name('store');
+                Route::get('/{id}/edit', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'update'])->name('update');
+                Route::delete('/{id}', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'destroy'])->name('destroy');
+            });
 
-            Route::delete('/{id}', [SoloController::class, 'destroy'])->name('destroy');
+            // Ganda (Disederhanakan agar tidak double prefix)
+            Route::prefix('ganda')->name('ganda.')->group(function () {
+                Route::get('/', [GandaController::class, 'index'])->name('index');
+                Route::get('/create', [GandaController::class, 'create'])->name('create');
+                Route::post('/store', [GandaController::class, 'store'])->name('store');
+                Route::get('/{id}/edit', [GandaController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [GandaController::class, 'update'])->name('update');
+                Route::delete('/{id}', [GandaController::class, 'destroy'])->name('destroy');
+            });
 
+            // Tunggal (Saran: samakan strukturnya agar rapi)
+            Route::prefix('tunggal')->name('tunggal.')->group(function () {
+                Route::get('/', [TunggalController::class, 'index'])->name('index');
+                Route::get('/create', [TunggalController::class, 'create'])->name('create');
+                Route::get('/{id}/edit', [TunggalController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [TunggalController::class, 'update'])->name('update');
+                Route::post('/store', [TunggalController::class, 'store'])->name('store');
+                Route::delete('/{id}', [TunggalController::class, 'destroy'])->name('destroy');
+            });
+
+            // Regu
+            Route::prefix('regu')->name('regu.')->group(function () {
+                Route::get('/', [ReguController::class, 'index'])->name('index');
+                Route::get('/create', [ReguController::class, 'create'])->name('create');
+                Route::post('/store', [ReguController::class, 'store'])->name('store');
+                Route::get('/{id}/edit', [ReguController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [ReguController::class, 'update'])->name('update');
+                Route::delete('/{id}', [ReguController::class, 'destroy'])->name('destroy');
+            });
         });
-        Route::prefix('pool')->name('pool.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'index'])->name('index');
-            Route::get('/create', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'create'])->name('create');
-            Route::post('/store', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'store'])->name('store');
-            Route::get('/{id}/edit', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'update'])->name('update');
-            Route::delete('/{id}', [App\Http\Controllers\Admin\Peserta\PoolController::class, 'destroy'])->name('destroy');
+
+        // --- MANAJEMEN PERTANDINGAN (OPERASIONAL) ---
+        Route::prefix('manajemen')->name('manajemen.')->group(function () {
+            Route::get('/solo', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'index'])->name('solo.index');
+            Route::get('/solo/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'mulai'])->name('solo.mulai');
+            Route::post('/solo/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'updateHukuman'])->name('solo.hukuman');
+            Route::post('/solo/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'diskualifikasi'])->name('solo.diskualifikasi');
+            Route::post('/solo/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'updateTimer'])->name('solo.update-timer');
+            Route::get('/solo/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'getStatus']);
+            Route::get('/solo/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'getJuriScores']);
+            Route::post('/solo/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'toggleStatusJuri']);
+            Route::post('/solo/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'toggleStatusInput']);
+
+            Route::get('/ganda', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'index'])->name('ganda.index');
+            Route::get('/ganda/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'mulai'])->name('ganda.mulai');
+            Route::post('/ganda/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateHukuman'])->name('ganda.hukuman');
+            Route::post('/ganda/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'diskualifikasi'])->name('ganda.diskualifikasi');
+            Route::post('/ganda/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateTimer'])->name('ganda.update-timer');
+            Route::get('/ganda/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getStatus']);
+            Route::get('/ganda/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getJuriScores']);
+            Route::post('/ganda/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusJuri']);
+            Route::post('/ganda/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusInput']);
+
+            Route::get('/tunggal', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'index'])->name('tunggal.index');
+            Route::get('/tunggal/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'mulai'])->name('tunggal.mulai');
+            Route::post('/tunggal/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateHukuman'])->name('tunggal.hukuman');
+            Route::post('/tunggal/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'diskualifikasi'])->name('tunggal.diskualifikasi');
+            Route::post('/tunggal/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateTimer'])->name('tunggal.update-timer');
+            Route::get('/tunggal/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getStatus']);
+            Route::get('/tunggal/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getJuriScores']);
+            Route::post('/tunggal/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusJuriTunggal']);
+            Route::post('/tunggal/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusInput']);
+
+            Route::get('/regu', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'index'])->name('regu.index');
+            Route::get('/regu/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'mulai'])->name('regu.mulai');
+            Route::post('/regu/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'updateHukuman'])->name('regu.hukuman');
+            Route::post('/regu/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'diskualifikasi'])->name('regu.diskualifikasi');
+            Route::post('/regu/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'updateTimer'])->name('regu.update-timer');
+            Route::get('/regu/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'getStatus']);
+            Route::get('/regu/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'getJuriScores']);
+            Route::post('/regu/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusJuriRegu']);
+            Route::post('/regu/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusInput']);
+
+            // Route untuk menjalankan partai pool dari halaman manajemen
+            Route::post('/pool/{id_partai}/mulai/{id_detail}', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'mulai'])->name('pool.mulai');
+
+            Route::resource('kelas', KelasController::class);
+            Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('admin.manajemen.kelas.destroy');
+            Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('admin.manajemen.kelas.update');
+            Route::get('/pool', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'index'])->name('pool.index');
         });
 
-        // Ganda (Disederhanakan agar tidak double prefix)
-        Route::prefix('ganda')->name('ganda.')->group(function () {
-            Route::get('/', [GandaController::class, 'index'])->name('index');
-            Route::get('/create', [GandaController::class, 'create'])->name('create');
-            Route::post('/store', [GandaController::class, 'store'])->name('store');
-            Route::get('/{id}/edit', [GandaController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [GandaController::class, 'update'])->name('update');
-            Route::delete('/{id}', [GandaController::class, 'destroy'])->name('destroy');
+
+
+        // --- HASIL PERTANDINGAN (LAPORAN) ---
+        Route::prefix('hasil')->name('hasil.')->group(function () {
+            Route::get('/solo', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'index'])->name('solo.index');
+            Route::get('/solo/export-pdf', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'exportPdf'])->name('solo.export-pdf');
+            Route::post('/solo/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tetapkanPemenang'])->name('solo.tetapkan-pemenang');
+            Route::post('/solo/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tutupDisplay'])->name('solo.tutup-display');
+
+
+            Route::get('/ganda', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'index'])->name('ganda.index');
+            Route::get('/ganda/export-pdf', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'exportPdf'])->name('ganda.export-pdf');
+            Route::post('/ganda/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tetapkanPemenang'])->name('ganda.tetapkan-pemenang');
+            Route::post('/ganda/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tutupDisplay'])->name('ganda.tutup-display');
+
+            Route::get('/tunggal', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'index'])->name('tunggal.index');
+            Route::get('/tunggal/export-pdf', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'exportPdf'])->name('tunggal.export-pdf');
+            Route::post('/tunggal/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tetapkanPemenang'])->name('tunggal.tetapkan-pemenang');
+            Route::post('/tunggal/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tutupDisplay'])->name('tunggal.tutup-display');
+
+
+            Route::get('/regu', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'index'])->name('regu.index');
+            Route::get('/regu/export-pdf', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'exportPdf'])->name('regu.export-pdf');
+            Route::post('/regu/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'tetapkanPemenang'])->name('regu.tetapkan-pemenang');
+            Route::post('/regu/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'tutupDisplay'])->name('regu.tutup-display');
+
+            Route::get('/pool', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'index'])->name('pool.index');
+            Route::post('/pool/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tetapkanPemenang'])->name('pool.tetapkan');
+            Route::post('/pool/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tutupDisplay'])->name('pool.tutup');
         });
 
-        // Tunggal (Saran: samakan strukturnya agar rapi)
-        Route::prefix('tunggal')->name('tunggal.')->group(function () {
-            Route::get('/', [TunggalController::class, 'index'])->name('index');
-            Route::get('/create', [TunggalController::class, 'create'])->name('create');
-            Route::get('/{id}/edit', [TunggalController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [TunggalController::class, 'update'])->name('update');
-            Route::post('/store', [TunggalController::class, 'store'])->name('store');
-            Route::delete('/{id}', [TunggalController::class, 'destroy'])->name('destroy');
-        });
-
-        // Regu
-        Route::prefix('regu')->name('regu.')->group(function () {
-            Route::get('/', [ReguController::class, 'index'])->name('index');
-            Route::get('/create', [ReguController::class, 'create'])->name('create');
-            Route::post('/store', [ReguController::class, 'store'])->name('store');
-            Route::get('/{id}/edit', [ReguController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [ReguController::class, 'update'])->name('update');
-            Route::delete('/{id}', [ReguController::class, 'destroy'])->name('destroy');
-        });
     });
-
-    // --- MANAJEMEN PERTANDINGAN (OPERASIONAL) ---
-    Route::prefix('manajemen')->name('manajemen.')->group(function () {
-        Route::get('/solo', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'index'])->name('solo.index');
-        Route::get('/solo/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'mulai'])->name('solo.mulai');
-        Route::post('/solo/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'updateHukuman'])->name('solo.hukuman');
-        Route::post('/solo/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'diskualifikasi'])->name('solo.diskualifikasi');
-        Route::post('/solo/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\SoloController::class, 'updateTimer'])->name('solo.update-timer');
-        Route::get('/solo/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'getStatus']);
-        Route::get('/solo/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'getJuriScores']);
-        Route::post('/solo/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'toggleStatusJuri']);
-        Route::post('/solo/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'toggleStatusInput']);
-
-        Route::get('/ganda', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'index'])->name('ganda.index');
-        Route::get('/ganda/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'mulai'])->name('ganda.mulai');
-        Route::post('/ganda/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateHukuman'])->name('ganda.hukuman');
-        Route::post('/ganda/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'diskualifikasi'])->name('ganda.diskualifikasi');
-        Route::post('/ganda/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'updateTimer'])->name('ganda.update-timer');
-        Route::get('/ganda/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getStatus']);
-        Route::get('/ganda/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'getJuriScores']);
-        Route::post('/ganda/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusJuri']);
-        Route::post('/ganda/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'toggleStatusInput']);
-
-        Route::get('/tunggal', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'index'])->name('tunggal.index');
-        Route::get('/tunggal/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'mulai'])->name('tunggal.mulai');
-        Route::post('/tunggal/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateHukuman'])->name('tunggal.hukuman');
-        Route::post('/tunggal/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'diskualifikasi'])->name('tunggal.diskualifikasi');
-        Route::post('/tunggal/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'updateTimer'])->name('tunggal.update-timer');
-        Route::get('/tunggal/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getStatus']);
-        Route::get('/tunggal/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'getJuriScores']);
-        Route::post('/tunggal/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusJuriTunggal']);
-        Route::post('/tunggal/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'toggleStatusInput']);
-
-        Route::get('/regu', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'index'])->name('regu.index');
-        Route::get('/regu/mulai/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'mulai'])->name('regu.mulai');
-        Route::post('/regu/hukuman/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'updateHukuman'])->name('regu.hukuman');
-        Route::post('/regu/diskualifikasi/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'diskualifikasi'])->name('regu.diskualifikasi');
-        Route::post('/regu/update-timer/{id}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'updateTimer'])->name('regu.update-timer');
-        Route::get('/regu/get-status/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'getStatus']);
-        Route::get('/regu/get-juri-scores/{id}/{sudut}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'getJuriScores']);
-        Route::post('/regu/toggle-juri/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusJuriRegu']);
-        Route::post('/regu/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'toggleStatusInput']);
-
-        // Route untuk menjalankan partai pool dari halaman manajemen
-        Route::post('/pool/{id_partai}/mulai/{id_detail}', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'mulai'])->name('pool.mulai');
-
-        Route::resource('kelas', KelasController::class);
-        Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('admin.manajemen.kelas.destroy');
-        Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('admin.manajemen.kelas.update');
-        Route::get('/pool', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'index'])->name('pool.index');
-    });
-
-
-
-    // --- HASIL PERTANDINGAN (LAPORAN) ---
-    Route::prefix('hasil')->name('hasil.')->group(function () {
-        Route::get('/solo', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'index'])->name('solo.index');
-        Route::get('/solo/export-pdf', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'exportPdf'])->name('solo.export-pdf');
-        Route::post('/solo/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tetapkanPemenang'])->name('solo.tetapkan-pemenang');
-        Route::post('/solo/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\SoloController::class, 'tutupDisplay'])->name('solo.tutup-display');
-
-
-        Route::get('/ganda', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'index'])->name('ganda.index');
-        Route::get('/ganda/export-pdf', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'exportPdf'])->name('ganda.export-pdf');
-        Route::post('/ganda/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tetapkanPemenang'])->name('ganda.tetapkan-pemenang');
-        Route::post('/ganda/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\GandaController::class, 'tutupDisplay'])->name('ganda.tutup-display');
-
-        Route::get('/tunggal', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'index'])->name('tunggal.index');
-        Route::get('/tunggal/export-pdf', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'exportPdf'])->name('tunggal.export-pdf');
-        Route::post('/tunggal/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tetapkanPemenang'])->name('tunggal.tetapkan-pemenang');
-        Route::post('/tunggal/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\TunggalController::class, 'tutupDisplay'])->name('tunggal.tutup-display');
-
-
-        Route::get('/regu', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'index'])->name('regu.index');
-        Route::get('/regu/export-pdf', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'exportPdf'])->name('regu.export-pdf');
-        Route::post('/regu/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'tetapkanPemenang'])->name('regu.tetapkan-pemenang');
-        Route::post('/regu/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\ReguController::class, 'tutupDisplay'])->name('regu.tutup-display');
-    });
-
-});
 
 // ==============================================
 // ROUTE JURI (TABLET) - AUTO DETECT PARTAI AKTIF
@@ -227,11 +231,11 @@ Route::get('/api/cek-partai-aktif', function () {
 });
 
 
-    Route::get('/juri/dashboard', function () {
+Route::get('/juri/dashboard', function () {
 
-        return view('pages.juri.dashboard');
+    return view('pages.juri.dashboard');
 
-    })->name('juri.dashboard');
+})->name('juri.dashboard');
 
 
 Route::post('/admin/reset/semua', [\App\Http\Controllers\Admin\ResetController::class, 'resetSemua'])->name('admin.reset.semua');
