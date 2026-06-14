@@ -70,6 +70,8 @@
                     <div
                         class="grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                         <div class="col-span-1 flex flex-col items-center">
+                            <input type="hidden" name="peserta[{{ $index }}][id_detail]"
+                                value="{{ $dp->id_detail }}">
                             <div
                                 class="w-8 h-8 flex items-center justify-center bg-gray-900 text-white rounded-lg font-bold text-sm">
                                 {{ $loop->iteration }}</div>

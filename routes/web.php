@@ -214,6 +214,7 @@ Route::prefix('admin')
             Route::get('/pool', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'index'])->name('pool.index');
             Route::post('/pool/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tetapkanPemenang'])->name('pool.tetapkan');
             Route::post('/pool/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tutupDisplay'])->name('pool.tutup');
+            Route::get('/pool/export-pdf', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'exportPdf'])->name('pool.export-pdf');
         });
 
     });

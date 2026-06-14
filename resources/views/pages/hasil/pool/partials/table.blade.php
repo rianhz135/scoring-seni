@@ -1,16 +1,16 @@
 {{-- resources/views/pages/hasil/pool/partials/table.blade.php --}}
 
 <div class="space-y-6">
-    {{-- Header Tabel Utama (Statis atas dengan ukuran kolom baru) --}}
+    {{-- Header Tabel Utama --}}
     <div class="rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-gray-50">
         <table class="w-full table-fixed text-left text-xs font-bold uppercase tracking-wide text-gray-700">
             <colgroup>
-                <col style="width: 70px;"> {{-- Rank --}}
-                <col style="width: 240px;"> {{-- Peserta / Kontingen --}}
-                <col style="width: 90px;"> {{-- Waktu Tampil --}}
-                <col style="width: 90px;"> {{-- Median --}}
-                <col style="width: 150px;"> {{-- Deviasi (Diperlebar agar tidak mepet) --}}
-                <col style="width: 100px;"> {{-- Hukuman --}}
+                <col style="width: 60px;"> {{-- Rank (Dipersempit sedikit) --}}
+                <col style="width: 230px;"> {{-- Peserta / Kontingen --}}
+                <col style="width: 80px;"> {{-- Waktu Tampil (Dipersempit) --}}
+                <col style="width: 80px;"> {{-- Median (Dipersempit) --}}
+                <col style="width: 220px;"> {{-- Deviasi (Diperlebar Maksimal) --}}
+                <col style="width: 80px;"> {{-- Hukuman (Dipersempit, tidak butuh space besar) --}}
                 <col> {{-- Total Nilai --}}
             </colgroup>
             <thead>
@@ -59,21 +59,31 @@
 
             <table class="w-full table-fixed text-left text-sm">
                 <colgroup>
-                    <col style="width: 70px;">
-                    <col style="width: 240px;">
-                    <col style="width: 90px;">
-                    <col style="width: 90px;">
-                    <col style="width: 150px;"> {{-- Lebar kolom disamakan persis dengan head --}}
-                    <col style="width: 100px;">
+                    <col style="width: 60px;">
+                    <col style="width: 230px;">
+                    <col style="width: 80px;">
+                    <col style="width: 80px;">
+                    <col style="width: 220px;">
+                    <col style="width: 80px;">
                     <col>
                 </colgroup>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($partai->detail_peserta as $index => $row)
-                        @php $rank = $loop->iteration; @endphp
-                        <tr class="hover:bg-blue-50/30 transition-colors">
+                        @php
+                            $rank = $loop->iteration;
+                            $isDisq = $row->is_disqualifikasi == 1;
+                        @endphp
+
+                        {{-- Warnai baris merah sedikit jika dia diskualifikasi --}}
+                        <tr
+                            class="{{ $isDisq ? 'bg-red-50/40 hover:bg-red-100/50' : 'hover:bg-blue-50/30' }} transition-colors">
+
                             {{-- Kolom Medali / Peringkat --}}
                             <td class="px-4 py-4 text-center">
-                                @if ($rank == 1)
+                                @if ($isDisq)
+                                    <span
+                                        class="text-[10px] font-black text-red-600 bg-red-100 px-2 py-1 rounded border border-red-200">DISQ</span>
+                                @elseif ($rank == 1)
                                     <span
                                         class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-700 font-black text-sm border border-yellow-200 shadow-sm">1</span>
                                 @elseif($rank == 2)
@@ -89,7 +99,8 @@
 
                             {{-- Identitas Peserta --}}
                             <td class="px-4 py-4">
-                                <div class="font-bold text-gray-900 uppercase tracking-wide text-xs truncate">
+                                <div
+                                    class="font-bold text-gray-900 uppercase tracking-wide text-xs truncate {{ $isDisq ? 'line-through opacity-70' : '' }}">
                                     {{ $row->peserta->nama_peserta ?? 'NAMA KOSONG' }}
                                 </div>
                                 <div
@@ -106,19 +117,17 @@
                                 </div>
                             </td>
 
-                            {{-- Format Waktu Aman (Mendukung detik murni maupun string) --}}
+                            {{-- Format Waktu --}}
                             <td class="px-4 py-4 text-center">
                                 @php
                                     $rawWaktu = $row->waktu_tampil;
                                     if (is_numeric($rawWaktu)) {
-                                        // Jika dari DB berbentuk angka detik (misal: 180)
                                         $menit = floor($rawWaktu / 60);
                                         $detik = $rawWaktu % 60;
                                         $waktuFormatted = sprintf('%02d:%02d', $menit, $detik);
                                     } elseif (empty($rawWaktu)) {
                                         $waktuFormatted = '00:00';
                                     } else {
-                                        // Jika dari DB sudah berformat teks (misal: "02:55")
                                         $waktuFormatted = $rawWaktu;
                                     }
                                 @endphp
@@ -133,9 +142,9 @@
                                 {{ number_format($row->nilai_median, 3) }}
                             </td>
 
-                            {{-- Nilai Deviasi Panjang (Aman & Berjarak Luas) --}}
+                            {{-- Nilai Deviasi (DIPERBAIKI: Hapus pemaksa baris baru, gunakan tracking-tighter agar huruf agak rapat) --}}
                             <td
-                                class="px-4 py-4 text-center font-mono text-xs font-bold text-gray-500 break-all whitespace-normal">
+                                class="px-4 py-4 text-center font-black text-gray-700 whitespace-nowrap tracking-tighter">
                                 {{ $row->nilai_deviasi }}
                             </td>
 
@@ -146,9 +155,15 @@
 
                             {{-- Total Skor Akhir --}}
                             <td class="px-4 py-4 text-right pr-6">
-                                <span class="text-base font-black text-blue-600 tracking-wider">
-                                    {{ number_format($row->total_nilai, 3) }}
-                                </span>
+                                @if ($isDisq)
+                                    <span class="text-base font-black text-red-600 tracking-wider">
+                                        DISQ
+                                    </span>
+                                @else
+                                    <span class="text-base font-black text-blue-600 tracking-wider">
+                                        {{ number_format($row->total_nilai, 3) }}
+                                    </span>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

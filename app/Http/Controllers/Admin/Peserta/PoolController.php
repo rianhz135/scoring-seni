@@ -108,6 +108,14 @@ class PoolController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'no_partai' => 'required|string',
+            'id_kategori' => 'required',
+            'id_kelas' => 'required',
+            'peserta.*.nama' => 'required|string',
+            'peserta.*.kontingen' => 'required|string',
+        ]);
+
         $partai = Partai::findOrFail($id);
 
         DB::transaction(function () use ($request, $partai) {
@@ -118,32 +126,66 @@ class PoolController extends Controller
                 'id_kelas' => $request->id_kelas,
             ]);
 
-            // 2. Ambil ID peserta lama untuk dibersihkan
-            $oldParticipantIds = $partai->detail_peserta->pluck('id_peserta');
+            // Array untuk mencatat id_detail yang dipertahankan/tidak dihapus
+            $keptDetailIds = [];
 
-            // 3. Hapus detail lama (relasi)
-            $partai->detail_peserta()->delete();
-
-            // 4. Hapus data atlet lama (optional: jika atlet tidak dipakai di partai lain)
-            Peserta::whereIn('id_peserta', $oldParticipantIds)->delete();
-
-            // 5. Masukkan data baru dari form
+            // 2. Loop data peserta dari form
             foreach ($request->peserta as $index => $data) {
-                $atlet = Peserta::create([
-                    'nama_peserta' => strtoupper($data['nama']),
-                    'kontingen' => strtoupper($data['kontingen']),
-                ]);
+                // Jika form mengirimkan 'id_detail', berarti ini peserta lama yang di-edit
+                if (isset($data['id_detail']) && !empty($data['id_detail'])) {
+                    $detail = DetailPesertaTanding::find($data['id_detail']);
 
-                DetailPesertaTanding::create([
-                    'id_partai' => $partai->id_partai,
-                    'id_peserta' => $atlet->id_peserta,
-                    'no_urut' => $index + 1, // Reset no urut agar rapi
-                    'sudut' => null,
-                    'total_nilai' => $data['total_nilai'] ?? 0
-                ]);
+                    if ($detail) {
+                        // Update nama & kontingen saja
+                        Peserta::where('id_peserta', $detail->id_peserta)->update([
+                            'nama_peserta' => strtoupper($data['nama']),
+                            'kontingen' => strtoupper($data['kontingen']),
+                        ]);
+
+                        // Update nomor urut saja (JANGAN sentuh total_nilai dll)
+                        $detail->update([
+                            'no_urut' => $index + 1
+                        ]);
+
+                        $keptDetailIds[] = $detail->id_detail;
+                    }
+                } else {
+                    // Jika TIDAK ADA 'id_detail', berarti ini tambah PESERTA BARU
+                    $atlet = Peserta::create([
+                        'nama_peserta' => strtoupper($data['nama']),
+                        'kontingen' => strtoupper($data['kontingen']),
+                    ]);
+
+                    $newDetail = DetailPesertaTanding::create([
+                        'id_partai' => $partai->id_partai,
+                        'id_peserta' => $atlet->id_peserta,
+                        'no_urut' => $index + 1,
+                        'sudut' => null,
+                        'total_nilai' => 0
+                    ]);
+
+                    $keptDetailIds[] = $newDetail->id_detail;
+                }
+            }
+
+            // 3. Hapus peserta yang di-delete/dihapus dari form oleh admin
+            // (Hanya menghapus yang id_detail-nya tidak ada di dalam $keptDetailIds)
+            $detailsToDelete = DetailPesertaTanding::where('id_partai', $partai->id_partai)
+                ->whereNotIn('id_detail', $keptDetailIds)
+                ->get();
+
+            foreach ($detailsToDelete as $del) {
+                // Simpan ID peserta sebelum detailnya dihapus
+                $idPesertaUntukDihapus = $del->id_peserta;
+
+                // 1. HAPUS CHILD DULU (Detail Peserta Tanding)
+                $del->delete();
+
+                // 2. BARU HAPUS PARENT-NYA (Peserta / Atlet)
+                Peserta::where('id_peserta', $idPesertaUntukDihapus)->delete();
             }
         });
 
-        return redirect()->route('admin.peserta.pool.index')->with('success', 'Data Pool berhasil diperbarui');
+        return redirect()->route('admin.peserta.pool.index')->with('success', 'Data Pool berhasil diperbarui tanpa mereset nilai!');
     }
 }
