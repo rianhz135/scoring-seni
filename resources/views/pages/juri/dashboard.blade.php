@@ -10,10 +10,10 @@
 
 <body class="min-h-screen bg-slate-900 p-6">
 
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-7xl mx-auto">
 
         {{-- HEADER --}}
-        <div class="mb-8 flex items-center justify-between gap-4 flex-wrap">
+        <div class="mb-10 flex items-center justify-between gap-4 flex-wrap">
             <div>
                 <h1 class="text-4xl font-black text-white tracking-tight">DASHBOARD JURI</h1>
                 <p class="text-slate-400 mt-2 font-medium">Pilih kategori penilaian pertandingan</p>
@@ -25,7 +25,7 @@
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 flex items-center gap-4">
                     <div>
                         <p class="text-slate-400 text-xs uppercase font-bold">Login Sebagai</p>
-                        <h2 class="text-base font-black text-white">{{ auth()->user()->name }}</h2>
+                        <h2 class="text-base font-black text-white">{{ auth()->user()->name ?? 'Juri' }}</h2>
                     </div>
                 </div>
 
@@ -41,68 +41,122 @@
             </div>
         </div>
 
-        {{-- MENU KATEGORI --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="menu-kategori">
+        {{-- MENU KATEGORI UTAMA --}}
+        <div id="menu-kategori" class="flex flex-col gap-10">
 
-            {{-- SOLO --}}
-            <button onclick="bukaModal('solo', 'SOLO', '🥋', 'indigo')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
-                        <h2 class="text-4xl font-black text-slate-800 mt-2">SOLO</h2>
-                    </div>
-                    <div
-                        class="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center text-3xl group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                        🥋
-                    </div>
+            {{-- ============================================== --}}
+            {{-- BARIS PERTAMA : SISTEM POOL --}}
+            {{-- ============================================== --}}
+            <div>
+                <div class="flex items-center gap-6 mb-5">
+                    <h3 class="text-xl font-black text-slate-300 tracking-widest uppercase">Sistem Pool</h3>
+                    <div class="h-px bg-slate-700 flex-1"></div>
                 </div>
-            </button>
 
-            {{-- GANDA --}}
-            <button onclick="bukaModal('ganda', 'GANDA', '👥', 'emerald')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
-                        <h2 class="text-4xl font-black text-slate-800 mt-2">GANDA</h2>
-                    </div>
-                    <div
-                        class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-3xl group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                        👥
-                    </div>
-                </div>
-            </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- 1. POOL SOLO GANDA --}}
+                    <button onclick="bukaModal('solo-ganda', 'POOL SOLO GANDA', '🎭', 'cyan')"
+                        class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-3xl font-black text-slate-800 mt-2">SOLO GANDA</h2>
+                            </div>
+                            <div
+                                class="w-16 h-16 rounded-2xl bg-cyan-100 flex items-center justify-center text-3xl group-hover:bg-cyan-500 group-hover:text-white transition-all shrink-0">
+                                🎭
+                            </div>
+                        </div>
+                    </button>
 
-            {{-- TUNGGAL --}}
-            <button onclick="bukaModal('tunggal', 'TUNGGAL', '⚔️', 'orange')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
-                        <h2 class="text-4xl font-black text-slate-800 mt-2">TUNGGAL</h2>
-                    </div>
-                    <div
-                        class="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center text-3xl group-hover:bg-orange-500 group-hover:text-white transition-all">
-                        ⚔️
-                    </div>
+                    {{-- 2. POOL TUNGGAL REGU --}}
+                    <button onclick="bukaModal('tunggal-regu', 'POOL TUNGGAL REGU', '🎪', 'fuchsia')"
+                        class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-3xl font-black text-slate-800 mt-2">TUNGGAL REGU</h2>
+                            </div>
+                            <div
+                                class="w-16 h-16 rounded-2xl bg-fuchsia-100 flex items-center justify-center text-3xl group-hover:bg-fuchsia-500 group-hover:text-white transition-all shrink-0">
+                                🎪
+                            </div>
+                        </div>
+                    </button>
                 </div>
-            </button>
+            </div>
 
-            {{-- REGU --}}
-            <button onclick="bukaModal('regu', 'REGU', '🛡️', 'red')"
-                class="group bg-white rounded-3xl p-8 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
-                        <h2 class="text-4xl font-black text-slate-800 mt-2">REGU</h2>
-                    </div>
-                    <div
-                        class="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center text-3xl group-hover:bg-red-500 group-hover:text-white transition-all">
-                        🛡️
-                    </div>
+            {{-- ============================================== --}}
+            {{-- BARIS KEDUA : SISTEM BATTLE --}}
+            {{-- ============================================== --}}
+            <div>
+                <div class="flex items-center gap-6 mb-5">
+                    <h3 class="text-xl font-black text-slate-300 tracking-widest uppercase">Sistem Battle</h3>
+                    <div class="h-px bg-slate-700 flex-1"></div>
                 </div>
-            </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {{-- 3. SOLO --}}
+                    <button onclick="bukaModal('solo', 'SOLO (BATTLE)', '🥋', 'indigo')"
+                        class="group bg-white rounded-3xl p-6 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-2xl font-black text-slate-800 mt-1">SOLO</h2>
+                            </div>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center text-2xl group-hover:bg-indigo-500 group-hover:text-white transition-all shrink-0">
+                                🥋
+                            </div>
+                        </div>
+                    </button>
+
+                    {{-- 4. GANDA --}}
+                    <button onclick="bukaModal('ganda', 'GANDA (BATTLE)', '👥', 'emerald')"
+                        class="group bg-white rounded-3xl p-6 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-2xl font-black text-slate-800 mt-1">GANDA</h2>
+                            </div>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0">
+                                👥
+                            </div>
+                        </div>
+                    </button>
+
+                    {{-- 5. TUNGGAL --}}
+                    <button onclick="bukaModal('tunggal', 'TUNGGAL (BATTLE)', '⚔️', 'orange')"
+                        class="group bg-white rounded-3xl p-6 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-2xl font-black text-slate-800 mt-1">TUNGGAL</h2>
+                            </div>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl group-hover:bg-orange-500 group-hover:text-white transition-all shrink-0">
+                                ⚔️
+                            </div>
+                        </div>
+                    </button>
+
+                    {{-- 6. REGU --}}
+                    <button onclick="bukaModal('regu', 'REGU (BATTLE)', '🛡️', 'red')"
+                        class="group bg-white rounded-3xl p-6 hover:scale-[1.02] transition-all shadow-2xl text-left cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 font-bold uppercase text-sm">Kategori</p>
+                                <h2 class="text-2xl font-black text-slate-800 mt-1">REGU</h2>
+                            </div>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center text-2xl group-hover:bg-red-500 group-hover:text-white transition-all shrink-0">
+                                🛡️
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -141,6 +195,14 @@
         let kategoriAktif = '';
 
         const warnaBg = {
+            cyan: {
+                normal: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
+                hover: 'hover:bg-cyan-500 hover:text-white hover:border-cyan-500'
+            },
+            fuchsia: {
+                normal: 'bg-fuchsia-500/20 border-fuchsia-500/30 text-fuchsia-300',
+                hover: 'hover:bg-fuchsia-500 hover:text-white hover:border-fuchsia-500'
+            },
             indigo: {
                 normal: 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300',
                 hover: 'hover:bg-indigo-500 hover:text-white hover:border-indigo-500'
@@ -169,17 +231,8 @@
 
             const w = warnaBg[warna] || warnaBg['indigo'];
 
-            // Looping juri 1-6 (Sesuaikan angka maksimal jika juri Anda berjumlah 5 atau 10)
             for (let i = 1; i <= 6; i++) {
-                
-                // --- PERBAIKAN STRUKTUR ROUTE DISINI ---
                 let url = `/juri/${kategori}/${i}`;
-                
-                // Jika kategori yang dipilih adalah solo atau ganda, alihkan ke rute gabungan Anda
-                if (kategori === 'solo' || kategori === 'ganda') {
-                    url = `/juri/solo-ganda/${i}`;
-                }
-                // ----------------------------------------
 
                 const btn = document.createElement('a');
                 btn.href = url;
@@ -200,7 +253,6 @@
             document.getElementById('modal-juri').classList.remove('flex');
         }
 
-        // Tutup modal jika klik di luar modal-content
         document.getElementById('modal-juri').addEventListener('click', function(e) {
             if (e.target === this) tutupModal();
         });

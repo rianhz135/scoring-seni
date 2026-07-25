@@ -458,12 +458,62 @@ Route::get('/juri/solo-ganda/{no_juri}', function ($no_juri) {
     ));
 
 })->name('juri.solo-ganda');
+Route::get('/juri/tunggal-regu/{no_juri}', function ($no_juri) {
+
+    // 1. Cari partai TUNGGAL atau REGU yang detailnya SEDANG BERTANDING (status_mulai = 1)
+    $partai = \App\Models\Partai::with(['kelas', 'kategori', 'detail_peserta.peserta'])
+        ->whereHas('kategori', function ($q) {
+            $q->where('nama_kategori', 'LIKE', '%TUNGGAL%')
+                ->orWhere('nama_kategori', 'LIKE', '%REGU%');
+        })
+        ->whereHas('detail_peserta', function ($q) {
+            $q->where('status_mulai', 1);
+        })->first();
+
+    $aktif = null;
+    $inputJuri = null; // Diubah menjadi inputJuri agar sinkron dengan file Blade tunggal_regu
+    $sudut = null;
+    $kontrol = null;
+
+    if ($partai) {
+        // 2. Ambil detail peserta yang sedang tampil (status_mulai = 1)
+        $aktif = $partai->detail_peserta->where('status_mulai', 1)->first();
+
+        // Meskipun sistem pool/netral, variabel sudut tetap diambil untuk kebutuhan DB
+        $sudut = strtolower($aktif->sudut ?? '');
+
+        // 3. Tarik nilai juri (Nilai A dan B) dari database berdasarkan id_detail peserta yang aktif
+        $inputJuri = \Illuminate\Support\Facades\DB::table('input_nilai_juri')
+            ->where('id_detail', $aktif->id_detail)
+            ->where('no_juri', $no_juri)
+            ->first();
+
+        // 4. Ambil data kontrol juri (ON/OFF & Status Input) spesifik untuk juri ini
+        $kontrol = \Illuminate\Support\Facades\DB::table('status_kontrol_juri')
+            ->where('id_partai', $partai->id_partai)
+            ->where('no_juri', $no_juri)
+            ->first();
+    }
+
+    // Mengarah ke view tunggal_regu (Netral/Tanpa Warna Sudut Dominan)
+    return view('pages.juri.tunggal_regu', compact(
+        'partai',
+        'aktif',
+        'sudut',
+        'no_juri',
+        'inputJuri',
+        'kontrol'
+    ));
+
+})->name('juri.tunggal-regu');
 
 // Route Simpan Nilai (Tetap)
 Route::post('/juri/solo/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'simpanNilaiJuri'])->name('juri.solo.simpan');
 Route::post('/juri/ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\MatchGandaController::class, 'simpanNilaiJuri'])->name('juri.ganda.simpan');
 Route::post('/juri/solo-ganda/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'simpanNilaiPool'])
     ->name('juri.solo-ganda.simpan');
+Route::post('/juri/pool/tunggal-regu/input-nilai/{id_partai}/{no_juri}/{no_urut}', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'inputNilaiJuriTunggalRegu'])->name('juri.pool.tunggal-regu.input-nilai');
+Route::post('/juri/pool/tunggal-regu/simpan-nilai/{id_partai}/{no_juri}/{no_urut}', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'simpanNilaiJuriTunggalRegu'])->name('juri.pool.tunggal-regu.simpan-nilai-final');
 
 Route::post('/juri/tunggal/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'inputNilaiJuri'])->name('juri.tunggal.input-nilai');
 Route::post('/juri/regu/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'inputNilaiJuri'])->name('juri.regu.input-nilai');

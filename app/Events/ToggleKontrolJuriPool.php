@@ -23,9 +23,10 @@ class ToggleKontrolJuriPool implements ShouldBroadcastNow
     public $hukuman;
     public $isDisq;
     public $jenis;
+    public $noUrut; // <--- 1. TAMBAHKAN PROPERTI INI
 
-    // STRUKTUR 11 PARAMETER PERSIS SEPERTI GANDA
-    public function __construct($partaiId, $noJuri, $isOn, $statusInput, $median = null, $deviasi = null, $totalNilai = null, $sudut = null, $hukuman = 0, $isDisq = 0, $jenis = 'solo')
+    // 2. TAMBAHKAN $noUrut = 0 DI PALING BELAKANG
+    public function __construct($partaiId, $noJuri, $isOn, $statusInput, $median = null, $deviasi = null, $totalNilai = null, $sudut = null, $hukuman = 0, $isDisq = 0, $jenis = 'solo', $noUrut = 0)
     {
         $this->partaiId = $partaiId;
         $this->noJuri = $noJuri;
@@ -38,6 +39,7 @@ class ToggleKontrolJuriPool implements ShouldBroadcastNow
         $this->hukuman = $hukuman;
         $this->isDisq = $isDisq;
         $this->jenis = $jenis;
+        $this->noUrut = $noUrut; // <--- 3. DEFINISIKAN DI SINI
     }
 
     public function broadcastOn()

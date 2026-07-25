@@ -234,8 +234,8 @@
                             </td>
                             <td class="px-6 py-4 text-center"><span class="bg-gray-100 px-3 py-1 rounded text-xs font-mono font-bold">${p.waktu}</span></td>
                             <td class="px-6 py-4 text-center font-bold text-gray-700 text-base">${p.median}</td>
-                            <td class="px-6 py-4 text-center text-xs text-gray-500 font-mono">${p.deviasi}</td>
-                            <td class="px-6 py-4 text-center text-red-600 font-bold">-${p.hukuman}</td>
+                            <td class="px-6 py-4 text-center text-base text-gray-700 font-bold">${p.deviasi}</td>
+                            <td class="px-6 py-4 text-center text-red-600 font-bold text-base">-${p.hukuman}</td>
                             <td class="px-6 py-4 text-right pr-8"><span class="text-2xl font-black text-blue-600">${p.total}</span></td>
                         </tr>
                     `;

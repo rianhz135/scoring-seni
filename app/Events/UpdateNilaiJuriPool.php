@@ -17,9 +17,10 @@ class UpdateNilaiJuriPool implements ShouldBroadcastNow
     public $nilaiA, $nilaiB, $nilaiC, $skorAkhir;
     public $median, $deviasi, $totalNilai;
     public $jenis;
+    public $noUrut; // Tambahkan variabel di sini
 
-    // URUTAN DISAMAKAN PERSIS DENGAN BATTLE (GANDA)
-    public function __construct($partaiId, $noJuri, $nilaiA, $nilaiB, $nilaiC, $skorAkhir, $median, $deviasi, $totalNilai, $jenis = 'solo')
+    // PERHATIKAN: $noUrut diletakkan PALING BELAKANG dengan nilai default = 0
+    public function __construct($partaiId, $noJuri, $nilaiA, $nilaiB, $nilaiC, $skorAkhir, $median, $deviasi, $totalNilai, $jenis = 'solo', $noUrut = 0)
     {
         $this->partaiId = $partaiId;
         $this->noJuri = $noJuri;
@@ -31,6 +32,7 @@ class UpdateNilaiJuriPool implements ShouldBroadcastNow
         $this->deviasi = $deviasi;
         $this->totalNilai = $totalNilai;
         $this->jenis = $jenis;
+        $this->noUrut = $noUrut; // Definisikan di sini
     }
 
     public function broadcastOn()

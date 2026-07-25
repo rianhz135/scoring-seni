@@ -15,9 +15,9 @@ return new class extends Migration {
             $table->foreignId('id_kategori')->constrained('ref_kategori', 'id_kategori');
             $table->foreignId('id_kelas')->constrained('ref_kelas', 'id_kelas');
             $table->string('no_partai', 10);
-            $table->string('babak'); // Penyisihan, Semi Final, Final
-            $table->string('gelanggang');
-            $table->string('status_pertandingan')->default('Waiting'); // Waiting/Live/Finished
+            $table->string('babak')->nullable(); // Penyesuaian ke nullable
+            $table->string('gelanggang')->nullable(); // Penyesuaian ke nullable
+            $table->string('status_pertandingan')->default('Waiting');
             $table->string('timer_live')->default('03:00');
             $table->timestamps();
         });

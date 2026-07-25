@@ -705,7 +705,7 @@
                         </td>
                         <td class="px-6 py-6 text-center"><span class="bg-gray-100 px-4 py-2 rounded text-lg font-mono font-bold">${p.waktu}</span></td>
                         <td class="px-6 py-6 text-center font-bold text-gray-700 text-xl">${p.median}</td>
-                        <td class="px-6 py-6 text-center text-sm text-gray-500 font-mono">${p.deviasi}</td>
+                        <td class="px-6 py-6 text-center text-xl text-gray-700 font-bold">${p.deviasi}</td>
                         <td class="px-6 py-6 text-center text-red-600 font-bold text-xl">-${p.hukuman}</td>
                         <td class="px-6 py-6 text-right pr-8"><span class="text-4xl font-black text-blue-600">${p.total}</span></td>
                     </tr>

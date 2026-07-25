@@ -13,10 +13,10 @@ return new class extends Migration {
         Schema::create('input_nilai_juri', function (Blueprint $table) {
             $table->id('id_nilai');
             $table->foreignId('id_detail')->constrained('detail_peserta_tanding', 'id_detail')->onDelete('cascade');
-            $table->integer('no_juri'); // 1-6
+            $table->integer('no_juri');
             $table->decimal('nilai_a', 5, 2)->default(0.00);
             $table->decimal('nilai_b', 5, 2)->default(0.00);
-            $table->decimal('nilai_c', 5, 2)->default(0.00);
+            $table->decimal('nilai_c', 5, 2)->nullable()->default(0.00); // Penyesuaian ke nullable
             $table->decimal('skor_akhir_juri', 5, 2)->default(0.00);
             $table->timestamps();
         });
