@@ -36,6 +36,7 @@
                 :active="request()->routeIs('admin.peserta.regu.*')">Regu</x-admin.sidebar-sublink>
             <x-admin.sidebar-sublink href="{{ route('admin.peserta.pool.index') }}" :active="request()->routeIs('admin.peserta.pool.*')">Pool
                 (Seni)</x-admin.sidebar-sublink>
+            <x-admin.sidebar-sublink href="{{ route('admin.peserta.tanding.index') }}" :active="request()->routeIs('admin.peserta.tanding.*')">Tanding</x-admin.sidebar-sublink>
         </x-admin.sidebar-group>
 
         <div class="pt-3 pb-1 px-3 sidebar-section-label">

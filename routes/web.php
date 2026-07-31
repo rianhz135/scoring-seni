@@ -10,8 +10,9 @@ use App\Http\Controllers\Admin\Peserta\SoloController;
 use App\Http\Controllers\Admin\Peserta\GandaController;
 use App\Http\Controllers\Admin\Peserta\TunggalController;
 use App\Http\Controllers\Admin\Peserta\ReguController;
+use App\Http\Controllers\Admin\Peserta\TandingController;
 use App\Http\Controllers\Admin\Manajemen\KelasController;
-use App\Http\Controllers\Admin\Manajemen\MatchGandaController;
+
 
 use App\Http\Controllers\Auth\LoginController;
 
@@ -131,6 +132,15 @@ Route::prefix('admin')
                 Route::get('/{id}/edit', [ReguController::class, 'edit'])->name('edit');
                 Route::put('/{id}', [ReguController::class, 'update'])->name('update');
                 Route::delete('/{id}', [ReguController::class, 'destroy'])->name('destroy');
+            });
+
+            Route::prefix('tanding')->name('tanding.')->group(function () {
+                Route::get('/', [TandingController::class, 'index'])->name('index');
+                Route::get('/create', [TandingController::class, 'create'])->name('create');
+                Route::post('/store', [TandingController::class, 'store'])->name('store');
+                Route::get('/{id}/edit', [TandingController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [TandingController::class, 'update'])->name('update');
+                Route::delete('/{id}', [TandingController::class, 'destroy'])->name('destroy');
             });
         });
 
