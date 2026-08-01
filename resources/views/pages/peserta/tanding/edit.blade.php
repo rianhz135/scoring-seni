@@ -14,11 +14,11 @@
     </a>
 </div>
 
-{{-- Perhatikan Action mengarah ke Update dengan @method('PUT') --}}
 <form action="{{ route('admin.peserta.tanding.update', $partai->id) }}" method="POST" class="space-y-6">
     @csrf
     @method('PUT')
     
+    {{-- INFORMASI PERTANDINGAN --}}
     <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
         <div class="flex items-center gap-3 mb-6">
             <div class="p-2 bg-primary-50 rounded-lg text-primary-600">
@@ -30,35 +30,57 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {{-- Nomor Partai --}}
             <div class="space-y-2">
                 <label class="text-sm font-bold text-gray-700 uppercase">Nomor Partai</label>
                 <input type="text" name="no_partai" value="{{ $partai->no_partai }}" placeholder="Contoh: A-01" required
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm font-bold uppercase">
+                    class="w-full h-10 px-4 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm font-bold uppercase">
             </div>
 
+            {{-- FASE BABAK --}}
             <div class="space-y-2">
                 <label class="text-sm font-bold text-gray-700 uppercase">Fase Babak</label>
-                <select name="fase_babak" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 outline-none text-sm bg-white">
-                    <option value="Penyisihan" {{ $partai->fase_babak == 'Penyisihan' ? 'selected' : '' }}>Penyisihan</option>
-                    <option value="Semi" {{ $partai->fase_babak == 'Semi' ? 'selected' : '' }}>Semi Final</option>
-                    <option value="Final" {{ $partai->fase_babak == 'Final' ? 'selected' : '' }}>Final</option>
-                </select>
+                <div class="flex bg-gray-100 border border-gray-200 rounded-xl p-1 gap-1 w-full h-10 items-center">
+                    
+                    <label class="flex-1 h-full cursor-pointer relative">
+                        <input type="radio" name="fase_babak" value="Penyisihan" class="sr-only babak-radio" {{ $partai->fase_babak == 'Penyisihan' ? 'checked' : '' }} onchange="updateBabakUI()">
+                        <div class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                            Penyisihan
+                        </div>
+                    </label>
+                    
+                    <label class="flex-1 h-full cursor-pointer relative">
+                        <input type="radio" name="fase_babak" value="Semi" class="sr-only babak-radio" {{ $partai->fase_babak == 'Semi' ? 'checked' : '' }} onchange="updateBabakUI()">
+                        <div class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                            Semi
+                        </div>
+                    </label>
+
+                    <label class="flex-1 h-full cursor-pointer relative">
+                        <input type="radio" name="fase_babak" value="Final" class="sr-only babak-radio" {{ $partai->fase_babak == 'Final' ? 'checked' : '' }} onchange="updateBabakUI()">
+                        <div class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                            Final
+                        </div>
+                    </label>
+
+                </div>
             </div>
 
+            {{-- Kelas & Kategori --}}
             <div class="space-y-2">
                 <label class="text-sm font-bold text-gray-700 uppercase">Kelas & Kategori</label>
                 <input type="text" name="kelas" value="{{ $partai->kelas }}" placeholder="Contoh: Kelas A Putra" required
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm">
+                    class="w-full h-10 px-4 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm">
             </div>
         </div>
     </div>
 
     @php
-        // Cek status saat ini (Apakah terisi ID Peserta, atau Kolom Menunggu?)
         $status_biru = $partai->id_biru ? 'atlet' : 'menunggu';
         $status_merah = $partai->id_merah ? 'atlet' : 'menunggu';
     @endphp
 
+    {{-- SUDUT ATLET --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {{-- SUDUT BIRU --}}
@@ -67,8 +89,11 @@
             
             <div class="flex items-center gap-3 mb-6 relative">
                 <div class="p-2 bg-blue-600 rounded-lg text-white shadow-md shadow-blue-200">
-                    <h2 class="text-lg font-bold px-2 uppercase tracking-tight">BIRU</h2>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                 </div>
+                <h2 class="text-lg font-bold text-blue-700 uppercase tracking-tight">SUDUT BIRU</h2>
             </div>
 
             <div class="mb-5 flex gap-4 p-1 bg-gray-50 rounded-lg border border-gray-100 w-max">
@@ -114,8 +139,11 @@
 
             <div class="flex items-center gap-3 mb-6 relative">
                 <div class="p-2 bg-red-600 rounded-lg text-white shadow-md shadow-red-200">
-                    <h2 class="text-lg font-bold px-2 uppercase tracking-tight">MERAH</h2>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                 </div>
+                <h2 class="text-lg font-bold text-red-700 uppercase tracking-tight">SUDUT MERAH</h2>
             </div>
 
             <div class="mb-5 flex gap-4 p-1 bg-gray-50 rounded-lg border border-gray-100 w-max">
@@ -167,6 +195,20 @@
 
 @push('scripts')
 <script>
+    // 1. FUNGSI UNTUK MENGATUR UI TOMBOL FASE BABAK
+    function updateBabakUI() {
+        const radios = document.querySelectorAll('.babak-radio');
+        radios.forEach(radio => {
+            const labelDiv = radio.nextElementSibling;
+            if (radio.checked) {
+                labelDiv.className = "babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all bg-primary-600 text-white shadow-md";
+            } else {
+                labelDiv.className = "babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700 bg-transparent shadow-none";
+            }
+        });
+    }
+
+    // 2. FUNGSI UNTUK TOGGLE FORM SUDUT MERAH/BIRU
     function toggleSudut(sudut, type) {
         const formAtlet = document.getElementById(`form_${sudut}_atlet`);
         const formMenunggu = document.getElementById(`form_${sudut}_menunggu`);
@@ -186,8 +228,9 @@
         }
     }
 
-    // Eksekusi script ini saat halaman dimuat untuk mengatur required field pertama kali
+    // 3. JALANKAN SAAT HALAMAN DIMUAT
     document.addEventListener('DOMContentLoaded', () => {
+        updateBabakUI();
         toggleSudut('biru', '{{ $status_biru }}');
         toggleSudut('merah', '{{ $status_merah }}');
     });

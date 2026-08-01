@@ -31,27 +31,53 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{-- Nomor Partai --}}
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-gray-700 uppercase">Nomor Partai</label>
                     <input type="text" name="no_partai" placeholder="Contoh: A-01" required
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm font-bold uppercase">
+                        class="w-full h-10 px-4 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm font-bold uppercase">
                 </div>
 
+                {{-- FASE BABAK --}}
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-gray-700 uppercase">Fase Babak</label>
-                    <select name="fase_babak" required
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 outline-none text-sm bg-white">
-                        <option value="" disabled selected>Pilih Babak</option>
-                        <option value="Penyisihan">Penyisihan</option>
-                        <option value="Semi">Semi Final</option>
-                        <option value="Final">Final</option>
-                    </select>
+                    <div class="flex bg-gray-100 border border-gray-200 rounded-xl p-1 gap-1 w-full h-10 items-center">
+
+                        <label class="flex-1 h-full cursor-pointer relative">
+                            <input type="radio" name="fase_babak" value="Penyisihan" class="sr-only babak-radio" checked
+                                onchange="updateBabakUI()">
+                            <div
+                                class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                                Penyisihan
+                            </div>
+                        </label>
+
+                        <label class="flex-1 h-full cursor-pointer relative">
+                            <input type="radio" name="fase_babak" value="Semi" class="sr-only babak-radio"
+                                onchange="updateBabakUI()">
+                            <div
+                                class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                                Semi
+                            </div>
+                        </label>
+
+                        <label class="flex-1 h-full cursor-pointer relative">
+                            <input type="radio" name="fase_babak" value="Final" class="sr-only babak-radio"
+                                onchange="updateBabakUI()">
+                            <div
+                                class="babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700">
+                                Final
+                            </div>
+                        </label>
+
+                    </div>
                 </div>
 
+                {{-- Kelas & Kategori --}}
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-gray-700 uppercase">Kelas & Kategori</label>
                     <input type="text" name="kelas" placeholder="Contoh: Kelas A Putra" required
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm">
+                        class="w-full h-10 px-4 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-sm">
                 </div>
             </div>
         </div>
@@ -194,36 +220,53 @@
 
 @push('scripts')
     <script>
-        // Script untuk memunculkan/menyembunyikan form dan mengatur atribut 'required'
-        // agar form HTML5 tidak error saat disubmit jika salah satu disembunyikan.
+        // 1. FUNGSI UNTUK MENGATUR UI TOMBOL FASE BABAK
+        function updateBabakUI() {
+            const radios = document.querySelectorAll('.babak-radio');
+            radios.forEach(radio => {
+                const labelDiv = radio.nextElementSibling;
+                if (radio.checked) {
+                    // UI Saat Aktif / Terpilih (Warna Utama Solid & Teks Putih)
+                    labelDiv.className =
+                        "babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all bg-primary-600 text-white shadow-md";
+                } else {
+                    // UI Saat Tidak Aktif (Abu-abu)
+                    labelDiv.className =
+                        "babak-label h-full w-full flex items-center justify-center rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-700 bg-transparent shadow-none";
+                }
+            });
+        }
+
+        // 2. FUNGSI UNTUK SUDUT MERAH/BIRU (Kode Anda sebelumnya)
         function toggleSudut(sudut, type) {
             const formAtlet = document.getElementById(`form_${sudut}_atlet`);
             const formMenunggu = document.getElementById(`form_${sudut}_menunggu`);
-
             const inputsAtlet = formAtlet.querySelectorAll('input, select');
             const inputsMenunggu = formMenunggu.querySelectorAll('input');
 
             if (type === 'atlet') {
                 formAtlet.classList.remove('hidden');
                 formMenunggu.classList.add('hidden');
-
-                // Wajibkan input atlet, hilangkan wajib input tunggu
                 inputsAtlet.forEach(el => el.setAttribute('required', 'required'));
                 inputsMenunggu.forEach(el => {
                     el.removeAttribute('required');
-                    el.value = ''; // Kosongkan nilai
+                    el.value = '';
                 });
             } else {
                 formAtlet.classList.add('hidden');
                 formMenunggu.classList.remove('hidden');
-
-                // Wajibkan input tunggu, hilangkan wajib input atlet
                 inputsMenunggu.forEach(el => el.setAttribute('required', 'required'));
                 inputsAtlet.forEach(el => {
                     el.removeAttribute('required');
-                    el.value = ''; // Kosongkan nilai
+                    el.value = '';
                 });
             }
         }
+
+        // 3. JALANKAN SAAT HALAMAN PERTAMA KALI DIBUKA
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set warna default pada babak
+            updateBabakUI();
+        });
     </script>
 @endpush
