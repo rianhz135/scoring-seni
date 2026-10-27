@@ -6,13 +6,22 @@
             <h1 class="text-xl font-bold text-gray-900">Peserta Tanding</h1>
             <p class="text-sm text-gray-400 mt-0.5">Kelola data jadwal partai dan peserta kategori Tanding di sini.</p>
         </div>
-        <a href="{{ route('admin.peserta.tanding.create') }}"
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.manajemen.tanding.index') }}"
+                class="px-3.5 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-all flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                </svg>
+                Manajemen Tanding
+            </a>
+            <a href="{{ route('admin.peserta.tanding.create') }}"
             class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Tambah Partai
-        </a>
+            </a>
+        </div>
     </div>
 
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">

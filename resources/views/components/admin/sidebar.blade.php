@@ -54,6 +54,7 @@
                 :active="request()->routeIs('admin.manajemen.regu.*')">Regu</x-admin.sidebar-sublink>
             <x-admin.sidebar-sublink href="{{ route('admin.manajemen.pool.index') }}" :active="request()->routeIs('admin.manajemen.pool.*')">Pool
                 (Seni)</x-admin.sidebar-sublink>
+            <x-admin.sidebar-sublink href="{{ route('admin.manajemen.tanding.index') }}" :active="request()->routeIs('admin.manajemen.tanding.*')">Tanding</x-admin.sidebar-sublink>
         </x-admin.sidebar-group>
 
         <x-admin.sidebar-link href="{{ route('admin.manajemen.kelas.index') }}" :active="request()->routeIs('admin.manajemen.kelas.*')" icon="management">

@@ -49,5 +49,8 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => '2026-05-13 03:51:56'
             ],
         ]);
+
+        // 3. Seed Juri Tanding & Inisialisasi Status Kontrol Juri Tanding
+        $this->call(JuriTandingSeeder::class);
     }
 }

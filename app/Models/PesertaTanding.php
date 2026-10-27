@@ -22,4 +22,9 @@ class PesertaTanding extends Model
     {
         return $this->hasMany(PartaiTanding::class, 'id_biru', 'id');
     }
+
+    public function partaiMenang()
+    {
+        return $this->hasMany(PartaiTanding::class, 'id_pemenang', 'id');
+    }
 }

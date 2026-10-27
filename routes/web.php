@@ -193,6 +193,33 @@ Route::prefix('admin')
             Route::delete('/kelas/{id}', [KelasController::class, 'destroy'])->name('admin.manajemen.kelas.destroy');
             Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('admin.manajemen.kelas.update');
             Route::get('/pool', [App\Http\Controllers\Admin\Manajemen\PoolManajemenController::class, 'index'])->name('pool.index');
+
+            // --- MANAJEMEN TANDING (OPERASIONAL) ---
+            Route::prefix('tanding')->name('tanding.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'index'])->name('index');
+                Route::post('/{id}/mulai', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'mulai'])->name('mulai');
+                Route::post('/{id}/update-babak', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'updateBabak'])->name('update-babak');
+                Route::post('/{id}/set-pemenang', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'setPemenang'])->name('set-pemenang');
+                Route::post('/{id}/selesai', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'selesai'])->name('selesai');
+                Route::post('/{id}/reset', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'resetPertandingan'])->name('reset');
+            });
+        });
+
+        // --- DEWAN KONTROL TANDING ---
+        Route::prefix('dewan/tanding')->name('dewan.tanding.')->group(function () {
+            Route::get('/{id}', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'index'])->name('index');
+            Route::post('/{id}/toggle-juri/{no_juri}', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'toggleJuri'])->name('toggle-juri');
+            Route::post('/{id}/toggle-all-juri', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'toggleAllJuri'])->name('toggle-all-juri');
+            Route::post('/{id}/jatuhan', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'addJatuhan'])->name('jatuhan');
+            Route::post('/{id}/jatuhan/undo', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'undoJatuhan'])->name('jatuhan.undo');
+            Route::post('/{id}/pelanggaran', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'addPelanggaran'])->name('pelanggaran');
+            Route::post('/{id}/pelanggaran/undo', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'undoPelanggaran'])->name('pelanggaran.undo');
+            Route::post('/{id}/start-verifikasi', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'startVerifikasi'])->name('start-verifikasi');
+            Route::post('/verifikasi/{id_verifikasi}/jawaban', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'recordJawabanVerifikasi'])->name('verifikasi.jawaban');
+            Route::post('/verifikasi/{id_verifikasi}/selesai', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'selesaiVerifikasi'])->name('verifikasi.selesai');
+            Route::post('/{id}/update-timer', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateTimer'])->name('update-timer');
+            Route::post('/{id}/update-babak', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateBabak'])->name('update-babak');
+            Route::get('/{id}/status-data', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData'])->name('status-data');
         });
 
 
@@ -745,5 +772,8 @@ Route::prefix('dewan')->name('dewan.')->group(function () {
         ->name('pool.toggle-juri');
     Route::post('/pool/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'toggleStatusInput'])
         ->name('pool.toggle-status-input');
+
+    // Rute Dewan Tanding (Akses Langsung)
+    Route::get('/tanding/{id}', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'index'])->name('tanding');
 });
 
