@@ -276,20 +276,54 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-red-600">Zona Berbahaya</h3>
-                        <p class="text-sm text-gray-500 mt-0.5">Tindakan berikut bersifat permanen dan tidak dapat dibatalkan.</p>
+                        <h3 class="text-lg font-bold text-red-600">Zona Berbahaya (Reset Data Pertandingan)</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">Pilih kategori data peserta dan pertandingan yang ingin direset bersih. Tindakan bersifat permanen.</p>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-4 bg-red-600 border border-red-700 rounded-xl">
+                <div class="space-y-4">
+                    {{-- 1. Reset Data Tanding --}}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-amber-50/50 border border-amber-200 rounded-2xl gap-3 hover:border-amber-300 transition-all">
                         <div>
-                            <p class="text-sm font-bold text-white">Reset Semua Data</p>
-                            <p class="text-xs text-red-200 mt-0.5">Menghapus seluruh data sistem. Tidak dapat dikembalikan!</p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-white tracking-wider">TANDING</span>
+                                <p class="text-sm font-bold text-gray-900">Reset Data Tanding</p>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1">Menghapus data seluruh peserta tanding, partai tanding, log nilai juri, poin sah, jatuhan, pelanggaran, dan verifikasi dewan.</p>
+                        </div>
+                        <button type="button" onclick="konfirmasiReset('tanding')"
+                            class="flex-shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
+                            Reset Tanding
+                        </button>
+                    </div>
+
+                    {{-- 2. Reset Data Seni & Pool --}}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-blue-50/50 border border-blue-200 rounded-2xl gap-3 hover:border-blue-300 transition-all">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-600 text-white tracking-wider">SENI & POOL</span>
+                                <p class="text-sm font-bold text-gray-900">Reset Data Seni & Pool</p>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1">Menghapus data seluruh peserta seni, jadwal partai seni (Solo, Ganda, Tunggal, Regu, Pool), plot giliran, dan input nilai juri seni.</p>
+                        </div>
+                        <button type="button" onclick="konfirmasiReset('seni_pool')"
+                            class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
+                            Reset Seni & Pool
+                        </button>
+                    </div>
+
+                    {{-- 3. Reset Semua Data --}}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-red-600 border border-red-700 rounded-2xl gap-3 shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-white text-red-600 tracking-wider">SEMUA KATEGORI</span>
+                                <p class="text-sm font-bold text-white">Reset Seluruh Data Pertandingan & Peserta</p>
+                            </div>
+                            <p class="text-xs text-red-100 mt-1">Menghapus total seluruh data pertandingan & peserta dari semua kategori (Tanding, Seni, dan Pool). Akun admin dan juri tetap aman.</p>
                         </div>
                         <button type="button" onclick="konfirmasiReset('semua')"
-                            class="flex-shrink-0 ml-4 px-4 py-2 bg-white border border-white text-red-600 hover:bg-red-800 hover:text-white hover:border-red-800 rounded-xl text-sm font-bold transition-all cursor-pointer">
-                            Reset Semua
+                            class="flex-shrink-0 px-4 py-2 bg-white text-red-600 hover:bg-red-800 hover:text-white rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer border border-white">
+                            Reset Semua Data
                         </button>
                     </div>
                 </div>
@@ -301,13 +335,15 @@
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script>
         const resetRoutes = {
-            semua:  '{{ route("admin.reset.semua") }}',
+            tanding:   '{{ route("admin.reset.tanding") }}',
+            seni_pool: '{{ route("admin.reset.seni.pool") }}',
+            semua:     '{{ route("admin.reset.semua") }}',
         };
 
         const resetLabels = {
-            nilai:  'semua data nilai juri',
-            partai: 'semua data partai',
-            semua:  'SELURUH DATA SISTEM',
+            tanding:   'seluruh data peserta & partai TANDING',
+            seni_pool: 'seluruh data peserta & partai SENI (Solo, Ganda, Tunggal, Regu, Pool)',
+            semua:     'SELURUH DATA PERTANDINGAN & PESERTA (Tanding, Seni & Pool)',
         };
 
         function konfirmasiReset(tipe) {

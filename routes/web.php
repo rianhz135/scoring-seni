@@ -135,6 +135,13 @@ Route::prefix('admin')
         Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
+        // Reset Data Routes
+        Route::prefix('reset')->name('reset.')->group(function () {
+            Route::post('/tanding', [\App\Http\Controllers\Admin\ResetController::class, 'resetTanding'])->name('tanding');
+            Route::post('/seni-pool', [\App\Http\Controllers\Admin\ResetController::class, 'resetSeniPool'])->name('seni.pool');
+            Route::post('/semua', [\App\Http\Controllers\Admin\ResetController::class, 'resetSemua'])->name('semua');
+        });
+
 
         // ROUTE UNTUK LAYAR DISPLAY PROYEKTOR / PENONTON
         // Route::get('/dewan/display', function () {
@@ -368,8 +375,6 @@ Route::get('/juri/dashboard', function () {
 
 })->name('juri.dashboard');
 
-
-Route::post('/admin/reset/semua', [\App\Http\Controllers\Admin\ResetController::class, 'resetSemua'])->name('admin.reset.semua');
 // 2. Route Halaman Utama Juri (Hanya butuh nomor Juri, misal: /juri/solo/1)
 Route::get('/juri/solo/{no_juri}', function ($no_juri) {
 
