@@ -18,6 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'juri' => \App\Http\Middleware\JuriMiddleware::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'dewan/tanding/*/input-juri',
+            'admin/dewan/tanding/*/input-juri',
+            'juri/tanding/input/*',
+        ]);
+
     })
 
     ->withExceptions(function (Exceptions $exceptions) {

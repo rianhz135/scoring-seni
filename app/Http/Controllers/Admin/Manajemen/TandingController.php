@@ -102,6 +102,13 @@ class TandingController extends Controller
             }
         }
 
+        // Broadcast refresh layar display agar otomatis membuka partai tanding ini
+        try {
+            broadcast(new \App\Events\RefreshDisplay('tanding.A'));
+        } catch (\Throwable $e) {
+            // Silently continue if broadcast server offline
+        }
+
         // Pindah otomatis ke halaman kontrol dewan tanding
         return redirect()->route('admin.dewan.tanding.index', $partai->id)
             ->with('success', 'Pertandingan Partai #' . $partai->no_partai . ' dimulai! Selamat bertanding.');

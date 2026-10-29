@@ -158,6 +158,56 @@
                 </div>
             </div>
 
+
+            {{-- ============================================== --}}
+            {{-- BARIS KETIGA : KATEGORI TANDING               --}}
+            {{-- ============================================== --}}
+            <div>
+                <div class="flex items-center gap-6 mb-5">
+                    <h3 class="text-xl font-black text-slate-300 tracking-widest uppercase">Kategori Tanding</h3>
+                    <div class="h-px bg-slate-700 flex-1"></div>
+                </div>
+
+                <div class="bg-gradient-to-r from-red-950/80 via-slate-800 to-blue-950/80 border border-slate-700 rounded-3xl p-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-6">
+                    <div class="flex items-center gap-5">
+                        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-300 flex items-center justify-center text-3xl border border-rose-500/30 shrink-0">
+                            🥊
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                    Pertarungan Sudut Merah vs Biru
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    Pukulan (+1) & Tendangan (+2)
+                                </span>
+                            </div>
+                            <h2 class="text-2xl md:text-3xl font-black text-white">PENILAIAN TANDING</h2>
+                            <p class="text-slate-400 text-sm font-medium mt-0.5">Pilih nomor meja juri untuk masuk ke panel penilaian</p>
+                        </div>
+                    </div>
+
+                    {{-- Tombol Langsung Login Juri 1, 2, 3 --}}
+                    <div class="grid grid-cols-3 gap-3 w-full lg:w-auto">
+                        <a href="{{ url('/juri/tanding/1') }}"
+                            class="px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white flex flex-col items-center justify-center shadow-lg shadow-blue-900/40 hover:scale-105 transition-all text-center">
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest opacity-80">MASUK KE</span>
+                            <span class="text-2xl font-black">JURI 1</span>
+                        </a>
+                        <a href="{{ url('/juri/tanding/2') }}"
+                            class="px-6 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex flex-col items-center justify-center shadow-lg shadow-indigo-900/40 hover:scale-105 transition-all text-center">
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest opacity-80">MASUK KE</span>
+                            <span class="text-2xl font-black">JURI 2</span>
+                        </a>
+                        <a href="{{ url('/juri/tanding/3') }}"
+                            class="px-6 py-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white flex flex-col items-center justify-center shadow-lg shadow-red-900/40 hover:scale-105 transition-all text-center">
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest opacity-80">MASUK KE</span>
+                            <span class="text-2xl font-black">JURI 3</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 

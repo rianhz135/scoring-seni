@@ -12,6 +12,9 @@ use App\Models\PelanggaranTanding;
 use App\Models\VerifikasiDewan;
 use App\Models\JawabanVerifikasiJuri;
 use App\Models\JatuhanTanding;
+use App\Events\TimerTandingUpdated;
+use App\Events\TandingScoreUpdated;
+use App\Events\JuriTandingInputReceived;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -96,6 +99,10 @@ class TandingController extends Controller
             'status' => $isActive ? 'Active' : 'Paused',
         ]);
 
+        try {
+            broadcast(new \App\Events\ToggleKontrolJuriTanding($partai->id, (int)$no_juri, $kontrol->is_active, $kontrol->status));
+        } catch (\Throwable $e) {}
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -124,6 +131,9 @@ class TandingController extends Controller
                     ['id_partai' => $partai->id, 'no_juri' => $noJuri],
                     ['is_active' => $isActive, 'status' => $isActive ? 'Active' : 'Paused']
                 );
+                try {
+                    broadcast(new \App\Events\ToggleKontrolJuriTanding($partai->id, $noJuri, $isActive, $isActive ? 'Active' : 'Paused'));
+                } catch (\Throwable $e) {}
             }
         }
 
@@ -159,6 +169,7 @@ class TandingController extends Controller
         ]);
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -205,6 +216,7 @@ class TandingController extends Controller
         }
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -299,6 +311,7 @@ class TandingController extends Controller
         ]);
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         $msg = "{$request->jenis_pelanggaran} dicatat untuk Sudut {$request->sudut}";
         if ($poinMinus > 0 && $poinMinus < 99) {
@@ -372,6 +385,7 @@ class TandingController extends Controller
         }
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -509,6 +523,7 @@ class TandingController extends Controller
         $verifikasi->update(['status' => 'Selesai']);
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -540,6 +555,8 @@ class TandingController extends Controller
             $partai->update($updateData);
         }
 
+        broadcast(new TimerTandingUpdated($partai->id, $partai->waktu_timer, $partai->status_timer, $partai->babak_aktif ?: 1));
+
         return response()->json([
             'success' => true,
             'waktu_timer' => $partai->waktu_timer,
@@ -564,6 +581,8 @@ class TandingController extends Controller
         ]);
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TimerTandingUpdated($partai->id, 120, 'stop', $partai->babak_aktif ?: 1));
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -589,6 +608,7 @@ class TandingController extends Controller
             : collect([]);
 
         $scores = $this->calculateScores($partai->id);
+        broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
 
         $verifikasiAktif = VerifikasiDewan::with('jawabanJuri')
             ->where('id_partai', $partai->id)
@@ -619,9 +639,207 @@ class TandingController extends Controller
     }
 
     /**
+     * Menerima input nilai pukulan / tendangan dari juri (1, 2, 3, dst).
+     * Menerapkan aturan konsensus IPSI:
+     * - Minimal 2 juri menginput nilai yang sama dalam jendela waktu 2 detik untuk sudut yang sama.
+     * - Pasangan konsensus 2 juri diproses menjadi Poin Sah (+1 Pukulan / +2 Tendangan).
+     * - Jika ada juri ke-3 input tanpa pasangan baru (misal serangan yang sama sudah dipasangkan oleh 2 juri),
+     *   dicatat ke log dengan keterangan "Tidak Diproses".
+     * - Jika ada juri ke-4 (atau juri lain yang menginput bersamaan dalam 2 detik dengan juri ke-3),
+     *   maka juri ke-3 dan ke-4 diproses menjadi poin sah berikutnya.
+     */
+    public function submitJuriInput(Request $request, $id)
+    {
+        $request->validate([
+            'no_juri' => 'required|integer|min:1|max:10',
+            'sudut' => 'required|in:Merah,Biru',
+            'jenis_serangan' => 'required|in:Pukulan,Tendangan',
+        ]);
+
+        $partai = PartaiTanding::findOrFail($id);
+        $babakAktif = $partai->babak_aktif ?: 1;
+        $noJuri = (int) $request->no_juri;
+        $sudut = ucfirst(strtolower($request->sudut));
+        $jenisSerangan = ucfirst(strtolower($request->jenis_serangan));
+        $poinVal = ($jenisSerangan === 'Tendangan') ? 2 : 1;
+
+        // Cek status kontrol juri (apakah sedang aktif atau di-pause)
+        $kontrolJuri = StatusKontrolJuriTanding::where('id_partai', $partai->id)
+            ->where('no_juri', $noJuri)
+            ->first();
+
+        if ($kontrolJuri && !$kontrolJuri->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => "Juri {$noJuri} sedang dijeda (Paused)!"
+            ], 403);
+        }
+
+        // Jalankan seluruh evaluasi konsensus dalam DB Transaction dengan pessimistic lock (lockForUpdate)
+        // untuk menangani input concurrent (bersamaan) dan serangan beruntun secara konsisten
+        return \Illuminate\Support\Facades\DB::transaction(function () use (
+            $partai, $babakAktif, $noJuri, $sudut, $jenisSerangan, $poinVal
+        ) {
+            $now = now();
+            // Jendela konsensus persis 2 detik
+            $twoSecondsAgo = $now->copy()->subSeconds(2);
+
+            // 1. Bersihkan log lama yang belum berpasangan dan sudah lewat 3 detik (buffer toleransi)
+            LogNilaiJuriTanding::where('id_partai', $partai->id)
+                ->where('status_input', 'Belum Proses')
+                ->where('created_at', '<', $now->copy()->subSeconds(3))
+                ->update([
+                    'status_input' => 'Tidak Diproses',
+                    'keterangan' => 'Tidak Diproses (Batas waktu 2 detik terlampaui)',
+                ]);
+
+            // 2. Cari calon pasangan: input dari JURI LAIN yang belum diproses dalam 2 detik terakhir
+            // Diurutkan berdasarkan id ASC (FIFO) dengan lockForUpdate untuk konkurensi aman
+            $partnerLog = LogNilaiJuriTanding::where('id_partai', $partai->id)
+                ->where('babak', $babakAktif)
+                ->where('sudut', $sudut)
+                ->where('jenis_serangan', $jenisSerangan)
+                ->where('status_input', 'Belum Proses')
+                ->where('no_juri', '!=', $noJuri)
+                ->where('created_at', '>=', $twoSecondsAgo)
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->first();
+
+            $isPoinSah = false;
+            $scores = null;
+
+            if ($partnerLog) {
+                // Tercapai konsensus sepasang 2 juri berbeda dalam batas waktu 2 detik!
+                $poinSah = PoinSahTanding::create([
+                    'id_partai' => $partai->id,
+                    'babak' => $babakAktif,
+                    'sudut' => $sudut,
+                    'poin_masuk' => $poinVal,
+                ]);
+
+                $waktuPartner = $partnerLog->created_at ? $partnerLog->created_at->format('H:i:s') : $now->format('H:i:s');
+                $waktuCurrent = $now->format('H:i:s');
+                $ketKonsensus = "Poin Sah (Konsensus Juri {$partnerLog->no_juri} [{$waktuPartner}] & Juri {$noJuri} [{$waktuCurrent}])";
+
+                // Simpan log juri saat ini langsung Berhasil
+                $currentLog = LogNilaiJuriTanding::create([
+                    'id_partai' => $partai->id,
+                    'babak' => $babakAktif,
+                    'no_juri' => $noJuri,
+                    'sudut' => $sudut,
+                    'jenis_serangan' => $jenisSerangan,
+                    'poin' => $poinVal,
+                    'status_input' => 'Berhasil',
+                    'id_poin_sah' => $poinSah->id,
+                    'keterangan' => $ketKonsensus,
+                ]);
+
+                // Update log juri pasangan menjadi Berhasil
+                $partnerLog->update([
+                    'status_input' => 'Berhasil',
+                    'id_poin_sah' => $poinSah->id,
+                    'keterangan' => $ketKonsensus,
+                ]);
+
+                $isPoinSah = true;
+                $scores = $this->calculateScores($partai->id);
+
+                $juristDetails = [
+                    [
+                        'no_juri' => $partnerLog->no_juri,
+                        'time' => $waktuPartner,
+                        'jenis' => $partnerLog->jenis_serangan,
+                        'status' => 'Berhasil'
+                    ],
+                    [
+                        'no_juri' => $noJuri,
+                        'time' => $waktuCurrent,
+                        'jenis' => $jenisSerangan,
+                        'status' => 'Berhasil'
+                    ]
+                ];
+
+                // Broadcast event ke display & dewan
+                broadcast(new JuriTandingInputReceived(
+                    $partai->id,
+                    $noJuri,
+                    $sudut,
+                    $jenisSerangan,
+                    true,
+                    $scores,
+                    $currentLog->keterangan,
+                    $babakAktif,
+                    $currentLog->created_at->format('H:i:s'),
+                    $partnerLog->no_juri,
+                    $juristDetails
+                ));
+                broadcast(new TandingScoreUpdated($partai->id, $scores, $babakAktif));
+
+                $message = "Konsensus tercapai! Poin Sah {$jenisSerangan} (+{$poinVal}) untuk Sudut {$sudut}.";
+            } else {
+                // Belum ada pasangan dari juri lain (menunggu juri berbeda dalam batas 2 detik)
+                $currentLog = LogNilaiJuriTanding::create([
+                    'id_partai' => $partai->id,
+                    'babak' => $babakAktif,
+                    'no_juri' => $noJuri,
+                    'sudut' => $sudut,
+                    'jenis_serangan' => $jenisSerangan,
+                    'poin' => $poinVal,
+                    'status_input' => 'Belum Proses',
+                    'keterangan' => 'Tidak Diproses (Menunggu Pasangan)',
+                ]);
+
+                broadcast(new JuriTandingInputReceived(
+                    $partai->id,
+                    $noJuri,
+                    $sudut,
+                    $jenisSerangan,
+                    false,
+                    null,
+                    $currentLog->keterangan,
+                    $babakAktif,
+                    $currentLog->created_at->format('H:i:s')
+                ));
+
+                $message = "Input Juri {$noJuri} tercatat (menunggu kesepakatan juri lain dalam 2 detik).";
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_poin_sah' => $isPoinSah,
+                'scores' => $scores,
+                'log' => [
+                    'id' => $currentLog->id,
+                    'no_juri' => $currentLog->no_juri,
+                    'sudut' => $currentLog->sudut,
+                    'jenis_serangan' => $currentLog->jenis_serangan,
+                    'poin' => $currentLog->poin,
+                    'status_input' => $currentLog->status_input,
+                    'keterangan' => $currentLog->keterangan,
+                    'time' => $currentLog->created_at->format('H:i:s'),
+                ],
+                'message' => $message,
+            ]);
+        });
+    }
+
+    /**
+     * Memicu refresh global display layar proyektor untuk kategori tanding.
+     */
+    public function triggerRefreshDisplay()
+    {
+        broadcast(new \App\Events\RefreshDisplay('tanding.A'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Sinyal refresh display tanding gelanggang A berhasil dikirim!',
+        ]);
+    }
+
+    /**
      * Helper: Menghitung akumulasi skor total dan rincian per babak.
      */
-    private function calculateScores($idPartai)
+    public function calculateScores($idPartai)
     {
         $partai = PartaiTanding::findOrFail($idPartai);
         $babakAktif = $partai->babak_aktif ?: 1;
@@ -829,18 +1047,70 @@ class TandingController extends Controller
         $poinSah = PoinSahTanding::where('id_partai', $idPartai)->get();
         foreach ($poinSah as $ps) {
             $jenis = ($ps->poin_masuk == 2) ? 'Tendangan (+2)' : 'Pukulan (+1)';
+
+            // Ambil waktu input juri yang berkontribusi menghasilkan poin sah ini
+            $contributingLogs = LogNilaiJuriTanding::where('id_poin_sah', $ps->id)
+                ->orderBy('created_at')
+                ->get();
+
+            $detailJuriArray = [];
+            if ($contributingLogs->isNotEmpty()) {
+                $detailJuriArray = $contributingLogs->map(function ($l) {
+                    $jam = $l->created_at ? $l->created_at->format('H:i:s') : '-';
+                    return [
+                        'no_juri' => $l->no_juri,
+                        'time' => $jam,
+                        'jenis' => $l->jenis_serangan,
+                        'status' => $l->status_input,
+                    ];
+                })->values()->toArray();
+
+                $detailText = $contributingLogs->map(function ($l) {
+                    $jam = $l->created_at ? $l->created_at->format('H:i:s') : '-';
+                    return "Juri {$l->no_juri} [{$jam}]";
+                })->implode(' & ');
+                $keterangan = "Poin Sah (Konsensus {$detailText})";
+            } else {
+                $keterangan = 'Serangan sah berhasil masuk';
+            }
+
             $events->push([
-                'id' => $ps->id,
+                'id' => 'ps-' . $ps->id,
+                'raw_id' => $ps->id,
                 'type' => 'poin',
                 'badge' => $jenis,
                 'sudut' => $ps->sudut,
                 'babak' => $ps->babak,
-                'keterangan' => 'Serangan sah berhasil masuk',
+                'keterangan' => $keterangan,
                 'time' => $ps->created_at ? $ps->created_at->format('H:i:s') : '-',
                 'created_at' => $ps->created_at,
+                'jurist_details' => $detailJuriArray,
             ]);
         }
 
-        return $events->sortByDesc('created_at')->values()->take(15);
+        // 4. Log Input Nilai Juri (SEMUA: Berhasil, Belum Proses, Tidak Diproses - Tetap Tampil)
+        $allJuriLogs = LogNilaiJuriTanding::where('id_partai', $idPartai)
+            ->latest('created_at')
+            ->take(50)
+            ->get();
+        foreach ($allJuriLogs as $uj) {
+            $waktuJuri = $uj->created_at ? $uj->created_at->format('H:i:s') : '-';
+            $events->push([
+                'id' => 'uj-' . $uj->id,
+                'raw_id' => $uj->id,
+                'type' => 'juri_input',
+                'no_juri' => $uj->no_juri,
+                'jenis_serangan' => $uj->jenis_serangan,
+                'status_input' => $uj->status_input,
+                'badge' => "Juri {$uj->no_juri}: {$uj->jenis_serangan}",
+                'sudut' => $uj->sudut,
+                'babak' => $uj->babak,
+                'keterangan' => $uj->keterangan ?: ($uj->status_input === 'Berhasil' ? 'Poin Sah (Konsensus)' : $uj->status_input),
+                'time' => $waktuJuri,
+                'created_at' => $uj->created_at,
+            ]);
+        }
+
+        return $events->sortByDesc('created_at')->values()->take(30);
     }
 }
