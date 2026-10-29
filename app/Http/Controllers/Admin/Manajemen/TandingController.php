@@ -47,8 +47,14 @@ class TandingController extends Controller
             $query->where('fase_babak', $request->fase_babak);
         }
 
+        // Jumlah item per halaman untuk partai (default: 10)
+        $perPage = (int) $request->input('per_page', 10);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 10;
+        }
+
         // Sorting & Pagination
-        $partais = $query->orderBy('no_partai', 'asc')->paginate(10)->withQueryString();
+        $partais = $query->orderBy('no_partai', 'asc')->paginate($perPage)->withQueryString();
 
         // Ringkasan Statistik
         $stats = [
@@ -60,6 +66,11 @@ class TandingController extends Controller
         ];
 
         // Query untuk Tab Daftar Atlet Tanding
+        $perPageAtlet = (int) $request->input('per_page_atlet', 15);
+        if ($perPageAtlet < 1 || $perPageAtlet > 100) {
+            $perPageAtlet = 15;
+        }
+
         $atletQuery = PesertaTanding::with(['partaiMerah', 'partaiBiru', 'partaiMenang']);
         if ($request->filled('search_atlet')) {
             $searchAtlet = trim($request->search_atlet);
@@ -69,9 +80,9 @@ class TandingController extends Controller
                     ->orWhere('kategori_umur', 'LIKE', "%{$searchAtlet}%");
             });
         }
-        $atlets = $atletQuery->orderBy('nama', 'asc')->paginate(15, ['*'], 'atlet_page')->withQueryString();
+        $atlets = $atletQuery->orderBy('nama', 'asc')->paginate($perPageAtlet, ['*'], 'atlet_page')->withQueryString();
 
-        return view('pages.manajemen.tanding.index', compact('partais', 'stats', 'atlets'));
+        return view('pages.manajemen.tanding.index', compact('partais', 'stats', 'atlets', 'perPage', 'perPageAtlet'));
     }
 
     /**
@@ -86,10 +97,14 @@ class TandingController extends Controller
             return redirect()->back()->with('error', 'Partai #' . $partai->no_partai . ' belum memiliki atlet di kedua sudut!');
         }
 
+        $waktu = $partai->waktu_timer ?: 120;
+        $babak = $partai->babak_aktif ?: 1;
+
         $partai->update([
             'status_pertandingan' => 'Berlangsung',
-            'status_timer' => 'running',
-            'babak_aktif' => $partai->babak_aktif ?: 1,
+            'status_timer' => 'stop', // Timer standby (stop), jangan langsung jalan otomatis
+            'waktu_timer' => $waktu,
+            'babak_aktif' => $babak,
         ]);
 
         // Inisialisasi status kontrol juri (1, 2, 3) jika tabel siap
@@ -102,8 +117,9 @@ class TandingController extends Controller
             }
         }
 
-        // Broadcast refresh layar display agar otomatis membuka partai tanding ini
+        // Broadcast refresh timer & layar display agar otomatis membuka partai tanding ini dalam kondisi standby
         try {
+            broadcast(new \App\Events\TimerTandingUpdated($partai->id, $waktu, 'stop', $babak));
             broadcast(new \App\Events\RefreshDisplay('tanding.A'));
         } catch (\Throwable $e) {
             // Silently continue if broadcast server offline
@@ -111,7 +127,7 @@ class TandingController extends Controller
 
         // Pindah otomatis ke halaman kontrol dewan tanding
         return redirect()->route('admin.dewan.tanding.index', $partai->id)
-            ->with('success', 'Pertandingan Partai #' . $partai->no_partai . ' dimulai! Selamat bertanding.');
+            ->with('success', 'Pertandingan Partai #' . $partai->no_partai . ' dimulai dalam status Standby. Silakan tekan tombol Start pada kontrol Dewan saat ronde siap dimulai.');
     }
 
     /**
@@ -136,33 +152,50 @@ class TandingController extends Controller
      */
     public function setPemenang(Request $request, $id)
     {
-        $request->validate([
-            'id_pemenang' => 'required|exists:peserta_tanding,id',
-        ]);
-
         $partai = PartaiTanding::findOrFail($id);
 
-        if ($partai->id_merah != $request->id_pemenang && $partai->id_biru != $request->id_pemenang) {
+        // Otomatis tentukan pemenang berdasarkan 5 kriteria regulasi IPSI
+        $evaluasi = app(\App\Http\Controllers\Admin\Dewan\TandingController::class)->evaluasiPemenang($partai->id);
+        
+        $idPemenang = $evaluasi['id_pemenang'] ?? ($request->input('id_pemenang') ?: null);
+
+        if (!$idPemenang) {
+            return redirect()->back()->with('error', 'Tidak dapat menyelesaikan partai: Hasil masih imbang / belum ada pemenang berdasarkan 5 kriteria!');
+        }
+
+        if ($partai->id_merah != $idPemenang && $partai->id_biru != $idPemenang) {
             return redirect()->back()->with('error', 'Pemenang harus merupakan atlet dari sudut merah atau biru pada partai ini!');
         }
 
+        $sudutPemenang = ($idPemenang == $partai->id_merah) ? 'Merah' : (($idPemenang == $partai->id_biru) ? 'Biru' : null);
+        $alasanPemenang = $evaluasi['alasan'] ?? ($request->input('alasan_pemenang') ?: 'Pemenang otomatis berdasarkan kriteria');
+
         $partai->update([
-            'id_pemenang' => $request->id_pemenang,
+            'id_pemenang' => $idPemenang,
+            'sudut_pemenang' => $sudutPemenang,
+            'alasan_pemenang' => $alasanPemenang,
             'status_pertandingan' => 'Selesai',
             'status_timer' => 'stop',
+            'status_pemenang' => 0,
         ]);
 
         // Otomatis isi pemenang ke partai berikutnya jika ada sistem bagan yang menunggu partai ini
         PartaiTanding::where('menunggu_pemenang_biru_dari', $partai->no_partai)
-            ->update(['id_biru' => $request->id_pemenang]);
+            ->update(['id_biru' => $idPemenang]);
 
         PartaiTanding::where('menunggu_pemenang_merah_dari', $partai->no_partai)
-            ->update(['id_merah' => $request->id_pemenang]);
+            ->update(['id_merah' => $idPemenang]);
 
-        $pemenang = PesertaTanding::find($request->id_pemenang);
+        $pemenang = PesertaTanding::find($idPemenang);
         $namaPemenang = $pemenang ? $pemenang->nama : 'Atlet';
 
-        return redirect()->back()->with('success', "Partai #{$partai->no_partai} selesai! Pemenang: {$namaPemenang}. Bagan lanjutan telah diperbarui secara otomatis.");
+        // Broadcast refresh ke layar display agar otomatis beralih ke standby
+        try {
+            broadcast(new \App\Events\RefreshDisplay('tanding.A'));
+        } catch (\Throwable $e) {}
+
+        return redirect()->route('admin.manajemen.tanding.index')
+            ->with('success', "Partai #{$partai->no_partai} selesai! Pemenang: {$namaPemenang} (Sudut {$sudutPemenang}). Alasan: {$alasanPemenang}. Bagan lanjutan telah diperbarui.");
     }
 
     /**
@@ -174,9 +207,16 @@ class TandingController extends Controller
         $partai->update([
             'status_pertandingan' => 'Selesai',
             'status_timer' => 'stop',
+            'status_pemenang' => 0,
         ]);
 
-        return redirect()->back()->with('success', 'Partai #' . $partai->no_partai . ' ditandai Selesai.');
+        // Broadcast refresh ke layar display agar otomatis beralih ke standby
+        try {
+            broadcast(new \App\Events\RefreshDisplay('tanding.A'));
+        } catch (\Throwable $e) {}
+
+        return redirect()->route('admin.manajemen.tanding.index')
+            ->with('success', 'Partai #' . $partai->no_partai . ' ditandai Selesai.');
     }
 
     /**

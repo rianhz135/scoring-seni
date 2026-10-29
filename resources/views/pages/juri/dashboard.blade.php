@@ -15,14 +15,26 @@
         {{-- HEADER --}}
         <div class="mb-10 flex items-center justify-between gap-4 flex-wrap">
             <div>
-                <h1 class="text-4xl font-black text-white tracking-tight">DASHBOARD JURI</h1>
-                <p class="text-slate-400 mt-2 font-medium">Pilih kategori penilaian pertandingan</p>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h1 class="text-4xl font-black text-white tracking-tight">DASHBOARD JURI</h1>
+                    <span class="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black uppercase tracking-wider">
+                        {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}
+                    </span>
+                </div>
+                <p class="text-slate-400 mt-2 font-medium">
+                    {{ $pengaturanDisplay->nama_kejuaraan ?? 'Kejuaraan Pencak Silat' }} &bull; Pilih kategori penilaian pertandingan
+                </p>
             </div>
 
             <div class="flex items-center gap-3">
 
-                {{-- INFO JURI --}}
+                {{-- INFO GELANGGANG & JURI --}}
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 flex items-center gap-4">
+                    <div>
+                        <p class="text-slate-400 text-xs uppercase font-bold">Gelanggang</p>
+                        <h2 class="text-base font-black text-amber-400 uppercase">{{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}</h2>
+                    </div>
+                    <div class="w-px h-8 bg-slate-700"></div>
                     <div>
                         <p class="text-slate-400 text-xs uppercase font-bold">Login Sebagai</p>
                         <h2 class="text-base font-black text-white">{{ auth()->user()->name ?? 'Juri' }}</h2>

@@ -22,6 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'dewan/tanding/*/input-juri',
             'admin/dewan/tanding/*/input-juri',
             'juri/tanding/input/*',
+            'juri/tanding/verifikasi/*',
+            'dewan/tanding/verifikasi/*',
+            'admin/dewan/tanding/verifikasi/*',
+            'admin/dewan/tanding/*/start-verifikasi',
+            'dewan/tanding/*/start-verifikasi',
+            'admin/dewan/tanding/*/keputusan-pemenang',
+            'dewan/tanding/*/keputusan-pemenang',
+            'admin/dewan/tanding/*/close-pemenang',
+            'dewan/tanding/*/close-pemenang',
         ]);
 
     })

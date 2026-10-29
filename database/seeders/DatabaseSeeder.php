@@ -13,15 +13,26 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Insert Data Kategori
-        DB::table('ref_kategori')->insert([
-            ['id_kategori' => 1, 'nama_kategori' => 'SOLO', 'created_at' => '2026-04-20 04:01:58', 'updated_at' => '2026-04-20 04:01:58'],
-            ['id_kategori' => 2, 'nama_kategori' => 'GANDA', 'created_at' => '2026-04-20 23:55:23', 'updated_at' => '2026-04-20 23:55:23'],
-            ['id_kategori' => 3, 'nama_kategori' => 'TUNGGAL', 'created_at' => '2026-04-20 23:55:23', 'updated_at' => '2026-04-20 23:55:23'],
-            ['id_kategori' => 4, 'nama_kategori' => 'REGU', 'created_at' => '2026-04-20 23:55:27', 'updated_at' => '2026-04-20 23:55:27'],
-        ]);
+        $kategoriList = [
+            ['id_kategori' => 1, 'nama_kategori' => 'SOLO'],
+            ['id_kategori' => 2, 'nama_kategori' => 'GANDA'],
+            ['id_kategori' => 3, 'nama_kategori' => 'TUNGGAL'],
+            ['id_kategori' => 4, 'nama_kategori' => 'REGU'],
+        ];
+
+        foreach ($kategoriList as $kat) {
+            DB::table('ref_kategori')->updateOrInsert(
+                ['id_kategori' => $kat['id_kategori']],
+                [
+                    'nama_kategori' => $kat['nama_kategori'],
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
 
         // 2. Insert Data Users
-        DB::table('users')->insert([
+        $userList = [
             [
                 'id' => 1, 
                 'name' => 'Administrator', 
@@ -32,8 +43,6 @@ class DatabaseSeeder extends Seeder
                 'role' => 'admin', 
                 'no_juri' => null, 
                 'remember_token' => null, 
-                'created_at' => '2026-05-13 03:13:39', 
-                'updated_at' => '2026-05-13 03:13:39'
             ],
             [
                 'id' => 2, 
@@ -45,12 +54,23 @@ class DatabaseSeeder extends Seeder
                 'role' => 'juri', 
                 'no_juri' => null, 
                 'remember_token' => null, 
-                'created_at' => '2026-05-13 03:51:56', 
-                'updated_at' => '2026-05-13 03:51:56'
             ],
-        ]);
+        ];
 
-        // 3. Seed Juri Tanding & Inisialisasi Status Kontrol Juri Tanding
+        foreach ($userList as $user) {
+            DB::table('users')->updateOrInsert(
+                ['username' => $user['username']],
+                array_merge($user, [
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ])
+            );
+        }
+
+        // 3. Seed Kelas
+        $this->call(KelasSeeder::class);
+
+        // 4. Seed Juri Tanding & Inisialisasi Status Kontrol Juri Tanding
         $this->call(JuriTandingSeeder::class);
     }
 }

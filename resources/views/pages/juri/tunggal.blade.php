@@ -23,7 +23,7 @@
 
             <div
                 class="animate-pulse bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-2xl relative z-10">
-                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri ?? '-' }}</h2>
+                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri ?? '-' }} &bull; <span class="text-amber-500 uppercase">{{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}</span></h2>
                 <div class="w-24 h-2 bg-slate-200 rounded-full mx-auto mb-6"></div>
 
                 {{-- PERBAIKAN DI SINI: Mengambil nama kategori secara dinamis --}}
@@ -82,7 +82,7 @@
                         </div>
                         <div class="flex-1 border-l border-white/20 pl-4 min-w-0">
                             <p class="text-xl font-black uppercase tracking-[0.2em] opacity-90 mb-1 leading-tight">
-                                SUDUT {{ $sudutDb }} &bull; PT #{{ $partai->no_partai }} &bull; TUNGGAL &bull;
+                                SUDUT {{ $sudutDb }} &bull; PT #{{ $partai->no_partai }} &bull; {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }} &bull; TUNGGAL &bull;
                                 <span class="text-yellow-300">
                                     {{-- Menampilkan Kontingen di samping kategori TUNGGAL --}}
                                     {{ $partai->detail_peserta->where('sudut', $sudutDb)->first()->peserta->kontingen ?? '-' }}

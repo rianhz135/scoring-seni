@@ -472,6 +472,26 @@
                     </div>
                 @endfor
             </div>
+
+            {{-- TOMBOL VERIFIKASI JURI (VAR TANDING) --}}
+            <div class="pt-2 border-t border-gray-100 space-y-1.5">
+                <button type="button" onclick="openModalVerifikasiDewan()"
+                    class="w-full py-2 px-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/25 transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Verifikasi Juri</span>
+                </button>
+
+                {{-- TOMBOL KEPUTUSAN PEMENANG --}}
+                <button type="button" onclick="openModalKeputusanPemenang()"
+                    class="w-full py-2 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    <span>Keputusan Pemenang</span>
+                </button>
+            </div>
         </div>
 
         {{-- KONTROL SUDUT MERAH --}}
@@ -622,127 +642,6 @@
                 </button>
             </div>
         </div>
-    </div>
-
-    {{-- 5. PANEL VERIFIKASI JURI (SISTEM VAR) --}}
-    <div class="bg-white rounded-xl p-2.5 mb-2.5 border border-gray-200 shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
-            <div class="flex items-center gap-1.5">
-                <div class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                    <svg class="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-gray-900 leading-tight">Sistem Verifikasi Juri (VAR Tanding)</h3>
-                    <p class="text-[10px] text-gray-400">Gunakan untuk memeriksa ulang serangan atau jatuhan bersama Juri 1, 2, dan 3.</p>
-                </div>
-            </div>
-
-            @if ($verifikasiAktif)
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-700 animate-pulse flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-ping"></span>
-                    VERIFIKASI AKTIF
-                </span>
-            @endif
-        </div>
-
-        @if ($verifikasiAktif)
-            {{-- SESI VERIFIKASI AKTIF --}}
-            <div class="p-3 rounded-lg bg-purple-50/60 border border-purple-200 mb-2 space-y-2.5">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5">
-                    <div>
-                        <span class="text-[9px] font-black text-purple-500 uppercase tracking-widest">Keterangan Verifikasi:</span>
-                        <h4 class="text-sm font-extrabold text-purple-900">{{ $verifikasiAktif->keterangan }}</h4>
-                    </div>
-                    <span class="px-2 py-0.5 rounded bg-purple-200/80 text-purple-800 text-[10px] font-bold">
-                        Babak {{ $verifikasiAktif->babak }}
-                    </span>
-                </div>
-
-                {{-- Matriks Respon 3 Juri --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    @for ($j = 1; $j <= 3; $j++)
-                        @php
-                            $ans = $verifikasiAktif->jawabanJuri->firstWhere('no_juri', $j);
-                            $pil = $ans ? $ans->pilihan_sudut : null;
-                        @endphp
-                        <div class="bg-white p-2 rounded-lg border border-purple-100 shadow-sm space-y-1.5">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-gray-700">Juri {{ $j }}</span>
-                                <span id="ans-badge-{{ $j }}" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase {{ $pil === 'Biru' ? 'bg-blue-600 text-white' : ($pil === 'Merah' ? 'bg-red-600 text-white' : ($pil === 'Batal' ? 'bg-gray-400 text-white' : 'bg-gray-100 text-gray-500')) }}">
-                                    {{ $pil ?: 'Menunggu' }}
-                                </span>
-                            </div>
-                            
-                            {{-- Tombol Pilih Sudut untuk Juri --}}
-                            <div class="grid grid-cols-3 gap-1">
-                                <button type="button" onclick="recordJawabanVerifikasi({{ $verifikasiAktif->id }}, {{ $j }}, 'Biru')"
-                                    class="py-1 px-1 rounded-md text-[9px] font-bold bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 transition-all">
-                                    Biru
-                                </button>
-                                <button type="button" onclick="recordJawabanVerifikasi({{ $verifikasiAktif->id }}, {{ $j }}, 'Merah')"
-                                    class="py-1 px-1 rounded-md text-[9px] font-bold bg-red-50 hover:bg-red-600 hover:text-white text-red-700 border border-red-200 transition-all">
-                                    Merah
-                                </button>
-                                <button type="button" onclick="recordJawabanVerifikasi({{ $verifikasiAktif->id }}, {{ $j }}, 'Batal')"
-                                    class="py-1 px-1 rounded-md text-[9px] font-bold bg-gray-100 hover:bg-gray-600 hover:text-white text-gray-600 border border-gray-200 transition-all">
-                                    Batal
-                                </button>
-                            </div>
-                        </div>
-                    @endfor
-                </div>
-
-                {{-- Eksekusi Keputusan Dewan --}}
-                <div class="pt-2 border-t border-purple-200 flex flex-wrap items-center justify-between gap-1.5">
-                    <span class="text-xs font-bold text-purple-900">Eksekusi Keputusan Dewan:</span>
-                    <div class="flex flex-wrap gap-1">
-                        <button type="button" onclick="selesaiVerifikasi({{ $verifikasiAktif->id }}, 'jatuhan_biru')"
-                            class="px-2 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold shadow-sm">
-                            Sahkan Jatuhan Biru (+3)
-                        </button>
-                        <button type="button" onclick="selesaiVerifikasi({{ $verifikasiAktif->id }}, 'jatuhan_merah')"
-                            class="px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold shadow-sm">
-                            Sahkan Jatuhan Merah (+3)
-                        </button>
-                        <button type="button" onclick="selesaiVerifikasi({{ $verifikasiAktif->id }}, 'sah_biru_tendangan')"
-                            class="px-2 py-1 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-800 text-[11px] font-bold">
-                            Tendangan Biru (+2)
-                        </button>
-                        <button type="button" onclick="selesaiVerifikasi({{ $verifikasiAktif->id }}, 'sah_merah_tendangan')"
-                            class="px-2 py-1 rounded-md bg-red-100 hover:bg-red-200 text-red-800 text-[11px] font-bold">
-                            Tendangan Merah (+2)
-                        </button>
-                        <button type="button" onclick="selesaiVerifikasi({{ $verifikasiAktif->id }}, 'batal')"
-                            class="px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700 text-[11px] font-bold">
-                            Batal / Tutup Sesi
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @else
-            {{-- FORM MEMULAI VERIFIKASI BARU --}}
-            <div class="flex flex-col sm:flex-row gap-1.5">
-                <input type="text" id="input-keterangan-verifikasi" placeholder="Ketik keterangan verifikasi (contoh: Verifikasi Jatuhan Sudut Biru)..."
-                    class="flex-1 h-8 px-2.5 text-xs rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-200 outline-none">
-                <div class="flex gap-1">
-                    <button type="button" onclick="quickVerifikasi('Verifikasi Jatuhan Biru')" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-blue-50 text-[10px] font-bold text-gray-600 hover:text-blue-700">
-                        + Jatuhan Biru
-                    </button>
-                    <button type="button" onclick="quickVerifikasi('Verifikasi Jatuhan Merah')" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-red-50 text-[10px] font-bold text-gray-600 hover:text-red-700">
-                        + Jatuhan Merah
-                    </button>
-                    <button type="button" onclick="quickVerifikasi('Verifikasi Peringatan / Pelanggaran')" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[10px] font-bold text-gray-600">
-                        + Pelanggaran
-                    </button>
-                    <button type="button" onclick="startVerifikasi()"
-                        class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0">
-                        Mulai Verifikasi
-                    </button>
-                </div>
-            </div>
-        @endif
     </div>
 
     {{-- 6. TIMELINE LOG RIWAYAT POIN & PELANGGARAN (DIBAGI DUA SUDUT: BIRU & MERAH) --}}
@@ -940,63 +839,369 @@
         </div>
     </div>
 
-    {{-- MODAL SELESAIKAN PERTANDINGAN --}}
-    <div id="modal-selesai" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-100">
+    {{-- MODAL SELESAIKAN PERTANDINGAN (OTOMATIS BERDASARKAN 5 KRITERIA) --}}
+    <div id="modal-selesai" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-100 transform transition-all animate-in fade-in zoom-in-95">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-gray-900">Selesaikan Pertandingan</h3>
-                <button type="button" onclick="closeSelesaiModal()" class="text-gray-400 hover:text-gray-600">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-black text-lg shadow-xs">
+                        🏁
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-gray-900 tracking-tight">Selesaikan Pertandingan</h3>
+                        <p class="text-[11px] text-gray-500 font-medium">Pemenang Ditetapkan Otomatis Berdasarkan 5 Kriteria</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSelesaiModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-all">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
-            <p class="text-xs text-gray-500 mb-4">Pilih atlet yang menjadi pemenang untuk mengunci skor dan mengupdate bagan partai selanjutnya:</p>
+            @php
+                $sudutMenang = $evaluasiPemenang['sudut'] ?? null;
+                $isMerah = (strtolower($sudutMenang) === 'merah');
+                $isBiru = (strtolower($sudutMenang) === 'biru');
+                $isSeri = (!$isMerah && !$isBiru);
+            @endphp
 
             <form action="{{ route('admin.manajemen.tanding.set-pemenang', $partai->id) }}" method="POST">
                 @csrf
-                <div class="space-y-3 mb-5">
-                    @if ($partai->pesertaBiru)
-                        <label class="block cursor-pointer">
-                            <input type="radio" name="id_pemenang" value="{{ $partai->pesertaBiru->id }}" checked class="peer sr-only">
-                            <div class="p-3.5 rounded-xl border-2 border-blue-100 bg-blue-50/40 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all flex items-center justify-between">
-                                <div>
-                                    <span class="text-[10px] font-bold uppercase bg-blue-600 text-white px-2 py-0.5 rounded">Sudut Biru</span>
-                                    <p class="text-sm font-bold text-blue-900 mt-1">{{ $partai->pesertaBiru->nama }}</p>
-                                    <p class="text-[10px] text-blue-600">{{ $partai->pesertaBiru->kontingen }}</p>
-                                </div>
-                                <span class="text-xs font-black text-blue-700 font-mono score-preview-biru">{{ $scores['biru']['total'] }} Poin</span>
-                            </div>
-                        </label>
-                    @endif
+                <input type="hidden" name="id_pemenang" id="selesai-id-pemenang" value="{{ $evaluasiPemenang['id_pemenang'] ?? '' }}">
+                <input type="hidden" name="alasan_pemenang" id="selesai-alasan-pemenang" value="{{ $evaluasiPemenang['alasan'] ?? '' }}">
 
-                    @if ($partai->pesertaMerah)
-                        <label class="block cursor-pointer">
-                            <input type="radio" name="id_pemenang" value="{{ $partai->pesertaMerah->id }}" class="peer sr-only">
-                            <div class="p-3.5 rounded-xl border-2 border-red-100 bg-red-50/40 peer-checked:border-red-600 peer-checked:bg-red-50 transition-all flex items-center justify-between">
-                                <div>
-                                    <span class="text-[10px] font-bold uppercase bg-red-600 text-white px-2 py-0.5 rounded">Sudut Merah</span>
-                                    <p class="text-sm font-bold text-red-900 mt-1">{{ $partai->pesertaMerah->nama }}</p>
-                                    <p class="text-[10px] text-red-600">{{ $partai->pesertaMerah->kontingen }}</p>
-                                </div>
-                                <span class="text-xs font-black text-red-700 font-mono score-preview-merah">{{ $scores['merah']['total'] }} Poin</span>
-                            </div>
-                        </label>
-                    @endif
+                <div class="mb-5">
+                    {{-- Card Pemenang Otomatis --}}
+                    <div id="card-pemenang-otomatis" class="p-4 rounded-xl border-2 transition-all {{ $isMerah ? 'border-red-500 bg-red-50/70' : ($isBiru ? 'border-blue-500 bg-blue-50/70' : 'border-amber-400 bg-amber-50/70') }}">
+                        <div class="flex items-center justify-between mb-2">
+                            <span id="badge-pemenang-otomatis" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs {{ $isMerah ? 'bg-red-600 text-white' : ($isBiru ? 'bg-blue-600 text-white' : 'bg-amber-600 text-white') }}">
+                                {{ $isMerah ? 'PEMENANG: SUDUT MERAH' : ($isBiru ? 'PEMENANG: SUDUT BIRU' : 'HASIL SERI / IMBANG') }}
+                            </span>
+                            <span id="tahap-pemenang-otomatis" class="text-[10px] font-extrabold text-gray-500 bg-white/80 px-2 py-0.5 rounded border border-gray-200">
+                                Kriteria Tahap {{ $evaluasiPemenang['kriteriaTahap'] ?? 1 }}
+                            </span>
+                        </div>
+
+                        <div class="my-2">
+                            <h4 id="nama-pemenang-otomatis" class="text-base font-black {{ $isMerah ? 'text-red-900' : ($isBiru ? 'text-blue-900' : 'text-amber-900') }}">
+                                @if($isMerah)
+                                    {{ $evaluasiPemenang['namaMerah'] ?? 'SUDUT MERAH' }}
+                                @elseif($isBiru)
+                                    {{ $evaluasiPemenang['namaBiru'] ?? 'SUDUT BIRU' }}
+                                @else
+                                    HASIL MASIH IMBANG / SERI
+                                @endif
+                            </h4>
+                            <p id="kontingen-pemenang-otomatis" class="text-xs font-semibold {{ $isMerah ? 'text-red-700' : ($isBiru ? 'text-blue-700' : 'text-amber-700') }}">
+                                @if($isMerah)
+                                    {{ $evaluasiPemenang['kontingenMerah'] ?? '-' }}
+                                @elseif($isBiru)
+                                    {{ $evaluasiPemenang['kontingenBiru'] ?? '-' }}
+                                @else
+                                    Seluruh 5 Kriteria Poin Bernilai Sama
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="mt-3 pt-2.5 border-t {{ $isMerah ? 'border-red-200' : ($isBiru ? 'border-blue-200' : 'border-amber-200') }} flex items-center justify-between text-xs">
+                            <span class="text-gray-500 font-medium">Alasan Kemenangan:</span>
+                            <span id="alasan-pemenang-otomatis" class="font-bold {{ $isMerah ? 'text-red-900' : ($isBiru ? 'text-blue-900' : 'text-amber-900') }}">
+                                {{ $evaluasiPemenang['alasan'] ?? '-' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Warning jika masih seri --}}
+                    <div id="warning-seri-selesai" class="{{ $isSeri ? '' : 'hidden' }} mt-3 p-3 rounded-xl bg-amber-100/70 border border-amber-300 text-amber-900 text-xs flex items-start gap-2">
+                        <span class="text-base">⚠️</span>
+                        <div>
+                            <p class="font-bold">Pertandingan belum memiliki pemenang.</p>
+                            <p class="text-[11px] text-amber-800 mt-0.5">Total skor dan semua kriteria tie-break masih bernilai sama. Selesaikan babak atau tambah poin/hukuman sah sebelum mengunci partai.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 text-[11px] text-slate-600">
+                        <span class="text-sm">⚖️</span>
+                        <span>Sistem otomatis mengunci skor dan mengupdate bagan partai lanjutan sesuai atlet pemenang di atas.</span>
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2">
                     <button type="button" onclick="closeSelesaiModal()"
-                        class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100">
+                        class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-all">
                         Batal
                     </button>
-                    <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm">
+                    <button type="submit" id="btn-submit-selesai" {{ $isSeri ? 'disabled' : '' }}
+                        class="px-4 py-2 {{ $isSeri ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' }} rounded-xl text-xs font-bold transition-all">
                         Kunci & Tetapkan Pemenang
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- MODAL VERIFIKASI DEWAN (VAR TANDING) --}}
+    <div id="modal-verifikasi-dewan" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col transform transition-all duration-300 animate-in fade-in zoom-in-95">
+            
+            {{-- Header Modal --}}
+            <div class="bg-gradient-to-r from-purple-700 via-indigo-700 to-slate-900 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-lg shadow-inner">
+                        📹
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-wider">SISTEM VERIFIKASI JURI (VAR)</h3>
+                        <p class="text-[10px] text-purple-200">Pantau respon Juri 1, 2, dan 3 secara real-time</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="dewan-verif-babak" class="px-2.5 py-1 bg-white/20 text-white rounded-lg text-xs font-black uppercase tracking-wider border border-white/30">
+                        BABAK {{ $partai->babak_aktif ?: 1 }}
+                    </span>
+                    <button type="button" onclick="closeVerifikasiDewan()" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body Modal --}}
+            <div class="p-4 space-y-4 bg-slate-50/50">
+                
+                {{-- Status 3 Juri Cards --}}
+                <div class="grid grid-cols-3 gap-3">
+                    @for ($j = 1; $j <= 3; $j++)
+                        <div id="dewan-card-juri-{{ $j }}" class="p-3 rounded-xl border bg-white shadow-sm flex flex-col items-center justify-between text-center min-h-[110px] transition-all border-slate-200">
+                            <span class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">JURI {{ $j }}</span>
+                            
+                            {{-- Icon status --}}
+                            <div id="dewan-icon-juri-{{ $j }}" class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-base font-black my-1 text-slate-400 transition-all">
+                                ⏳
+                            </div>
+                            
+                            {{-- Pilihan badge --}}
+                            <span id="dewan-badge-juri-{{ $j }}" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
+                                Menunggu...
+                            </span>
+                        </div>
+                    @endfor
+                </div>
+
+                {{-- Banner Hasil Konsensus Realtime --}}
+                <div id="dewan-banner-hasil" class="p-3.5 rounded-xl border bg-slate-100 border-slate-200 text-center transition-all">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">STATUS HASIL KONSENSUS</span>
+                    <h4 id="dewan-text-hasil" class="text-base font-black text-slate-700">
+                        ⏳ Menunggu respon dari juri (Minimal 2 juri sepakat)...
+                    </h4>
+                </div>
+
+                {{-- Aksi Eksekusi Hasil (Jika Diperlukan oleh Dewan) --}}
+                <div id="dewan-aksi-eksekusi" class="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Tindakan Keputusan (Opsional):</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
+                        <button type="button" onclick="eksekusiKeputusanVerifikasi('jatuhan_biru')"
+                            class="px-2 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 text-[10px] font-black transition-all">
+                            Jatuhan Biru (+3)
+                        </button>
+                        <button type="button" onclick="eksekusiKeputusanVerifikasi('jatuhan_merah')"
+                            class="px-2 py-1.5 rounded-lg bg-red-50 hover:bg-red-600 hover:text-white text-red-700 border border-red-200 text-[10px] font-black transition-all">
+                            Jatuhan Merah (+3)
+                        </button>
+                        <button type="button" onclick="eksekusiKeputusanVerifikasi('sah_biru_tendangan')"
+                            class="px-2 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 text-[10px] font-black transition-all">
+                            Tendangan Biru (+2)
+                        </button>
+                        <button type="button" onclick="eksekusiKeputusanVerifikasi('sah_merah_tendangan')"
+                            class="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-[10px] font-black transition-all">
+                            Tendangan Merah (+2)
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- Footer Modal --}}
+            <div class="p-3 bg-white border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400">Modal verifikasi di display & juri dikontrol oleh Dewan.</span>
+                <button type="button" onclick="closeVerifikasiDewan()"
+                    class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer">
+                    <span>Tutup Verifikasi</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- MODAL KEPUTUSAN PEMENANG DEWAN --}}
+    <div id="modal-pemenang-dewan" class="{{ ($partai->status_pemenang ?? false) ? '' : 'hidden' }} fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl border border-amber-200/80 w-full max-w-2xl max-h-[92vh] overflow-y-auto flex flex-col transform transition-all duration-300 animate-in fade-in zoom-in-95">
+            
+            {{-- Header Modal --}}
+            <div class="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 text-white p-4 flex items-center justify-between shrink-0 shadow-md">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-xl shadow-inner">
+                        🏆
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-wider">KEPUTUSAN PEMENANG PERTANDINGAN</h3>
+                        <p class="text-[11px] text-amber-100 font-medium">Partai {{ $partai->no_partai }} • {{ $partai->kelas }} • Kriteria IPSI (5 Tahapan)</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModalKeputusanPemenang()" class="w-8 h-8 rounded-lg bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-all cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Body Modal --}}
+            <div class="p-4 space-y-4 text-slate-800 text-xs">
+                
+                {{-- Banner Pemenang Utama --}}
+                @php
+                    $isMerah = ($partai->sudut_pemenang === 'Merah');
+                    $isBiru = ($partai->sudut_pemenang === 'Biru');
+                    $pBoxClass = $isMerah ? 'bg-gradient-to-r from-red-600 to-red-800 text-white border-red-500' : ($isBiru ? 'bg-gradient-to-r from-blue-600 to-blue-800 text-white border-blue-500' : 'bg-gradient-to-r from-amber-600 to-yellow-700 text-white border-amber-500');
+                    $pBadgeText = $isMerah ? 'PEMENANG: SUDUT MERAH' : ($isBiru ? 'PEMENANG: SUDUT BIRU' : 'STATUS: HASIL IMBANG / SERI');
+                    $pNama = $isMerah ? ($partai->pesertaMerah->nama ?? 'SUDUT MERAH') : ($isBiru ? ($partai->pesertaBiru->nama ?? 'SUDUT BIRU') : 'HASIL IMBANG / SERI');
+                    $pKontingen = $isMerah ? ($partai->pesertaMerah->kontingen ?? '-') : ($isBiru ? ($partai->pesertaBiru->kontingen ?? '-') : 'Seluruh 5 Kriteria Poin Sama');
+                @endphp
+                <div id="dewan-pemenang-box" class="p-4 rounded-xl border-2 {{ $pBoxClass }} shadow-lg flex flex-col items-center justify-center text-center gap-1.5 transition-all">
+                    <span id="dewan-pemenang-badge" class="px-3 py-1 bg-white {{ $isMerah ? 'text-red-700' : ($isBiru ? 'text-blue-700' : 'text-amber-800') }} font-black text-xs uppercase rounded-full shadow">
+                        {{ $pBadgeText }}
+                    </span>
+                    <h2 id="dewan-pemenang-nama" class="text-xl sm:text-2xl font-black tracking-wide text-white drop-shadow">
+                        {{ $pNama }}
+                    </h2>
+                    <p id="dewan-pemenang-kontingen" class="text-xs sm:text-sm font-bold text-amber-200">
+                        {{ $pKontingen }}
+                    </p>
+                    <div class="mt-1 px-3 py-1 bg-black/25 backdrop-blur-sm rounded-lg border border-white/20 text-white font-semibold text-xs flex items-center gap-1.5">
+                        <span>Alasan:</span>
+                        <span id="dewan-pemenang-alasan" class="font-bold underline">{{ $partai->alasan_pemenang ?? '-' }}</span>
+                    </div>
+                </div>
+
+                {{-- Tabel Perbandingan 5 Kriteria IPSI --}}
+                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 font-black text-[11px] uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                        <span>Rincian Evaluasi 5 Kriteria Penentuan Pemenang</span>
+                        <span class="text-[10px] text-slate-500 font-medium">Berdasarkan Regulasi IPSI</span>
+                    </div>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
+                                <th class="p-2.5">Tahap & Kriteria</th>
+                                <th class="p-2.5 text-center text-red-600 w-28 bg-red-50/60 font-black">Sudut Merah</th>
+                                <th class="p-2.5 text-center text-blue-600 w-28 bg-blue-50/60 font-black">Sudut Biru</th>
+                                <th class="p-2.5 text-slate-600 text-[11px]">Aturan Evaluasi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {{-- 1. Total Nilai --}}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5 font-bold text-slate-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">1</span>
+                                        <span>Total Skor (Nilai Bersih)</span>
+                                    </div>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-red-700 bg-red-50/30 text-sm">
+                                    <span id="dewan-skor-merah">{{ $scores['merah']['total'] ?? 0 }}</span>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-blue-700 bg-blue-50/30 text-sm">
+                                    <span id="dewan-skor-biru">{{ $scores['biru']['total'] ?? 0 }}</span>
+                                </td>
+                                <td class="p-2.5 text-slate-500 text-[11px]">Skor tertinggi otomatis menang</td>
+                            </tr>
+
+                            {{-- 2. Nilai Hukuman --}}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5 font-bold text-slate-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">2</span>
+                                        <span>Nilai Hukuman</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 font-normal pl-6.5">(T1×1) + (T2×2) + (P1×5) + (P2×10)</p>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-red-700 bg-red-50/30 text-sm">
+                                    <span id="dewan-hukuman-merah">0</span>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-blue-700 bg-blue-50/30 text-sm">
+                                    <span id="dewan-hukuman-biru">0</span>
+                                </td>
+                                <td class="p-2.5 text-slate-500 text-[11px]">Jika skor sama, hukuman <strong>lebih rendah</strong> menang</td>
+                            </tr>
+
+                            {{-- 3. Nilai Jatuhan --}}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5 font-bold text-slate-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">3</span>
+                                        <span>Nilai Jatuhan (3 Poin)</span>
+                                    </div>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-red-700 bg-red-50/30 text-sm">
+                                    <span id="dewan-jatuhan-merah">{{ ($scores['merah']['jatuhan_count'] ?? 0) * 3 }}</span>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-blue-700 bg-blue-50/30 text-sm">
+                                    <span id="dewan-jatuhan-biru">{{ ($scores['biru']['jatuhan_count'] ?? 0) * 3 }}</span>
+                                </td>
+                                <td class="p-2.5 text-slate-500 text-[11px]">Nilai jatuhan <strong>lebih tinggi</strong> menang</td>
+                            </tr>
+
+                            {{-- 4. Nilai Tendangan --}}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5 font-bold text-slate-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">4</span>
+                                        <span>Jumlah Tendangan (2 Poin)</span>
+                                    </div>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-red-700 bg-red-50/30 text-sm">
+                                    <span id="dewan-tendangan-merah">0</span>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-blue-700 bg-blue-50/30 text-sm">
+                                    <span id="dewan-tendangan-biru">0</span>
+                                </td>
+                                <td class="p-2.5 text-slate-500 text-[11px]">Jumlah tendangan <strong>lebih banyak</strong> menang</td>
+                            </tr>
+
+                            {{-- 5. Nilai Pukulan --}}
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="p-2.5 font-bold text-slate-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">5</span>
+                                        <span>Jumlah Pukulan (1 Poin)</span>
+                                    </div>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-red-700 bg-red-50/30 text-sm">
+                                    <span id="dewan-pukulan-merah">0</span>
+                                </td>
+                                <td class="p-2.5 text-center font-black text-blue-700 bg-blue-50/30 text-sm">
+                                    <span id="dewan-pukulan-biru">0</span>
+                                </td>
+                                <td class="p-2.5 text-slate-500 text-[11px]">Jumlah pukulan <strong>lebih banyak</strong> menang</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            {{-- Footer Modal --}}
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <span class="text-[11px] text-slate-500">Tampilan modal ini tersinkronisasi otomatis dengan Layar Display Penonton.</span>
+                <button type="button" onclick="closeModalKeputusanPemenang()"
+                    class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Tutup Keputusan Pemenang</span>
+                </button>
+            </div>
+
         </div>
     </div>
 @endsection
@@ -1135,44 +1340,207 @@
         }
     }
 
-    // 4. KONTROL VERIFIKASI JURI (VAR)
-    function quickVerifikasi(text) {
-        document.getElementById('input-keterangan-verifikasi').value = text;
-    }
+    // 4. KONTROL VERIFIKASI JURI (VAR TANDING SISTEM MODAL)
+    let currentVerifikasiId = {{ (isset($verifikasiAktif) && $verifikasiAktif) ? $verifikasiAktif->id : 'null' }};
 
-    async function startVerifikasi() {
-        const ket = document.getElementById('input-keterangan-verifikasi').value;
-        if (!ket) {
-            showToast('error', 'Keterangan verifikasi wajib diisi!');
-            return;
-        }
+    async function openModalVerifikasiDewan() {
+        const modal = document.getElementById('modal-verifikasi-dewan');
+        if (modal) modal.classList.remove('hidden');
+
+        resetModalVerifikasiDewan();
 
         const url = `/admin/dewan/tanding/${partaiId}/start-verifikasi`;
-        const res = await sendPost(url, { keterangan: ket });
-        if (res.success) {
-            window.location.reload();
+        const res = await sendPost(url, { keterangan: 'Verifikasi Juri (VAR)' });
+        if (res && res.success) {
+            currentVerifikasiId = res.verifikasi.id;
+            showToast('info', 'Sesi verifikasi dibuka. Menunggu respon 3 juri...');
+        } else {
+            showToast('error', res.message || 'Gagal memulai verifikasi');
         }
     }
 
-    async function recordJawabanVerifikasi(idVerifikasi, noJuri, pilihan) {
-        const url = `/admin/dewan/tanding/verifikasi/${idVerifikasi}/jawaban`;
-        const res = await sendPost(url, { no_juri: noJuri, pilihan_sudut: pilihan });
-        if (res.success) {
-            const badge = document.getElementById(`ans-badge-${noJuri}`);
-            badge.innerText = pilihan;
-            if (pilihan === 'Biru') badge.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase bg-blue-600 text-white";
-            else if (pilihan === 'Merah') badge.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-600 text-white";
-            else badge.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase bg-gray-400 text-white";
+    function resetModalVerifikasiDewan() {
+        for (let j = 1; j <= 3; j++) {
+            const badge = document.getElementById(`dewan-badge-juri-${j}`);
+            const icon = document.getElementById(`dewan-icon-juri-${j}`);
+            const card = document.getElementById(`dewan-card-juri-${j}`);
+            if (badge) {
+                badge.innerText = 'Menunggu...';
+                badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200';
+            }
+            if (icon) {
+                icon.innerText = '⏳';
+                icon.className = 'w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-base font-black my-1 text-slate-400 transition-all';
+            }
+            if (card) {
+                card.className = 'p-3 rounded-xl border bg-white shadow-sm flex flex-col items-center justify-between text-center min-h-[110px] transition-all border-slate-200';
+            }
+        }
+        const banner = document.getElementById('dewan-banner-hasil');
+        const textHasil = document.getElementById('dewan-text-hasil');
+        if (banner && textHasil) {
+            banner.className = 'p-3.5 rounded-xl border bg-slate-100 border-slate-200 text-center transition-all';
+            textHasil.innerText = '⏳ Menunggu respon dari juri (Minimal 2 juri sepakat)...';
+            textHasil.className = 'text-base font-black text-slate-700';
+        }
+    }
+
+    function updateDewanVerifikasiUI(jawaban, hasil) {
+        if (jawaban) {
+            for (let j = 1; j <= 3; j++) {
+                const pil = jawaban[j];
+                const badge = document.getElementById(`dewan-badge-juri-${j}`);
+                const icon = document.getElementById(`dewan-icon-juri-${j}`);
+                const card = document.getElementById(`dewan-card-juri-${j}`);
+                if (!badge || !icon || !card) continue;
+
+                if (pil === 'Biru') {
+                    badge.innerText = 'Sudut Biru';
+                    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white border border-blue-400 shadow-sm';
+                    icon.innerText = '🔵';
+                    icon.className = 'w-10 h-10 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-base font-black my-1 text-blue-600 transition-all';
+                    card.className = 'p-3 rounded-xl border-2 border-blue-400 bg-blue-50/50 shadow-sm flex flex-col items-center justify-between text-center min-h-[110px] transition-all';
+                } else if (pil === 'Merah') {
+                    badge.innerText = 'Sudut Merah';
+                    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600 text-white border border-red-400 shadow-sm';
+                    icon.innerText = '🔴';
+                    icon.className = 'w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-base font-black my-1 text-red-600 transition-all';
+                    card.className = 'p-3 rounded-xl border-2 border-red-400 bg-red-50/50 shadow-sm flex flex-col items-center justify-between text-center min-h-[110px] transition-all';
+                } else if (pil === 'Tidak Valid' || pil === 'Batal') {
+                    badge.innerText = 'Tidak Valid';
+                    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white border border-amber-400 shadow-sm';
+                    icon.innerText = '⚪';
+                    icon.className = 'w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-base font-black my-1 text-amber-600 transition-all';
+                    card.className = 'p-3 rounded-xl border-2 border-amber-400 bg-amber-50/50 shadow-sm flex flex-col items-center justify-between text-center min-h-[110px] transition-all';
+                }
+            }
+        }
+
+        if (hasil) {
+            const banner = document.getElementById('dewan-banner-hasil');
+            const textHasil = document.getElementById('dewan-text-hasil');
+            if (!banner || !textHasil) return;
+
+            if (hasil === 'Biru') {
+                banner.className = 'p-3.5 rounded-xl border-2 border-blue-500 bg-blue-50 text-center transition-all shadow-md';
+                textHasil.innerHTML = '🎉 KONSENSUS SAH: <span class="text-blue-700 underline font-black">SUDUT BIRU</span> (Tampil di Display)';
+                textHasil.className = 'text-base font-black text-blue-900';
+            } else if (hasil === 'Merah') {
+                banner.className = 'p-3.5 rounded-xl border-2 border-red-500 bg-red-50 text-center transition-all shadow-md';
+                textHasil.innerHTML = '🎉 KONSENSUS SAH: <span class="text-red-700 underline font-black">SUDUT MERAH</span> (Tampil di Display)';
+                textHasil.className = 'text-base font-black text-red-900';
+            } else {
+                banner.className = 'p-3.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-center transition-all shadow-md';
+                textHasil.innerHTML = '⚠️ KONSENSUS: <span class="text-amber-800 underline font-black">TIDAK VALID / BATAL</span> (Tampil di Display)';
+                textHasil.className = 'text-base font-black text-amber-900';
+            }
+        }
+    }
+
+    async function closeVerifikasiDewan(keputusan = 'tutup') {
+        if (!currentVerifikasiId) {
+            const modal = document.getElementById('modal-verifikasi-dewan');
+            if (modal) modal.classList.add('hidden');
+            return;
+        }
+        const url = `/admin/dewan/tanding/verifikasi/${currentVerifikasiId}/selesai`;
+        await sendPost(url, { keputusan: keputusan });
+        const modal = document.getElementById('modal-verifikasi-dewan');
+        if (modal) modal.classList.add('hidden');
+        currentVerifikasiId = null;
+        showToast('info', 'Sesi verifikasi ditutup di dewan dan display.');
+    }
+
+    async function eksekusiKeputusanVerifikasi(keputusan) {
+        if (!currentVerifikasiId) return;
+        await closeVerifikasiDewan(keputusan);
+    }
+
+    // 4.5 KONTROL KEPUTUSAN PEMENANG
+    async function openModalKeputusanPemenang() {
+        showToast('info', 'Menghitung keputusan pemenang...');
+        const url = `/admin/dewan/tanding/${partaiId}/keputusan-pemenang`;
+        const res = await sendPost(url);
+
+        if (res && res.success) {
+            updateDewanPemenangUI(res.data);
+            const modal = document.getElementById('modal-pemenang-dewan');
+            if (modal) modal.classList.remove('hidden');
             showToast('success', res.message);
+        } else {
+            showToast('error', res.message || 'Gagal menghitung pemenang');
         }
     }
 
-    async function selesaiVerifikasi(idVerifikasi, keputusan) {
-        const url = `/admin/dewan/tanding/verifikasi/${idVerifikasi}/selesai`;
-        const res = await sendPost(url, { keputusan: keputusan });
-        if (res.success) {
-            window.location.reload();
+    async function closeModalKeputusanPemenang() {
+        const url = `/admin/dewan/tanding/${partaiId}/close-pemenang`;
+        await sendPost(url);
+        const modal = document.getElementById('modal-pemenang-dewan');
+        if (modal) modal.classList.add('hidden');
+        showToast('info', 'Modal keputusan pemenang ditutup di dewan dan display.');
+    }
+
+    function updateDewanPemenangUI(data) {
+        if (!data) return;
+        const box = document.getElementById('dewan-pemenang-box');
+        const badge = document.getElementById('dewan-pemenang-badge');
+        const nama = document.getElementById('dewan-pemenang-nama');
+        const kontingen = document.getElementById('dewan-pemenang-kontingen');
+        const alasan = document.getElementById('dewan-pemenang-alasan');
+
+        if (data.pemenang === 'Merah') {
+            if (box) box.className = "p-4 rounded-xl border-2 border-red-500 bg-gradient-to-r from-red-600 to-red-800 text-white shadow-lg flex flex-col items-center justify-center text-center gap-1.5 transition-all";
+            if (badge) {
+                badge.innerText = "PEMENANG: SUDUT MERAH";
+                badge.className = "px-3 py-1 bg-white text-red-700 font-black text-xs uppercase rounded-full shadow";
+            }
+            if (nama) nama.innerText = data.pesertaPemenang ? data.pesertaPemenang.nama : (data.namaMerah || 'SUDUT MERAH');
+            if (kontingen) kontingen.innerText = data.pesertaPemenang ? data.pesertaPemenang.kontingen : (data.kontingenMerah || '-');
+        } else if (data.pemenang === 'Biru') {
+            if (box) box.className = "p-4 rounded-xl border-2 border-blue-500 bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg flex flex-col items-center justify-center text-center gap-1.5 transition-all";
+            if (badge) {
+                badge.innerText = "PEMENANG: SUDUT BIRU";
+                badge.className = "px-3 py-1 bg-white text-blue-700 font-black text-xs uppercase rounded-full shadow";
+            }
+            if (nama) nama.innerText = data.pesertaPemenang ? data.pesertaPemenang.nama : (data.namaBiru || 'SUDUT BIRU');
+            if (kontingen) kontingen.innerText = data.pesertaPemenang ? data.pesertaPemenang.kontingen : (data.kontingenBiru || '-');
+        } else {
+            if (box) box.className = "p-4 rounded-xl border-2 border-amber-500 bg-gradient-to-r from-amber-600 to-yellow-700 text-white shadow-lg flex flex-col items-center justify-center text-center gap-1.5 transition-all";
+            if (badge) {
+                badge.innerText = "HASIL IMBANG / SERI";
+                badge.className = "px-3 py-1 bg-white text-amber-800 font-black text-xs uppercase rounded-full shadow";
+            }
+            if (nama) nama.innerText = "HASIL IMBANG / SERI";
+            if (kontingen) kontingen.innerText = "Seluruh 5 Kriteria Poin Sama";
         }
+
+        if (alasan) alasan.innerText = data.alasan || '-';
+
+        // Update rows
+        const elSkorM = document.getElementById('dewan-skor-merah');
+        const elSkorB = document.getElementById('dewan-skor-biru');
+        if (elSkorM) elSkorM.innerText = data.totalMerah ?? 0;
+        if (elSkorB) elSkorB.innerText = data.totalBiru ?? 0;
+
+        const elHukM = document.getElementById('dewan-hukuman-merah');
+        const elHukB = document.getElementById('dewan-hukuman-biru');
+        if (elHukM) elHukM.innerText = data.hukumanMerah ?? 0;
+        if (elHukB) elHukB.innerText = data.hukumanBiru ?? 0;
+
+        const elJatM = document.getElementById('dewan-jatuhan-merah');
+        const elJatB = document.getElementById('dewan-jatuhan-biru');
+        if (elJatM) elJatM.innerText = data.jatuhanMerah ?? 0;
+        if (elJatB) elJatB.innerText = data.jatuhanBiru ?? 0;
+
+        const elTenM = document.getElementById('dewan-tendangan-merah');
+        const elTenB = document.getElementById('dewan-tendangan-biru');
+        if (elTenM) elTenM.innerText = data.tendanganMerah ?? 0;
+        if (elTenB) elTenB.innerText = data.tendanganBiru ?? 0;
+
+        const elPukM = document.getElementById('dewan-pukulan-merah');
+        const elPukB = document.getElementById('dewan-pukulan-biru');
+        if (elPukM) elPukM.innerText = data.pukulanMerah ?? 0;
+        if (elPukB) elPukB.innerText = data.pukulanBiru ?? 0;
     }
 
     // 5. KONTROL BABAK
@@ -1705,14 +2073,140 @@
                     }
                 }
             });
+
+            // 4. Realtime Verifikasi VAR Dewan
+            channel.listen('VerifikasiTandingUpdated', function(e) {
+                console.log("Realtime Verifikasi Tanding on Dewan:", e);
+                if (e.action === 'start') {
+                    currentVerifikasiId = e.verifikasiId;
+                    const modal = document.getElementById('modal-verifikasi-dewan');
+                    if (modal) modal.classList.remove('hidden');
+                    resetModalVerifikasiDewan();
+                } else if (e.action === 'vote') {
+                    currentVerifikasiId = e.verifikasiId;
+                    const modal = document.getElementById('modal-verifikasi-dewan');
+                    if (modal) modal.classList.remove('hidden');
+                    updateDewanVerifikasiUI(e.jawaban, e.hasil);
+                } else if (e.action === 'close') {
+                    const modal = document.getElementById('modal-verifikasi-dewan');
+                    if (modal) modal.classList.add('hidden');
+                    currentVerifikasiId = null;
+                }
+            });
+
+            // 5. Realtime Keputusan Pemenang Dewan
+            channel.listen('KeputusanPemenangTandingUpdated', function(e) {
+                console.log("Realtime Keputusan Pemenang on Dewan:", e);
+                if (e.action === 'show') {
+                    updateDewanPemenangUI(e);
+                    const modal = document.getElementById('modal-pemenang-dewan');
+                    if (modal) modal.classList.remove('hidden');
+                } else if (e.action === 'close') {
+                    const modal = document.getElementById('modal-pemenang-dewan');
+                    if (modal) modal.classList.add('hidden');
+                }
+            });
         }
     });
 
     setInterval(refreshStatus, 5000);
 
-    // Modal Selesai
-    function openSelesaiModal() {
-        document.getElementById('modal-selesai').classList.remove('hidden');
+    // Modal Selesai Otomatis Berdasarkan 5 Kriteria
+    async function openSelesaiModal() {
+        const modal = document.getElementById('modal-selesai');
+        if (modal) modal.classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/admin/dewan/tanding/${partaiId}/evaluasi-pemenang`);
+            const json = await res.json();
+            if (json.success && json.data) {
+                updateModalSelesaiUI(json.data);
+            }
+        } catch (e) {
+            console.error('Gagal mengambil data evaluasi pemenang:', e);
+        }
+    }
+
+    function updateModalSelesaiUI(data) {
+        const card = document.getElementById('card-pemenang-otomatis');
+        const badge = document.getElementById('badge-pemenang-otomatis');
+        const tahap = document.getElementById('tahap-pemenang-otomatis');
+        const nama = document.getElementById('nama-pemenang-otomatis');
+        const kontingen = document.getElementById('kontingen-pemenang-otomatis');
+        const alasan = document.getElementById('alasan-pemenang-otomatis');
+        const warning = document.getElementById('warning-seri-selesai');
+        const btnSubmit = document.getElementById('btn-submit-selesai');
+        const inputId = document.getElementById('selesai-id-pemenang');
+        const inputAlasan = document.getElementById('selesai-alasan-pemenang');
+
+        if (inputId) inputId.value = data.id_pemenang || '';
+        if (inputAlasan) inputAlasan.value = data.alasan || '';
+        if (tahap) tahap.innerText = `Kriteria Tahap ${data.kriteriaTahap || 1}`;
+        if (alasan) alasan.innerText = data.alasan || '-';
+
+        const sudut = (data.sudut || data.pemenang || '').toLowerCase();
+        const isMerah = (sudut === 'merah');
+        const isBiru = (sudut === 'biru');
+        const isSeri = (!isMerah && !isBiru);
+
+        if (isMerah) {
+            if (card) card.className = "p-4 rounded-xl border-2 transition-all border-red-500 bg-red-50/70";
+            if (badge) {
+                badge.className = "text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs bg-red-600 text-white";
+                badge.innerText = "PEMENANG: SUDUT MERAH";
+            }
+            if (nama) {
+                nama.className = "text-base font-black text-red-900";
+                nama.innerText = data.pesertaPemenang ? data.pesertaPemenang.nama : (data.namaMerah || 'SUDUT MERAH');
+            }
+            if (kontingen) {
+                kontingen.className = "text-xs font-semibold text-red-700";
+                kontingen.innerText = data.pesertaPemenang ? data.pesertaPemenang.kontingen : (data.kontingenMerah || '-');
+            }
+            if (warning) warning.classList.add('hidden');
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer";
+            }
+        } else if (isBiru) {
+            if (card) card.className = "p-4 rounded-xl border-2 transition-all border-blue-500 bg-blue-50/70";
+            if (badge) {
+                badge.className = "text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs bg-blue-600 text-white";
+                badge.innerText = "PEMENANG: SUDUT BIRU";
+            }
+            if (nama) {
+                nama.className = "text-base font-black text-blue-900";
+                nama.innerText = data.pesertaPemenang ? data.pesertaPemenang.nama : (data.namaBiru || 'SUDUT BIRU');
+            }
+            if (kontingen) {
+                kontingen.className = "text-xs font-semibold text-blue-700";
+                kontingen.innerText = data.pesertaPemenang ? data.pesertaPemenang.kontingen : (data.kontingenBiru || '-');
+            }
+            if (warning) warning.classList.add('hidden');
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer";
+            }
+        } else {
+            if (card) card.className = "p-4 rounded-xl border-2 transition-all border-amber-400 bg-amber-50/70";
+            if (badge) {
+                badge.className = "text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs bg-amber-600 text-white";
+                badge.innerText = "HASIL SERI / IMBANG";
+            }
+            if (nama) {
+                nama.className = "text-base font-black text-amber-900";
+                nama.innerText = "HASIL MASIH IMBANG / SERI";
+            }
+            if (kontingen) {
+                kontingen.className = "text-xs font-semibold text-amber-700";
+                kontingen.innerText = "Seluruh 5 Kriteria Poin Bernilai Sama";
+            }
+            if (warning) warning.classList.remove('hidden');
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.className = "px-4 py-2 bg-gray-300 text-gray-500 cursor-not-allowed opacity-60 rounded-xl text-xs font-bold transition-all";
+            }
+        }
     }
 
     function closeSelesaiModal() {

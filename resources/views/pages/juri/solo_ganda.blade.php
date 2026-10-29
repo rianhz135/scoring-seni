@@ -36,7 +36,7 @@
             </div>
             <div
                 class="animate-pulse bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-2xl relative z-10">
-                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri }}</h2>
+                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri }} &bull; <span class="text-amber-500 uppercase">{{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}</span></h2>
                 <h1 class="text-7xl font-black text-slate-800 tracking-tighter mb-4">STANDBY</h1>
                 <p class="text-xl font-bold text-slate-400 uppercase tracking-widest">Menunggu Giliran Peserta</p>
             </div>
@@ -84,7 +84,7 @@
                         <div class="flex-1 border-l border-white/20 pl-3 md:pl-6 min-w-0">
                             <p
                                 class="text-[8px] md:text-xl font-bold uppercase tracking-[0.1em] text-emerald-100 mb-0.5 md:mb-1 leading-tight">
-                                PARTAI #{{ $partai->no_partai }} &bull; {{ $partai->kategori->nama_kategori ?? 'SENI' }}
+                                PARTAI #{{ $partai->no_partai }} &bull; {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }} &bull; {{ $partai->kategori->nama_kategori ?? 'SENI' }}
                                 &bull; NO. URUT {{ $aktif->no_urut ?? '-' }}
                             </p>
 

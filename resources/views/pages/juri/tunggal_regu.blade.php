@@ -5,8 +5,21 @@
         body {
             background-color: #f1f5f9;
             overflow: hidden;
-            touch-action: pan-y;
-            /* Hindari pan-x agar tidak tergeser horizontal */
+            touch-action: manipulation;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+        }
+
+        body > div.min-h-screen {
+            padding: 0.5rem !important;
+            min-height: 100dvh !important;
+            height: 100dvh !important;
+            box-sizing: border-box !important;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         /* Menghilangkan scrollbar tapi tetap bisa scroll jika perlu */
@@ -28,7 +41,7 @@
             </div>
             <div
                 class="animate-pulse bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-2xl relative z-10">
-                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri ?? '-' }}</h2>
+                <h2 class="text-3xl font-black text-slate-400 mb-2">JURI {{ $no_juri ?? '-' }} &bull; <span class="text-amber-500 uppercase">{{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}</span></h2>
                 <div class="w-24 h-2 bg-slate-200 rounded-full mx-auto mb-6"></div>
 
                 <p class="text-xl text-slate-500 font-medium">
@@ -73,32 +86,32 @@
             $kategoriNama = $partai->kategori->nama_kategori ?? 'TUNGGAL / REGU';
         @endphp
 
-        <div id="landscape-wrapper" class="w-full p-3 flex flex-col gap-3 overflow-hidden">
+        <div id="landscape-wrapper" class="w-full h-full flex flex-col justify-between gap-2 overflow-hidden">
 
             {{-- BARIS 1: HEADER + TOTAL NILAI --}}
-            <div class="flex gap-3 shrink-0">
+            <div class="flex gap-2 shrink-0">
                 {{-- Sisi kiri: Info Juri & Nama Peserta --}}
                 <div
-                    class="bg-emerald-600 rounded-xl md:rounded-2xl px-3 md:px-6 py-3 md:py-6 shadow-lg flex items-center text-white relative overflow-hidden flex-1">
+                    class="bg-emerald-600 rounded-xl px-3 md:px-5 py-2 md:py-3 shadow-md flex items-center text-white relative overflow-hidden flex-1">
                     <div class="absolute top-0 right-0 w-40 h-full bg-white/10 skew-x-12 translate-x-10"></div>
-                    <div class="relative z-10 flex items-center gap-3 md:gap-6 w-full">
+                    <div class="relative z-10 flex items-center gap-3 md:gap-4 w-full">
 
                         <div
-                            class="bg-white/20 backdrop-blur-md px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl border border-white/30 text-center shadow-inner shrink-0">
-                            <p class="text-[10px] md:text-[14px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
+                            class="bg-white/20 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl border border-white/30 text-center shadow-inner shrink-0">
+                            <p class="text-[9px] md:text-xs font-black uppercase tracking-widest opacity-80 mb-0.5">
                                 JURI</p>
-                            <h2 class="text-3xl md:text-6xl font-black italic leading-none">{{ $no_juri }}</h2>
+                            <h2 class="text-2xl md:text-4xl font-black italic leading-none">{{ $no_juri }}</h2>
                         </div>
 
-                        <div class="flex-1 border-l border-white/20 pl-3 md:pl-6 min-w-0">
+                        <div class="flex-1 border-l border-white/20 pl-3 md:pl-4 min-w-0">
                             <p
-                                class="text-[8px] md:text-xl font-bold uppercase tracking-[0.1em] text-emerald-100 mb-0.5 md:mb-1 leading-tight">
-                                PARTAI #{{ $partai->no_partai }} &bull; {{ $partai->kategori->nama_kategori ?? 'SENI' }}
+                                class="text-[9px] md:text-xs font-bold uppercase tracking-wider text-emerald-100 mb-0.5 leading-tight truncate">
+                                PARTAI #{{ $partai->no_partai }} &bull; {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }} &bull; {{ $partai->kategori->nama_kategori ?? 'SENI' }}
                                 &bull; NO. URUT {{ $aktif->no_urut ?? '-' }}
                             </p>
 
                             <h1
-                                class="text-lg md:text-5xl font-black uppercase italic tracking-tight leading-none truncate">
+                                class="text-base md:text-2xl lg:text-3xl font-black uppercase italic tracking-tight leading-none truncate">
                                 @php
                                     $pesertaTampil = $partai->detail_peserta->where('status_mulai', 1);
                                 @endphp
@@ -109,7 +122,7 @@
                                 @endforeach
                             </h1>
 
-                            <p class="text-[11px] md:text-lg font-medium text-white/80 mt-0.5 md:mt-1">
+                            <p class="text-[10px] md:text-sm font-medium text-white/80 mt-0.5 truncate">
                                 {{ $aktif->peserta->kontingen ?? '' }}
                             </p>
                         </div>
@@ -118,15 +131,15 @@
 
                 {{-- Sisi kanan: Nilai Default & Nilai Akhir --}}
                 <div
-                    class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 px-6 py-5 flex items-center gap-6 shrink-0">
-                    <div class="text-center pr-6 border-r border-slate-600">
-                        <p class="text-lg font-black text-slate-400 uppercase tracking-widest mb-1">Nilai Default</p>
-                        <p class="text-4xl font-black text-white font-mono leading-none">9.90</p>
+                    class="bg-slate-800 rounded-xl shadow-md border border-slate-700 px-4 py-2 flex items-center gap-4 shrink-0">
+                    <div class="text-center pr-3 border-r border-slate-600">
+                        <p class="text-xs md:text-sm font-black text-slate-400 uppercase tracking-wider mb-0.5">Nilai Default</p>
+                        <p class="text-2xl md:text-3xl font-black text-white font-mono leading-none">9.90</p>
                     </div>
-                    <div class="text-center min-w-[120px]">
-                        <p class="text-lg font-black text-slate-400 uppercase tracking-widest mb-1">Nilai Akhir</p>
+                    <div class="text-center min-w-[90px]">
+                        <p class="text-xs md:text-sm font-black text-slate-400 uppercase tracking-wider mb-0.5">Nilai Akhir</p>
                         <p id="display-total"
-                            class="text-5xl font-black text-emerald-400 font-mono leading-none drop-shadow-md transition-all duration-300">
+                            class="text-3xl md:text-4xl font-black text-emerald-400 font-mono leading-none drop-shadow-md transition-all duration-300">
                             {{ number_format($inputJuri->skor_akhir_juri ?? 9.9, 2) }}
                         </p>
                     </div>
@@ -134,7 +147,7 @@
             </div>
 
             {{-- BARIS 2: KOLOM PENILAIAN (GRID 2 KOLOM) --}}
-            <div class="flex-1 grid grid-cols-2 gap-4 min-h-0 relative">
+            <div class="flex-1 grid grid-cols-2 gap-2 md:gap-3 min-h-0 relative">
 
                 {{-- OVERLAY KUNCI DENGAN ID AGAR BISA DIKONTROL JAVASCRIPT --}}
                 <div id="overlay-kunci"
@@ -151,67 +164,65 @@
                 </div>
 
                 {{-- KOLOM KIRI (Kemantapan / Nilai B) --}}
-                <div class="bg-white rounded-2xl border-2 border-emerald-100 shadow-sm p-5 flex flex-col gap-4">
+                <div class="bg-white rounded-xl md:rounded-2xl border-2 border-emerald-100 shadow-sm p-3 md:p-4 flex flex-col justify-between min-h-0">
                     <div class="shrink-0 text-center">
-                        <h3 class="text-lg xl:text-2xl font-black text-emerald-500 uppercase tracking-[0.2em]">Kemantapan
-                        </h3>
-                        <p class="text-slate-400 font-bold mt-1 tracking-widest text-xs">TOTAL PENAMBAHAN</p>
+                        <h3 class="text-base md:text-xl font-black text-emerald-500 uppercase tracking-[0.15em]">Kemantapan</h3>
+                        <p class="text-slate-400 font-bold tracking-widest text-[10px] md:text-xs">TOTAL PENAMBAHAN</p>
                     </div>
 
-                    <div class="flex-1 flex items-center justify-center min-h-[120px]">
+                    <div class="flex-1 flex items-center justify-center min-h-0 py-1">
                         <div id="display-nilai-b"
                             class="font-black text-emerald-500 leading-none font-mono transition-all duration-200"
-                            style="font-size: clamp(2rem, 10vw, 5rem);">
+                            style="font-size: clamp(2rem, 8vh, 4.5rem);">
                             +0.00
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 shrink-0" style="height: clamp(60px, 10vh, 120px);">
+                    <div class="grid grid-cols-3 gap-2 shrink-0" style="height: clamp(50px, 9vh, 85px);">
                         <button onclick="updateNilai('B', -0.01)"
-                            class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black rounded-2xl shadow-sm active:scale-95 transition-all flex flex-col items-center justify-center gap-2 text-xs uppercase tracking-widest">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black rounded-xl shadow-sm active:scale-95 transition-all flex flex-col items-center justify-center gap-1 text-[10px] md:text-xs uppercase tracking-widest">
+                            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                             </svg>
                             Undo
                         </button>
                         <button onclick="updateNilai('B', 0.01)"
-                            class="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-md active:scale-95 transition-all flex flex-col items-center justify-center gap-1">
-                            <span class="font-mono leading-none" style="font-size: clamp(2rem, 5vw, 2rem);">+0.01</span>
-                            <span class="text-xs font-bold opacity-90 uppercase tracking-widest">Mantap</span>
+                            class="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl shadow-md active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                            <span class="font-mono leading-none text-xl md:text-2xl font-black">+0.01</span>
+                            <span class="text-[10px] md:text-xs font-bold opacity-90 uppercase tracking-widest">Mantap</span>
                         </button>
                     </div>
                 </div>
 
                 {{-- KOLOM KANAN (Kebenaran Gerak / Nilai A) --}}
-                <div class="bg-white rounded-2xl border-2 border-red-100 shadow-sm p-5 flex flex-col gap-4">
+                <div class="bg-white rounded-xl md:rounded-2xl border-2 border-red-100 shadow-sm p-3 md:p-4 flex flex-col justify-between min-h-0">
                     <div class="shrink-0 text-center">
-                        <h3 class="text-lg xl:text-2xl font-black text-red-500 uppercase tracking-[0.2em]">Kebenaran Gerak
-                        </h3>
-                        <p class="text-slate-400 font-bold mt-1 tracking-widest text-xs">TOTAL PENGURANGAN</p>
+                        <h3 class="text-base md:text-xl font-black text-red-500 uppercase tracking-[0.15em]">Kebenaran Gerak</h3>
+                        <p class="text-slate-400 font-bold tracking-widest text-[10px] md:text-xs">TOTAL PENGURANGAN</p>
                     </div>
 
-                    <div class="flex-1 flex items-center justify-center min-h-[120px]">
+                    <div class="flex-1 flex items-center justify-center min-h-0 py-1">
                         <div id="display-nilai-a"
                             class="font-black text-red-600 leading-none font-mono transition-all duration-200"
-                            style="font-size: clamp(2rem, 10vw, 5rem);">
+                            style="font-size: clamp(2rem, 8vh, 4.5rem);">
                             -0.00
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 shrink-0" style="height: clamp(60px, 10vh, 120px);">
+                    <div class="grid grid-cols-3 gap-2 shrink-0" style="height: clamp(50px, 9vh, 85px);">
                         <button onclick="updateNilai('A', -0.01)"
-                            class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black rounded-2xl shadow-sm active:scale-95 transition-all flex flex-col items-center justify-center gap-2 text-xs uppercase tracking-widest">
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black rounded-xl shadow-sm active:scale-95 transition-all flex flex-col items-center justify-center gap-1 text-[10px] md:text-xs uppercase tracking-widest">
+                            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                             </svg>
                             Undo
                         </button>
                         <button onclick="updateNilai('A', 0.01)"
-                            class="col-span-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl shadow-md active:scale-95 transition-all flex flex-col items-center justify-center gap-1">
-                            <span class="font-mono leading-none" style="font-size: clamp(2rem, 5vw, 2rem);">-0.01</span>
-                            <span class="text-xs font-bold opacity-90 uppercase tracking-widest">Salah Gerak</span>
+                            class="col-span-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl shadow-md active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                            <span class="font-mono leading-none text-xl md:text-2xl font-black">-0.01</span>
+                            <span class="text-[10px] md:text-xs font-bold opacity-90 uppercase tracking-widest">Salah Gerak</span>
                         </button>
                     </div>
                 </div>
@@ -219,11 +230,11 @@
             </div>
 
             {{-- BARIS 3: TOMBOL KIRIM / SIMPAN KE DEWAN --}}
-            <div class="shrink-0">
+            <div class="shrink-0 relative z-30">
                 {{-- TOMBOL AKTIF (Disembunyikan jika isLocked = true) --}}
                 <button id="btn-kirim-aktif" onclick="simpanKeServer()"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-3xl py-5 rounded-2xl shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-4 {{ $isLocked ? 'hidden' : '' }}">
-                    <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-xl md:text-2xl py-3.5 md:py-4 rounded-xl md:rounded-2xl shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 {{ $isLocked ? 'hidden' : '' }}">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     SELESAI DAN KUNCI NILAI
@@ -231,8 +242,8 @@
 
                 {{-- TOMBOL TERKUNCI (Disembunyikan jika isLocked = false) --}}
                 <button id="btn-kirim-terkunci" disabled
-                    class="w-full bg-slate-400 text-white font-black text-3xl py-5 rounded-2xl shadow-lg flex items-center justify-center gap-3 cursor-not-allowed {{ $isLocked ? '' : 'hidden' }}">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    class="w-full bg-slate-400 text-white font-black text-xl md:text-2xl py-3.5 md:py-4 rounded-xl md:rounded-2xl shadow-lg flex items-center justify-center gap-3 cursor-not-allowed {{ $isLocked ? '' : 'hidden' }}">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
@@ -242,13 +253,15 @@
 
         </div>
     @endif
-    <div class="fixed bottom-4 right-4 flex gap-2 z-50">
+
+    {{-- Floating Controls: Posisi di Kiri Bawah agar tidak menutupi tombol penilaian atau tombol selesai --}}
+    <div style="position:fixed; bottom:0.75rem; left:0.75rem; display:flex; gap:0.4rem; z-index:99999;">
 
         {{-- Zoom In --}}
         <button onclick="zoomIn()"
-            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl shadow-lg flex items-center justify-center transition-all">
-            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                stroke-width="2.5">
+            class="w-9 h-9 md:w-11 md:h-11 bg-slate-700/90 hover:bg-slate-600 active:scale-95 text-white rounded-lg md:rounded-xl shadow-lg flex items-center justify-center transition-all backdrop-blur-sm"
+            title="Zoom In">
+            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6M11 8v6" />
@@ -257,25 +270,34 @@
 
         {{-- Zoom Out --}}
         <button onclick="zoomOut()"
-            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                stroke-width="2.5">
+            class="w-9 h-9 md:w-11 md:h-11 bg-slate-700/90 hover:bg-slate-600 active:scale-95 text-white rounded-lg md:rounded-xl shadow-lg flex items-center justify-center transition-all backdrop-blur-sm"
+            title="Zoom Out">
+            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M21 21l-4.35-4.35M11 19A8 8 0 1 0 11 3a8 8 0 0 0 0 16z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 11h6" />
             </svg>
         </button>
 
+        {{-- Home / Dashboard --}}
+        <a href="{{ url('/juri/dashboard') }}"
+            class="w-9 h-9 md:w-11 md:h-11 bg-indigo-600/90 hover:bg-indigo-500 active:scale-95 text-white rounded-lg md:rounded-xl shadow-lg flex items-center justify-center transition-all backdrop-blur-sm"
+            title="Dashboard Juri">
+            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m4-8v8m-7 0h10a2 2 0 002-2v-6" />
+            </svg>
+        </a>
+
         {{-- Fullscreen / Exit Fullscreen --}}
         <button onclick="toggleFullscreen()" id="btn-fullscreen"
-            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-            <svg id="icon-enter-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2.5">
+            class="w-9 h-9 md:w-11 md:h-11 bg-slate-700/90 hover:bg-slate-600 active:scale-95 text-white rounded-lg md:rounded-xl shadow-lg flex items-center justify-center transition-all backdrop-blur-sm"
+            title="Fullscreen">
+            <svg id="icon-enter-fs" class="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
             </svg>
-            <svg id="icon-exit-fs" class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 hidden" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2.5">
+            <svg id="icon-exit-fs" class="w-4 h-4 md:w-5 md:h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M8 3v3a1 1 0 0 1-1 1H4M21 8h-3a1 1 0 0 1-1-1V4M4 16h3a1 1 0 0 1 1 1v3M16 21v-3a1 1 0 0 1 1-1h3" />
             </svg>
@@ -283,16 +305,17 @@
 
         {{-- Refresh --}}
         <button onclick="window.location.reload()"
-            class="w-12 h-12 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-amber-500 hover:bg-amber-400 active:scale-95 text-white rounded-xl md:rounded-2xl lg:rounded-3xl shadow-lg flex items-center justify-center transition-all">
-            <svg class="w-5 h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                stroke-width="2.5">
+            class="w-9 h-9 md:w-11 md:h-11 bg-amber-500/90 hover:bg-amber-400 active:scale-95 text-white rounded-lg md:rounded-xl shadow-lg flex items-center justify-center transition-all backdrop-blur-sm"
+            title="Refresh">
+            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0 1 15-3.87M20 15a9 9 0 0 1-15 3.87" />
             </svg>
         </button>
 
     </div>
-    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
+    
+<script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script>
         let zoomLevel = 1;
         const ZOOM_STEP = 0.1;
@@ -309,7 +332,7 @@
                 wrapper.style.transform = '';
                 wrapper.style.transformOrigin = '';
                 wrapper.style.width = '100%';
-                wrapper.style.height = '100dvh';
+                wrapper.style.height = '100%';
             }
         }
 

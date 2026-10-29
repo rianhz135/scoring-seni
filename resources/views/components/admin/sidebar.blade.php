@@ -75,6 +75,8 @@
                 :active="request()->routeIs('admin.hasil.regu.*')">Regu</x-admin.sidebar-sublink>
             <x-admin.sidebar-sublink href="{{ route('admin.hasil.pool.index') }}"
                 :active="request()->routeIs('admin.hasil.pool.*')">Pool</x-admin.sidebar-sublink>
+            <x-admin.sidebar-sublink href="{{ route('admin.hasil.tanding.index') }}"
+                :active="request()->routeIs('admin.hasil.tanding.*')">Tanding</x-admin.sidebar-sublink>
         </x-admin.sidebar-group>
 
 

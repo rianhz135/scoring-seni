@@ -15,7 +15,7 @@ class KelasSeeder extends Seeder
         $kelas = ['KELAS A', 'KELAS B', 'KELAS C', 'KELAS D', 'KELAS E'];
 
         foreach ($kelas as $k) {
-            \App\Models\RefKelas::create([
+            \App\Models\RefKelas::firstOrCreate([
                 'label_kelas' => $k
             ]);
         }

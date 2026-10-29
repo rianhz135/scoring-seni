@@ -41,29 +41,40 @@ Route::get('/dewan/display', function (\Illuminate\Http\Request $request) {
         $q = \App\Models\PartaiTanding::with(['pesertaMerah', 'pesertaBiru', 'pemenang']);
         if ($targetId) {
             $partaiTanding = $q->find($targetId);
+            if ($partaiTanding && $partaiTanding->status_pertandingan === 'Selesai' && !$partaiTanding->status_pemenang) {
+                $partaiTanding = null;
+            }
         } else {
-            $partaiTanding = $q->where('status_pertandingan', 'Berlangsung')->latest('updated_at')->first() 
-                ?? $q->latest('id')->first();
+            $partaiTanding = $q->where(function($sq) {
+                $sq->where('status_pertandingan', 'Berlangsung')
+                   ->orWhere('status_pemenang', 1);
+            })->latest('updated_at')->first();
         }
         if ($partaiTanding) {
             $mode = 'tanding';
             $scoresTanding = app(\App\Http\Controllers\Admin\Dewan\TandingController::class)->calculateScores($partaiTanding->id);
+        } else {
+            $mode = 'standby';
         }
     } elseif (in_array($kategori, ['seni', 'solo', 'ganda', 'tunggal', 'regu', 'pool'])) {
         $q = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta', 'kategori']);
         if ($targetId) {
             $partai = $q->find($targetId);
         } else {
-            $partai = $q->whereHas('detail_peserta', fn($sq) => $sq->where('status_mulai', 1))->first()
-                ?? $q->latest('id_partai')->first();
+            $partai = $q->whereHas('detail_peserta', fn($sq) => $sq->where('status_mulai', 1))->first();
         }
         if ($partai) {
             $mode = 'seni';
+        } else {
+            $mode = 'standby';
         }
     } else {
         // 2. Auto-Detect: Cari partai mana yang sedang bertanding aktif saat ini
         $activeTanding = \App\Models\PartaiTanding::with(['pesertaMerah', 'pesertaBiru', 'pemenang'])
-            ->where('status_pertandingan', 'Berlangsung')
+            ->where(function($q) {
+                $q->where('status_pertandingan', 'Berlangsung')
+                  ->orWhere('status_pemenang', 1);
+            })
             ->latest('updated_at')
             ->first();
 
@@ -95,7 +106,16 @@ Route::get('/dewan/display', function (\Illuminate\Http\Request $request) {
         }
     }
 
-    return view('pages.dewan.display', compact('partai', 'partaiTanding', 'mode', 'scoresTanding'));
+    $verifikasiAktif = null;
+    if ($partaiTanding) {
+        $verifikasiAktif = \App\Models\VerifikasiDewan::with('jawabanJuri')
+            ->where('id_partai', $partaiTanding->id)
+            ->where('status', 'Aktif')
+            ->latest()
+            ->first();
+    }
+
+    return view('pages.dewan.display', compact('partai', 'partaiTanding', 'mode', 'scoresTanding', 'verifikasiAktif'));
 
 })->name('dewan.display');
 
@@ -111,6 +131,9 @@ Route::prefix('admin')
         // --- 1. DASHBOARD & PROFILE ---
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+        Route::post('/profile/display', [ProfileController::class, 'updateDisplay'])->name('profile.update-display');
+        Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
 
         // ROUTE UNTUK LAYAR DISPLAY PROYEKTOR / PENONTON
@@ -283,6 +306,9 @@ Route::prefix('admin')
             Route::post('/{id}/input-juri', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput'])->name('input-juri');
             Route::post('/refresh-display', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'triggerRefreshDisplay'])->name('refresh');
             Route::get('/{id}/status-data', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData'])->name('status-data');
+            Route::get('/{id}/evaluasi-pemenang', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'getEvaluasiPemenang'])->name('evaluasi-pemenang');
+            Route::post('/{id}/keputusan-pemenang', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang'])->name('keputusan-pemenang');
+            Route::post('/{id}/close-pemenang', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'closeKeputusanPemenang'])->name('close-pemenang');
         });
 
 
@@ -315,6 +341,10 @@ Route::prefix('admin')
             Route::post('/pool/{id}/tetapkan-pemenang', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tetapkanPemenang'])->name('pool.tetapkan');
             Route::post('/pool/{id}/tutup-display', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'tutupDisplay'])->name('pool.tutup');
             Route::get('/pool/export-pdf', [App\Http\Controllers\Admin\Hasil\HasilPoolController::class, 'exportPdf'])->name('pool.export-pdf');
+
+            Route::get('/tanding', [App\Http\Controllers\Admin\Hasil\TandingController::class, 'index'])->name('tanding.index');
+            Route::get('/tanding/{id}/detail', [App\Http\Controllers\Admin\Hasil\TandingController::class, 'detail'])->name('tanding.detail');
+            Route::get('/tanding/export-pdf', [App\Http\Controllers\Admin\Hasil\TandingController::class, 'exportPdf'])->name('tanding.export-pdf');
         });
 
     });
@@ -619,6 +649,7 @@ Route::get('/juri/tanding/{no_juri}', function ($no_juri) {
 
     $kontrol = null;
     $recentLogs = collect([]);
+    $verifikasiAktif = null;
 
     if ($partai) {
         $kontrol = \App\Models\StatusKontrolJuriTanding::firstOrCreate(
@@ -631,13 +662,20 @@ Route::get('/juri/tanding/{no_juri}', function ($no_juri) {
             ->latest('id')
             ->take(15)
             ->get();
+
+        $verifikasiAktif = \App\Models\VerifikasiDewan::with('jawabanJuri')
+            ->where('id_partai', $partai->id)
+            ->where('status', 'Aktif')
+            ->first();
     }
 
-    return view('pages.juri.tanding', compact('partai', 'no_juri', 'kontrol', 'recentLogs'));
+    return view('pages.juri.tanding', compact('partai', 'no_juri', 'kontrol', 'recentLogs', 'verifikasiAktif'));
 })->name('juri.tanding');
 
 Route::post('/juri/tanding/input/{id}/{no_juri}', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput'])
     ->name('juri.tanding.input');
+Route::post('/juri/tanding/verifikasi/{id_verifikasi}/jawaban', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'recordJawabanVerifikasi'])
+    ->name('juri.tanding.verifikasi.jawaban');
 
 // Route Simpan Nilai (Tetap)
 Route::post('/juri/solo/simpan/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\SoloController::class, 'simpanNilaiJuri'])->name('juri.solo.simpan');
@@ -876,8 +914,12 @@ Route::prefix('dewan')->name('dewan.')->group(function () {
     Route::post('/tanding/{id}/toggle-all-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'toggleAllJuri'])->name('tanding.toggle-all-juri');
     Route::post('/tanding/{id}/update-timer', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateTimer'])->name('tanding.update-timer');
     Route::post('/tanding/{id}/update-babak', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateBabak'])->name('tanding.update-babak');
+    Route::post('/tanding/{id}/keputusan-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang'])->name('tanding.keputusan-pemenang');
+    Route::post('/tanding/{id}/close-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'closeKeputusanPemenang'])->name('tanding.close-pemenang');
 });
 
 // Fallback langsung untuk input juri tanding
 Route::post('/dewan/tanding/{id}/input-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput']);
+Route::post('/dewan/tanding/{id}/keputusan-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang']);
+Route::post('/dewan/tanding/{id}/close-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'closeKeputusanPemenang']);
 

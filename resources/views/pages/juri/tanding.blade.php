@@ -71,14 +71,15 @@
                 <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-3xl sm:text-4xl mx-auto mb-4 sm:mb-6">
                     🥊
                 </div>
-                <div class="inline-block px-3 sm:px-4 py-1 rounded-full bg-slate-700/80 text-slate-300 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-2 sm:mb-3">
-                    PANEL PENILAIAN JURI {{ $no_juri }} &bull; TANDING
+                <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-slate-700/80 text-slate-300 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-2 sm:mb-3 border border-slate-600">
+                    <span>PANEL PENILAIAN JURI {{ $no_juri }} &bull; TANDING</span>
+                    <span class="text-amber-400">&bull; {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight uppercase mb-2 sm:mb-3">
                     STANDBY
                 </h1>
                 <p class="text-xs sm:text-base text-slate-400 font-medium mb-6 sm:mb-8">
-                    Menunggu operator atau dewan memulai partai tanding di gelanggang ini...
+                    Menunggu operator atau dewan memulai partai tanding di <span class="text-amber-400 font-bold uppercase">{{ $pengaturanDisplay->gelanggang ?? 'Gelanggang' }}</span>...
                 </p>
                 <div class="flex items-center justify-center gap-3">
                     <a href="{{ route('juri.dashboard') }}"
@@ -88,6 +89,16 @@
                 </div>
             </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.Echo) {
+                    window.Echo.channel('gelanggang.global.tanding.A')
+                        .listen('RefreshDisplay', function() {
+                            window.location.reload();
+                        });
+                }
+            });
+        </script>
     @else
         @php
             $isActive = $kontrol ? $kontrol->is_active : true;
@@ -113,6 +124,69 @@
             </div>
         </div>
 
+        @php
+            $hasVerifAktif = isset($verifikasiAktif) && $verifikasiAktif;
+            $sudahVote = $hasVerifAktif ? $verifikasiAktif->jawabanJuri->where('no_juri', $no_juri)->isNotEmpty() : false;
+            $showVerifModalInit = ($hasVerifAktif && !$sudahVote);
+            $initialVerifId = $hasVerifAktif ? $verifikasiAktif->id : null;
+        @endphp
+
+        {{-- MODAL VERIFIKASI JURI --}}
+        <div id="modal-verifikasi-juri" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md {{ $showVerifModalInit ? '' : 'hidden' }} transition-all duration-300">
+            <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl shadow-2xl border-2 border-purple-500/50 w-full max-w-lg p-5 sm:p-6 text-white text-center transform transition-all animate-in fade-in zoom-in-95">
+                
+                <div class="w-14 h-14 rounded-2xl bg-purple-600/30 border border-purple-400/40 text-purple-300 flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+                    📹
+                </div>
+
+                <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[10px] sm:text-xs font-black uppercase tracking-widest border border-purple-500/30">
+                    PERMINTAAN VERIFIKASI DEWAN
+                </span>
+
+                <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight mt-2.5 mb-1 text-white">
+                    PILIH KEPUTUSAN VERIFIKASI
+                </h2>
+                <p class="text-slate-400 text-xs sm:text-sm font-medium mb-5">
+                    Juri {{ $no_juri }}, tentukan keputusan Anda untuk diverifikasi di dewan dan display pertandingan:
+                </p>
+
+                {{-- 3 Tombol Opsi: Sudut Biru, Sudut Merah, Tidak Valid --}}
+                <div class="flex flex-col gap-3">
+                    {{-- 1. Sudut Biru --}}
+                    <button type="button" onclick="submitVerifikasiJuri('Biru')"
+                        class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 active:scale-98 text-white font-black text-base sm:text-lg uppercase tracking-wider flex items-center justify-between border-2 border-blue-400 shadow-[0_8px_20px_rgba(37,99,235,0.4)] transition-all cursor-pointer">
+                        <span class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-lg">🔵</span>
+                            <span>SUDUT BIRU</span>
+                        </span>
+                        <span class="text-xs font-black px-2 py-0.5 rounded-full bg-white/20 border border-white/30 truncate max-w-[150px]">
+                            {{ $partai->pesertaBiru->nama ?? 'BIRU' }}
+                        </span>
+                    </button>
+
+                    {{-- 2. Sudut Merah --}}
+                    <button type="button" onclick="submitVerifikasiJuri('Merah')"
+                        class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 active:scale-98 text-white font-black text-base sm:text-lg uppercase tracking-wider flex items-center justify-between border-2 border-red-400 shadow-[0_8px_20px_rgba(220,38,38,0.4)] transition-all cursor-pointer">
+                        <span class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-lg">🔴</span>
+                            <span>SUDUT MERAH</span>
+                        </span>
+                        <span class="text-xs font-black px-2 py-0.5 rounded-full bg-white/20 border border-white/30 truncate max-w-[150px]">
+                            {{ $partai->pesertaMerah->nama ?? 'MERAH' }}
+                        </span>
+                    </button>
+
+                    {{-- 3. Tidak Valid --}}
+                    <button type="button" onclick="submitVerifikasiJuri('Tidak Valid')"
+                        class="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-98 text-slate-300 hover:text-white font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 shadow-md transition-all cursor-pointer">
+                        <span class="text-base">⚪</span>
+                        <span>TIDAK VALID / BATAL</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
         {{-- 3. CONTAINER UTAMA JURI TANDING (RESPONSIF TABLET & HP, BISA DISCROLL) --}}
         <div class="w-full flex-1 flex flex-col gap-2.5 sm:gap-3 text-white pb-6">
 
@@ -131,8 +205,11 @@
                         <span class="text-[10px] sm:text-xs font-black px-1.5 sm:px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
                             {{ $partai->kelas ?? 'TANDING' }}
                         </span>
-                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase hidden md:inline">
-                            Gel. {{ $partai->gelanggang ?? 'A' }} &bull; {{ $partai->fase_babak ?? 'Penyisihan' }}
+                        <span class="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
+                            {{ $pengaturanDisplay->gelanggang ?? 'GELANGGANG 1' }}
+                        </span>
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase hidden sm:inline">
+                            &bull; {{ $partai->fase_babak ?? 'Penyisihan' }}
                         </span>
                     </div>
                 </div>
@@ -487,7 +564,63 @@
                     list.prepend(card);
                 }
 
-                // 4. Listen Reverb Real-Time
+                // 4. KONTROL VERIFIKASI JURI MODAL (VAR)
+                let activeVerifikasiId = {{ $initialVerifId ?: 'null' }};
+
+                window.showVerifikasiModalJuri = function(verifId) {
+                    activeVerifikasiId = verifId;
+                    const modal = document.getElementById('modal-verifikasi-juri');
+                    if (modal) modal.classList.remove('hidden');
+                    playBeep(750, 0.25);
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                };
+
+                window.hideVerifikasiModalJuri = function() {
+                    const modal = document.getElementById('modal-verifikasi-juri');
+                    if (modal) modal.classList.add('hidden');
+                };
+
+                window.submitVerifikasiJuri = async function(pilihan) {
+                    // Ketika diklik, modal langsung tertutup di halaman juri
+                    hideVerifikasiModalJuri();
+                    playBeep(pilihan === 'Biru' ? 520 : (pilihan === 'Merah' ? 780 : 400), 0.15);
+                    if (navigator.vibrate) navigator.vibrate(80);
+
+                    if (!activeVerifikasiId) return;
+
+                    const fbEl = (pilihan === 'Biru') ? document.getElementById('feedback-biru') : document.getElementById('feedback-merah');
+                    if (fbEl) {
+                        const originalText = fbEl.innerText;
+                        fbEl.innerText = `Pilihan verifikasi (${pilihan}) telah dikirim ke Dewan`;
+                        fbEl.className = "shrink-0 text-center py-1 sm:py-1.5 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-purple-900 border border-purple-400 text-[11px] sm:text-xs font-black text-white truncate shadow-inner animate-pulse";
+                        setTimeout(() => {
+                            fbEl.innerText = originalText;
+                            fbEl.className = (pilihan === 'Biru') ?
+                                "shrink-0 text-center py-1 sm:py-1.5 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-blue-950/70 border border-blue-500/40 text-[11px] sm:text-xs font-bold text-blue-100 truncate shadow-inner" :
+                                "shrink-0 text-center py-1 sm:py-1.5 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-red-950/70 border border-red-500/40 text-[11px] sm:text-xs font-bold text-red-100 truncate shadow-inner";
+                        }, 3500);
+                    }
+
+                    try {
+                        const url = `/juri/tanding/verifikasi/${activeVerifikasiId}/jawaban`;
+                        await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: JSON.stringify({
+                                no_juri: noJuri,
+                                pilihan_sudut: pilihan
+                            })
+                        });
+                    } catch (err) {
+                        console.error("Gagal mengirim pilihan verifikasi:", err);
+                    }
+                };
+
+                // 5. Listen Reverb Real-Time
                 document.addEventListener('DOMContentLoaded', function() {
                     if (window.Echo) {
                         const channelName = `partai.tanding.${partaiId}`;
@@ -548,6 +681,16 @@
                             .listen('RefreshDisplay', function() {
                                 window.location.reload();
                             });
+
+                        // E. Realtime Verifikasi VAR Juri
+                        channel.listen('VerifikasiTandingUpdated', function(e) {
+                            console.log("Realtime Verifikasi received on Juri:", e);
+                            if (e.action === 'start') {
+                                showVerifikasiModalJuri(e.verifikasiId);
+                            } else if (e.action === 'close') {
+                                hideVerifikasiModalJuri();
+                            }
+                        });
                     }
                 });
             })();

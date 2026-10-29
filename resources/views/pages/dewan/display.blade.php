@@ -23,9 +23,9 @@
                 transform: scale(1.05);
             }
             100% {
-                background-color: rgba(30, 41, 59, 0.8);
-                border-color: rgba(51, 65, 85, 0.8);
-                color: #94a3b8;
+                background-color: rgba(23, 37, 84, 0.7);
+                border-color: rgba(96, 165, 250, 0.3);
+                color: #ffffff;
                 box-shadow: none;
                 transform: scale(1);
             }
@@ -47,9 +47,9 @@
                 transform: scale(1.05);
             }
             100% {
-                background-color: rgba(30, 41, 59, 0.8);
-                border-color: rgba(51, 65, 85, 0.8);
-                color: #94a3b8;
+                background-color: rgba(69, 10, 10, 0.7);
+                border-color: rgba(248, 113, 113, 0.3);
+                color: #ffffff;
                 box-shadow: none;
                 transform: scale(1);
             }
@@ -93,7 +93,7 @@
 
         /* Skor Utama Display Penonton */
         .score-display-number {
-            font-size: clamp(9rem, min(34vh, 24vw), 24rem);
+            font-size: clamp(6rem, min(26vh, 18vw), 20rem);
             line-height: 0.85;
             font-weight: 900;
             letter-spacing: -0.04em;
@@ -104,6 +104,27 @@
             line-height: 0.9;
         }
     </style>
+
+    @php
+        $pengaturan = \App\Models\PengaturanDisplay::getSetting();
+
+        $logoKiriSrc = null;
+        if (!empty($pengaturan->logo_kiri) && file_exists(public_path($pengaturan->logo_kiri))) {
+            $logoKiriSrc = asset($pengaturan->logo_kiri);
+        } elseif (file_exists(public_path('smi.png'))) {
+            $logoKiriSrc = asset('smi.png');
+        }
+
+        $logoKananSrc = null;
+        if (!empty($pengaturan->logo_kanan) && file_exists(public_path($pengaturan->logo_kanan))) {
+            $logoKananSrc = asset($pengaturan->logo_kanan);
+        } elseif (file_exists(public_path('logo2.png'))) {
+            $logoKananSrc = asset('logo2.png');
+        }
+
+        $teksGelanggang = $pengaturan->gelanggang ?: 'GELANGGANG 1';
+        $teksKejuaraan = $pengaturan->nama_kejuaraan ?: 'PERTANDINGAN SMI CUP 2026';
+    @endphp
 
     @if (($mode ?? '') === 'tanding' && isset($partaiTanding) && $partaiTanding)
         @php
@@ -126,15 +147,51 @@
             $babakAktif = $partaiTanding->babak_aktif ?: 1;
             $waktuTimer = (int) ($partaiTanding->waktu_timer ?? 0);
             $statusTimer = $partaiTanding->status_timer ?? 'stop';
+
+            // Evaluasi inisial jika ada sesi verifikasi aktif saat halaman di-load
+            $isVerifikasiAktif = false;
+            $initVerifHasil = null;
+            $initJawaban = [1 => null, 2 => null, 3 => null];
+            if (isset($verifikasiAktif) && $verifikasiAktif && $verifikasiAktif->status === 'Aktif') {
+                $isVerifikasiAktif = true;
+                $cBiru = 0;
+                $cMerah = 0;
+                $cTidakValid = 0;
+                foreach ($verifikasiAktif->jawabanJuri as $jj) {
+                    $val = in_array($jj->pilihan_sudut, ['Batal', 'Tidak Valid']) ? 'Tidak Valid' : $jj->pilihan_sudut;
+                    $initJawaban[$jj->no_juri] = $val;
+                    if ($val === 'Biru') $cBiru++;
+                    elseif ($val === 'Merah') $cMerah++;
+                    elseif ($val === 'Tidak Valid') $cTidakValid++;
+                }
+                if ($cBiru >= 2) $initVerifHasil = 'Biru';
+                elseif ($cMerah >= 2) $initVerifHasil = 'Merah';
+                elseif ($cTidakValid >= 2) $initVerifHasil = 'Tidak Valid';
+                elseif ($verifikasiAktif->jawabanJuri->count() >= 3) $initVerifHasil = 'Tidak Valid';
+            }
+
+            // Evaluasi inisial keputusan pemenang jika ada saat load
+            $isPemenangAktif = (bool) ($partaiTanding->status_pemenang ?? false);
+            $initPemenangSudut = $partaiTanding->sudut_pemenang ?? null;
+            $initPemenangAlasan = $partaiTanding->alasan_pemenang ?? '';
+            $initPemenangNama = '';
+            $initPemenangKontingen = '';
+            if ($initPemenangSudut === 'Merah') {
+                $initPemenangNama = $partaiTanding->pesertaMerah->nama ?? 'SUDUT MERAH';
+                $initPemenangKontingen = $partaiTanding->pesertaMerah->kontingen ?? '-';
+            } elseif ($initPemenangSudut === 'Biru') {
+                $initPemenangNama = $partaiTanding->pesertaBiru->nama ?? 'SUDUT BIRU';
+                $initPemenangKontingen = $partaiTanding->pesertaBiru->kontingen ?? '-';
+            }
         @endphp
 
         <div class="h-[96vh] flex flex-col justify-between p-3.5 gap-3 text-white select-none">
             {{-- 0. TOP EVENT BAR (GRID 1:3:1 -> LOGO 1, INFORMASI PERTANDINGAN, LOGO 2) --}}
-            <div class="bg-slate-800/90 border border-slate-700 rounded-3xl px-6 py-2.5 grid grid-cols-5 items-center shadow-xl backdrop-blur-md shrink-0 gap-4">
+            <div class="bg-slate-800/90 border border-slate-700 rounded-3xl px-8 py-5 grid grid-cols-5 items-center shadow-xl backdrop-blur-md shrink-0 gap-4">
                 {{-- Grid 1: Logo Kiri (Logo 1) - Col 1 (Rasio 1) --}}
                 <div class="col-span-1 flex items-center justify-start">
-                    @if (file_exists(public_path('smi.png')))
-                        <img src="{{ asset('smi.png') }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
+                    @if ($logoKiriSrc)
+                        <img src="{{ $logoKiriSrc }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @elseif (file_exists(public_path('logo1.png')))
                         <img src="{{ asset('logo1.png') }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @else
@@ -150,14 +207,14 @@
                 {{-- Grid 2: Informasi Pertandingan - Col 3 (Rasio 3) --}}
                 <div class="col-span-3 flex flex-col items-center justify-center text-center">
                     <h1 class="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_4px_15px_rgba(245,158,11,0.4)] leading-tight whitespace-nowrap">
-                        PERTANDINGAN SMI CUP 2026
+                        {{ $teksKejuaraan }}
                     </h1>
                 </div>
 
                 {{-- Grid 3: Logo Kanan (Logo 2) - Col 1 (Rasio 1) --}}
                 <div class="col-span-1 flex items-center justify-end">
-                    @if (file_exists(public_path('logo2.png')))
-                        <img src="{{ asset('logo2.png') }}" alt="Logo 2" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
+                    @if ($logoKananSrc)
+                        <img src="{{ $logoKananSrc }}" alt="Logo 2" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @else
                         {{-- Fallback SVG Logo 2 (Piala Juara) --}}
                         <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-700/80 border border-slate-600 flex items-center justify-center text-amber-300 shadow">
@@ -170,36 +227,36 @@
             </div>
 
             {{-- 1. HEADER INFO PERTANDINGAN & TIMER UTAMA (GRID TERPISAH RASIO 3:1) --}}
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch shrink-0">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch shrink-0">
                 {{-- Kiri: Info Gelanggang, Kelas, dan Status Babak (9 Cols = 3 Rasio) --}}
-                <div class="lg:col-span-9 bg-slate-800/90 border border-slate-700 rounded-3xl p-4 px-6 flex items-center justify-between shadow-2xl backdrop-blur-md">
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <span class="px-4 py-2 bg-primary-600 text-white text-xl font-black uppercase rounded-xl tracking-wider shadow">
-                            GELANGGANG {{ $partaiTanding->gelanggang ?? 'A' }}
+                <div class="lg:col-span-9 bg-slate-800/90 border border-slate-700 rounded-3xl py-2 px-5 flex items-center justify-between shadow-2xl backdrop-blur-md">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span class="px-3.5 py-1.5 bg-primary-600 text-white text-lg xl:text-xl font-black uppercase rounded-xl tracking-wider shadow">
+                            {{ $teksGelanggang }}
                         </span>
-                        <span class="px-4 py-2 bg-slate-700 text-slate-100 text-xl font-black uppercase rounded-xl tracking-wider border border-slate-600">
+                        <span class="px-3.5 py-1.5 bg-slate-700 text-slate-100 text-lg xl:text-xl font-black uppercase rounded-xl tracking-wider border border-slate-600">
                             PARTAI #{{ $partaiTanding->no_partai }}
                         </span>
-                        <span class="px-4 py-2 bg-slate-700 text-slate-100 text-xl font-black uppercase rounded-xl tracking-wider border border-slate-600">
+                        <span class="px-3.5 py-1.5 bg-slate-700 text-slate-100 text-lg xl:text-xl font-black uppercase rounded-xl tracking-wider border border-slate-600">
                             TANDING - {{ $partaiTanding->kelas ?? 'DEWASA' }}
                         </span>
-                        <span class="px-3.5 py-2 bg-slate-700 text-slate-200 text-lg font-extrabold uppercase rounded-xl border border-slate-600">
+                        <span class="px-3 py-1.5 bg-slate-700 text-slate-200 text-base xl:text-lg font-extrabold uppercase rounded-xl border border-slate-600">
                             {{ $partaiTanding->fase_babak ?? 'Penyisihan' }}
                         </span>
                     </div>
 
                     {{-- Babak Badge --}}
-                    <div id="tanding-babak-badge" class="px-6 py-2 rounded-2xl bg-slate-700/80 border-2 border-amber-400/80 text-amber-300 text-2xl font-black uppercase tracking-[0.25em] shadow-lg shrink-0">
+                    <div id="tanding-babak-badge" class="px-5 py-1.5 rounded-2xl bg-slate-700/80 border-2 border-amber-400/80 text-amber-300 text-xl xl:text-2xl font-black uppercase tracking-[0.25em] shadow-lg shrink-0">
                         BABAK {{ $babakAktif }}
                     </div>
                 </div>
 
                 {{-- Kanan: Timer Digital (3 Cols = 1 Rasio -> Total 9:3 = 3:1) --}}
-                <div class="lg:col-span-3 bg-slate-800/90 border border-slate-700 rounded-3xl p-3 px-6 flex items-center justify-center shadow-2xl backdrop-blur-md">
-                    <div class="flex items-center justify-center gap-3.5 w-full h-full">
-                        <span id="tanding-timer-dot" class="w-4 h-4 rounded-full {{ $statusTimer === 'running' ? 'bg-emerald-400 shadow-[0_0_12px_#34d399]' : ($statusTimer === 'pause' ? 'bg-amber-400' : 'bg-red-500') }}"></span>
+                <div class="lg:col-span-3 bg-slate-800/90 border border-slate-700 rounded-3xl py-1.5 px-4 flex items-center justify-center shadow-2xl backdrop-blur-md">
+                    <div class="flex items-center justify-center gap-3 w-full h-full">
+                        <span id="tanding-timer-dot" class="w-3.5 h-3.5 rounded-full {{ $statusTimer === 'running' ? 'bg-emerald-400 shadow-[0_0_12px_#34d399]' : ($statusTimer === 'pause' ? 'bg-amber-400' : 'bg-red-500') }}"></span>
                         <span id="display-timer-tanding"
-                              class="text-6xl xl:text-7xl 2xl:text-8xl font-black text-white font-mono tracking-tight tabular-nums leading-none"
+                              class="text-5xl xl:text-6xl 2xl:text-7xl font-black text-white font-mono tracking-tight tabular-nums leading-none"
                               data-seconds="{{ $waktuTimer }}"
                               data-status="{{ $statusTimer }}">
                             {{ sprintf('%02d:%02d', floor($waktuTimer / 60), $waktuTimer % 60) }}
@@ -220,10 +277,7 @@
                     {{-- Header Atlet Biru --}}
                     <div class="relative z-10 flex justify-between items-start pb-3 border-b border-white/20">
                         <div class="flex-1 pr-3">
-                            <span class="inline-block px-3.5 py-1 bg-slate-900/60 backdrop-blur-md text-white text-xs font-black uppercase tracking-[0.25em] rounded-lg shadow mb-1.5 border border-white/20">
-                                SUDUT BIRU
-                            </span>
-                            <h2 class="text-3xl xl:text-4xl font-black text-white uppercase tracking-tight truncate drop-shadow-md">
+                                                        <h2 class="text-3xl xl:text-5xl font-black text-white uppercase tracking-tight truncate drop-shadow-md">
                                 {{ $partaiTanding->pesertaBiru->nama ?? 'SUDUT BIRU' }}
                             </h2>
                             <p class="text-lg font-bold text-blue-100 uppercase tracking-wide truncate drop-shadow-sm">
@@ -231,7 +285,7 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <span class="text-[11px] font-black uppercase tracking-widest text-blue-100/80 block mb-0.5">Jatuhan</span>
+                            <span class="text-xs sm:text-sm font-black uppercase tracking-wider text-white/90 block mb-0.5">JATUHAN</span>
                             <div class="px-3.5 py-1.5 rounded-xl bg-black/20 border border-white/20 text-white text-base font-black shadow-inner">
                                 <span id="count-biru-jatuhan">{{ $sb['jatuhan_count'] }}</span>x (+<span id="poin-biru-jatuhan">{{ $sb['poin_jatuhan'] }}</span>)
                             </div>
@@ -254,80 +308,80 @@
 
                     {{-- STATUS HUKUMAN & SENSOR JURI BIRU --}}
                     <div class="relative z-10 space-y-3 pt-3 border-t border-white/20">
-                        {{-- STATUS PELANGGARAN: BINAAN, TEGURAN, PERINGATAN --}}
+                        {{-- STATUS PELANGGARAN: BINAAN, TEGURAN, PERINGATAN (WARNA SUDUT TRANSPARAN) --}}
                         <div class="grid grid-cols-3 gap-2">
                             {{-- Binaan --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Binaan (Babak)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-biru-binaan-1" class="w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all {{ $sb['has_binaan_1'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">1</span>
-                                    <span id="badge-biru-binaan-2" class="w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all {{ $sb['has_binaan_2'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">2</span>
+                            <div class="bg-blue-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">BINAAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-biru-binaan-1" class="flex-1 py-2 px-1 rounded-xl text-sm sm:text-base md:text-lg font-black flex items-center justify-center transition-all {{ $sb['has_binaan_1'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">1</span>
+                                    <span id="badge-biru-binaan-2" class="flex-1 py-2 px-1 rounded-xl text-sm sm:text-base md:text-lg font-black flex items-center justify-center transition-all {{ $sb['has_binaan_2'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">2</span>
                                 </div>
                             </div>
                             {{-- Teguran --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Teguran (Babak)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-biru-teguran-1" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sb['has_teguran_1'] ? 'bg-orange-500 text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">T1 (-1)</span>
-                                    <span id="badge-biru-teguran-2" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sb['has_teguran_2'] ? 'bg-orange-600 text-white shadow-md shadow-orange-600/40 ring-2 ring-orange-500' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">T2 (-2)</span>
+                            <div class="bg-blue-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">TEGURAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-biru-teguran-1" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sb['has_teguran_1'] ? 'bg-orange-500 text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">T1 (-1)</span>
+                                    <span id="badge-biru-teguran-2" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sb['has_teguran_2'] ? 'bg-orange-600 text-white shadow-md shadow-orange-600/40 ring-2 ring-orange-500' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">T2 (-2)</span>
                                 </div>
                             </div>
                             {{-- Peringatan --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Peringatan (Match)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-biru-peringatan-1" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sb['has_peringatan_1'] ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">P1 (-5)</span>
-                                    <span id="badge-biru-peringatan-2" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sb['has_peringatan_2'] ? 'bg-red-700 text-white shadow-md shadow-red-700/50 ring-2 ring-red-500' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">P2 (-10)</span>
+                            <div class="bg-blue-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">PERINGATAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-biru-peringatan-1" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sb['has_peringatan_1'] ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">P1 (-5)</span>
+                                    <span id="badge-biru-peringatan-2" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sb['has_peringatan_2'] ? 'bg-red-700 text-white shadow-md shadow-red-700/50 ring-2 ring-red-500' : 'bg-blue-950/60 text-white/50 border border-white/15' }}">P2 (-10)</span>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- STATUS INPUT JURI 1, 2, 3 BIRU (PUKULAN & TENDANGAN) --}}
-                        <div class="bg-slate-900/65 border border-white/20 rounded-2xl p-3 shadow-inner backdrop-blur-xs">
-                            <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-white mb-2">
-                                <span>Status Input Juri Sudut Biru</span>
+                        {{-- STATUS INPUT JURI 1, 2, 3 BIRU (PUKULAN & TENDANGAN DENGAN WARNA BIRU TRANSPARAN) --}}
+                        <div class="bg-blue-950/50 border border-white/20 rounded-2xl p-3 shadow-inner backdrop-blur-xs">
+                            <div class="flex items-center justify-between text-xs sm:text-sm font-black uppercase tracking-wider text-white mb-2">
+                                <span>STATUS INPUT JURI</span>
                                 <span class="text-[9px] text-blue-100/70 font-mono tracking-normal">Konsensus IPSI 2/3</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 {{-- Pukulan (+1) --}}
-                                <div class="bg-slate-950/60 rounded-xl p-2 border border-white/10">
+                                <div class="bg-blue-950/60 rounded-xl p-2 border border-blue-400/20">
                                     <div class="flex justify-between items-center mb-1.5 px-1">
-                                        <span class="text-xs font-bold text-white">Pukulan</span>
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/20 text-white">+1</span>
+                                        <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">PUKULAN</span>
+                                        <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+1</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-biru-pukulan-1" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J1</span>
+                                        <div id="lamp-biru-pukulan-1" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J1</span>
                                         </div>
-                                        <div id="lamp-biru-pukulan-2" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J2</span>
+                                        <div id="lamp-biru-pukulan-2" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J2</span>
                                         </div>
-                                        <div id="lamp-biru-pukulan-3" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J3</span>
+                                        <div id="lamp-biru-pukulan-3" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J3</span>
                                         </div>
                                     </div>
                                 </div>
                                 {{-- Tendangan (+2) --}}
-                                <div class="bg-slate-950/60 rounded-xl p-2 border border-white/10">
+                                <div class="bg-blue-950/60 rounded-xl p-2 border border-blue-400/20">
                                     <div class="flex justify-between items-center mb-1.5 px-1">
-                                        <span class="text-xs font-bold text-white">Tendangan</span>
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/20 text-white">+2</span>
+                                        <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">TENDANGAN</span>
+                                        <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+2</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-biru-tendangan-1" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J1</span>
+                                        <div id="lamp-biru-tendangan-1" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J1</span>
                                         </div>
-                                        <div id="lamp-biru-tendangan-2" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J2</span>
+                                        <div id="lamp-biru-tendangan-2" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J2</span>
                                         </div>
-                                        <div id="lamp-biru-tendangan-3" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J3</span>
+                                        <div id="lamp-biru-tendangan-3" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -345,10 +399,7 @@
                     {{-- Header Atlet Merah --}}
                     <div class="relative z-10 flex justify-between items-start pb-3 border-b border-white/20">
                         <div class="flex-1 pr-3">
-                            <span class="inline-block px-3.5 py-1 bg-slate-900/60 backdrop-blur-md text-white text-xs font-black uppercase tracking-[0.25em] rounded-lg shadow mb-1.5 border border-white/20">
-                                SUDUT MERAH
-                            </span>
-                            <h2 class="text-3xl xl:text-4xl font-black text-white uppercase tracking-tight truncate drop-shadow-md">
+                                                        <h2 class="text-3xl xl:text-5xl font-black text-white uppercase tracking-tight truncate drop-shadow-md">
                                 {{ $partaiTanding->pesertaMerah->nama ?? 'SUDUT MERAH' }}
                             </h2>
                             <p class="text-lg font-bold text-red-100 uppercase tracking-wide truncate drop-shadow-sm">
@@ -356,7 +407,7 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <span class="text-[11px] font-black uppercase tracking-widest text-red-100/80 block mb-0.5">Jatuhan</span>
+                            <span class="text-xs sm:text-sm font-black uppercase tracking-wider text-white/90 block mb-0.5">JATUHAN</span>
                             <div class="px-3.5 py-1.5 rounded-xl bg-black/20 border border-white/20 text-white text-base font-black shadow-inner">
                                 <span id="count-merah-jatuhan">{{ $sm['jatuhan_count'] }}</span>x (+<span id="poin-merah-jatuhan">{{ $sm['poin_jatuhan'] }}</span>)
                             </div>
@@ -379,80 +430,80 @@
 
                     {{-- STATUS HUKUMAN & SENSOR JURI MERAH --}}
                     <div class="relative z-10 space-y-3 pt-3 border-t border-white/20">
-                        {{-- STATUS PELANGGARAN: BINAAN, TEGURAN, PERINGATAN --}}
+                        {{-- STATUS PELANGGARAN: BINAAN, TEGURAN, PERINGATAN (WARNA SUDUT TRANSPARAN) --}}
                         <div class="grid grid-cols-3 gap-2">
                             {{-- Binaan --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Binaan (Babak)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-merah-binaan-1" class="w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all {{ $sm['has_binaan_1'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">1</span>
-                                    <span id="badge-merah-binaan-2" class="w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all {{ $sm['has_binaan_2'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">2</span>
+                            <div class="bg-red-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">BINAAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-merah-binaan-1" class="flex-1 py-2 px-1 rounded-xl text-sm sm:text-base md:text-lg font-black flex items-center justify-center transition-all {{ $sm['has_binaan_1'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-red-950/60 text-white/50 border border-white/15' }}">1</span>
+                                    <span id="badge-merah-binaan-2" class="flex-1 py-2 px-1 rounded-xl text-sm sm:text-base md:text-lg font-black flex items-center justify-center transition-all {{ $sm['has_binaan_2'] ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300' : 'bg-red-950/60 text-white/50 border border-white/15' }}">2</span>
                                 </div>
                             </div>
                             {{-- Teguran --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Teguran (Babak)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-merah-teguran-1" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sm['has_teguran_1'] ? 'bg-orange-500 text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">T1 (-1)</span>
-                                    <span id="badge-merah-teguran-2" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sm['has_teguran_2'] ? 'bg-orange-600 text-white shadow-md shadow-orange-600/40 ring-2 ring-orange-500' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">T2 (-2)</span>
+                            <div class="bg-red-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">TEGURAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-merah-teguran-1" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sm['has_teguran_1'] ? 'bg-orange-500 text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400' : 'bg-red-950/60 text-white/50 border border-white/15' }}">T1 (-1)</span>
+                                    <span id="badge-merah-teguran-2" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sm['has_teguran_2'] ? 'bg-orange-600 text-white shadow-md shadow-orange-600/40 ring-2 ring-orange-500' : 'bg-red-950/60 text-white/50 border border-white/15' }}">T2 (-2)</span>
                                 </div>
                             </div>
                             {{-- Peringatan --}}
-                            <div class="bg-slate-900/65 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-white block mb-1.5">Peringatan (Match)</span>
-                                <div class="flex justify-center gap-1.5">
-                                    <span id="badge-merah-peringatan-1" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sm['has_peringatan_1'] ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">P1 (-5)</span>
-                                    <span id="badge-merah-peringatan-2" class="px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all {{ $sm['has_peringatan_2'] ? 'bg-red-700 text-white shadow-md shadow-red-700/50 ring-2 ring-red-500' : 'bg-slate-950/60 text-white/50 border border-white/10' }}">P2 (-10)</span>
+                            <div class="bg-red-950/50 rounded-2xl p-2.5 border border-white/20 text-center shadow-md backdrop-blur-xs flex flex-col justify-between">
+                                <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white block mb-1.5">PERINGATAN</span>
+                                <div class="grid grid-cols-2 gap-1.5 w-full">
+                                    <span id="badge-merah-peringatan-1" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sm['has_peringatan_1'] ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400' : 'bg-red-950/60 text-white/50 border border-white/15' }}">P1 (-5)</span>
+                                    <span id="badge-merah-peringatan-2" class="flex-1 py-2 px-1 rounded-xl text-xs sm:text-sm md:text-base font-black flex items-center justify-center transition-all {{ $sm['has_peringatan_2'] ? 'bg-red-700 text-white shadow-md shadow-red-700/50 ring-2 ring-red-500' : 'bg-red-950/60 text-white/50 border border-white/15' }}">P2 (-10)</span>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- STATUS INPUT JURI 1, 2, 3 MERAH (PUKULAN & TENDANGAN) --}}
-                        <div class="bg-slate-900/65 border border-white/20 rounded-2xl p-3 shadow-inner backdrop-blur-xs">
-                            <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-white mb-2">
-                                <span>Status Input Juri Sudut Merah</span>
+                        {{-- STATUS INPUT JURI 1, 2, 3 MERAH (PUKULAN & TENDANGAN DENGAN WARNA MERAH TRANSPARAN) --}}
+                        <div class="bg-red-950/50 border border-white/20 rounded-2xl p-3 shadow-inner backdrop-blur-xs">
+                            <div class="flex items-center justify-between text-xs sm:text-sm font-black uppercase tracking-wider text-white mb-2">
+                                <span>STATUS INPUT JURI</span>
                                 <span class="text-[9px] text-red-100/70 font-mono tracking-normal">Konsensus IPSI 2/3</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 {{-- Pukulan (+1) --}}
-                                <div class="bg-slate-950/60 rounded-xl p-2 border border-white/10">
+                                <div class="bg-red-950/60 rounded-xl p-2 border border-red-400/20">
                                     <div class="flex justify-between items-center mb-1.5 px-1">
-                                        <span class="text-xs font-bold text-white">Pukulan</span>
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/20 text-white">+1</span>
+                                        <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">PUKULAN</span>
+                                        <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+1</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-merah-pukulan-1" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J1</span>
+                                        <div id="lamp-merah-pukulan-1" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J1</span>
                                         </div>
-                                        <div id="lamp-merah-pukulan-2" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J2</span>
+                                        <div id="lamp-merah-pukulan-2" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J2</span>
                                         </div>
-                                        <div id="lamp-merah-pukulan-3" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J3</span>
+                                        <div id="lamp-merah-pukulan-3" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J3</span>
                                         </div>
                                     </div>
                                 </div>
                                 {{-- Tendangan (+2) --}}
-                                <div class="bg-slate-950/60 rounded-xl p-2 border border-white/10">
+                                <div class="bg-red-950/60 rounded-xl p-2 border border-red-400/20">
                                     <div class="flex justify-between items-center mb-1.5 px-1">
-                                        <span class="text-xs font-bold text-white">Tendangan</span>
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/20 text-white">+2</span>
+                                        <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">TENDANGAN</span>
+                                        <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+2</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-merah-tendangan-1" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J1</span>
+                                        <div id="lamp-merah-tendangan-1" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J1</span>
                                         </div>
-                                        <div id="lamp-merah-tendangan-2" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J2</span>
+                                        <div id="lamp-merah-tendangan-2" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J2</span>
                                         </div>
-                                        <div id="lamp-merah-tendangan-3" class="lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-[11px]">J3</span>
+                                        <div id="lamp-merah-tendangan-3" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
+                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
+                                            <span class="text-xs sm:text-sm font-bold">J3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -461,6 +512,255 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        {{-- ==================== MODAL VERIFIKASI JURI DISPLAY (VAR) ==================== --}}
+        <div id="modal-verifikasi-display" class="{{ $isVerifikasiAktif ? '' : 'hidden' }} fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-300">
+            @php
+                if ($initVerifHasil === 'Biru') {
+                    $cardClasses = 'bg-gradient-to-b from-blue-900 via-blue-950 to-slate-950 border-blue-400 shadow-[0_0_120px_rgba(37,99,235,0.7)]';
+                    $badgeClasses = 'bg-blue-600 border-blue-300 text-white shadow-[0_0_40px_rgba(37,99,235,0.8)]';
+                    $glow1Classes = 'opacity-40 bg-blue-500';
+                    $glow2Classes = 'opacity-40 bg-blue-600';
+                    $badgeText = 'SUDUT BIRU SAH';
+                    $titleText = $partaiTanding->pesertaBiru->nama ?? 'SUDUT BIRU';
+                    $titleClasses = 'text-white';
+                    $subText = $partaiTanding->pesertaBiru->kontingen ?? '-';
+                    $subClasses = 'text-blue-200';
+                } elseif ($initVerifHasil === 'Merah') {
+                    $cardClasses = 'bg-gradient-to-b from-red-900 via-red-950 to-slate-950 border-red-400 shadow-[0_0_120px_rgba(220,38,38,0.7)]';
+                    $badgeClasses = 'bg-red-600 border-red-300 text-white shadow-[0_0_40px_rgba(220,38,38,0.8)]';
+                    $glow1Classes = 'opacity-40 bg-red-500';
+                    $glow2Classes = 'opacity-40 bg-red-600';
+                    $badgeText = 'SUDUT MERAH SAH';
+                    $titleText = $partaiTanding->pesertaMerah->nama ?? 'SUDUT MERAH';
+                    $titleClasses = 'text-white';
+                    $subText = $partaiTanding->pesertaMerah->kontingen ?? '-';
+                    $subClasses = 'text-red-200';
+                } elseif ($initVerifHasil === 'Tidak Valid') {
+                    $cardClasses = 'bg-gradient-to-b from-slate-900 via-zinc-950 to-neutral-950 border-amber-500 shadow-[0_0_120px_rgba(245,158,11,0.5)]';
+                    $badgeClasses = 'bg-amber-600 border-amber-300 text-white shadow-[0_0_40px_rgba(245,158,11,0.6)]';
+                    $glow1Classes = 'opacity-30 bg-amber-500';
+                    $glow2Classes = 'opacity-30 bg-amber-600';
+                    $badgeText = 'TIDAK VALID';
+                    $titleText = 'KEPUTUSAN DIBATALKAN';
+                    $titleClasses = 'text-amber-200';
+                    $subText = 'TIDAK ADA POIN MASUK / TIDAK ADA KESEPAKATAN';
+                    $subClasses = 'text-amber-300/80';
+                } else {
+                    // Default saat menunggu validasi ketiga juri
+                    $cardClasses = 'bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 border-indigo-500 shadow-[0_0_100px_rgba(99,102,241,0.6)]';
+                    $badgeClasses = 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_30px_rgba(99,102,241,0.7)] animate-pulse';
+                    $glow1Classes = 'opacity-40 bg-indigo-500';
+                    $glow2Classes = 'opacity-40 bg-indigo-600';
+                    $badgeText = 'PROSES VERIFIKASI JURI';
+                    $titleText = 'MENUNGGU VALIDASI JURI';
+                    $titleClasses = 'text-indigo-200 animate-pulse';
+                    $subText = 'MENUNGGU KETIGA JURI SELESAI INPUT PILIHAN';
+                    $subClasses = 'text-indigo-300/80';
+                }
+            @endphp
+            <div id="card-verifikasi-display" class="w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 {{ $cardClasses }}">
+                {{-- Glow background decorator --}}
+                <div id="bg-verif-glow-1" class="absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl pointer-events-none {{ $glow1Classes }}"></div>
+                <div id="bg-verif-glow-2" class="absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl pointer-events-none {{ $glow2Classes }}"></div>
+
+                <div class="relative z-10 space-y-6">
+                    {{-- Header Badge --}}
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-black tracking-widest uppercase bg-white/10 border border-white/20 text-white shadow-md">
+                            <svg class="w-5 h-5 text-amber-400 animate-spin" style="animation-duration: 4s;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span>HASIL KEPUTUSAN VERIFIKASI JURI (VAR)</span>
+                        </span>
+                    </div>
+
+                    {{-- Main Result Banner --}}
+                    <div class="space-y-3">
+                        <div>
+                            <span id="display-verif-badge" class="inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider shadow-2xl border-2 {{ $badgeClasses }}">
+                                {{ $badgeText }}
+                            </span>
+                        </div>
+                        <h2 id="display-verif-title" class="text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight drop-shadow-md {{ $titleClasses }}">
+                            {{ $titleText }}
+                        </h2>
+                        <p id="display-verif-sub" class="text-xl sm:text-2xl font-bold uppercase tracking-wider {{ $subClasses }}">
+                            {{ $subText }}
+                        </p>
+                    </div>
+
+                    {{-- Juri Votes Breakdown (3 Cards) --}}
+                    <div class="pt-5 border-t border-white/20">
+                        <p class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70 mb-3">
+                            RINCIAN PILIHAN JURI
+                        </p>
+                        <div class="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+                            {{-- Juri 1 --}}
+                            <div class="bg-black/40 border border-white/15 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner">
+                                <span class="text-xs font-black uppercase tracking-wider text-white/70 block mb-1.5">JURI 1</span>
+                                <div id="display-juri-vote-1" class="py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider border {{ $initJawaban[1] === 'Biru' ? 'bg-blue-600 text-white border-blue-300 shadow-md' : ($initJawaban[1] === 'Merah' ? 'bg-red-600 text-white border-red-300 shadow-md' : ($initJawaban[1] ? 'bg-slate-700 text-amber-300 border-amber-400/50 shadow-md' : 'bg-slate-800 text-white/50 border-white/10')) }}">
+                                    {{ $initJawaban[1] ? ($initJawaban[1] === 'Biru' ? 'SUDUT BIRU' : ($initJawaban[1] === 'Merah' ? 'SUDUT MERAH' : 'TIDAK VALID')) : 'Menunggu...' }}
+                                </div>
+                            </div>
+                            {{-- Juri 2 --}}
+                            <div class="bg-black/40 border border-white/15 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner">
+                                <span class="text-xs font-black uppercase tracking-wider text-white/70 block mb-1.5">JURI 2</span>
+                                <div id="display-juri-vote-2" class="py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider border {{ $initJawaban[2] === 'Biru' ? 'bg-blue-600 text-white border-blue-300 shadow-md' : ($initJawaban[2] === 'Merah' ? 'bg-red-600 text-white border-red-300 shadow-md' : ($initJawaban[2] ? 'bg-slate-700 text-amber-300 border-amber-400/50 shadow-md' : 'bg-slate-800 text-white/50 border-white/10')) }}">
+                                    {{ $initJawaban[2] ? ($initJawaban[2] === 'Biru' ? 'SUDUT BIRU' : ($initJawaban[2] === 'Merah' ? 'SUDUT MERAH' : 'TIDAK VALID')) : 'Menunggu...' }}
+                                </div>
+                            </div>
+                            {{-- Juri 3 --}}
+                            <div class="bg-black/40 border border-white/15 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner">
+                                <span class="text-xs font-black uppercase tracking-wider text-white/70 block mb-1.5">JURI 3</span>
+                                <div id="display-juri-vote-3" class="py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider border {{ $initJawaban[3] === 'Biru' ? 'bg-blue-600 text-white border-blue-300 shadow-md' : ($initJawaban[3] === 'Merah' ? 'bg-red-600 text-white border-red-300 shadow-md' : ($initJawaban[3] ? 'bg-slate-700 text-amber-300 border-amber-400/50 shadow-md' : 'bg-slate-800 text-white/50 border-white/10')) }}">
+                                    {{ $initJawaban[3] ? ($initJawaban[3] === 'Biru' ? 'SUDUT BIRU' : ($initJawaban[3] === 'Merah' ? 'SUDUT MERAH' : 'TIDAK VALID')) : 'Menunggu...' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Footer Info --}}
+                    <div class="text-xs sm:text-sm text-white/60 tracking-wider">
+                        Keputusan verifikasi sah berdasarkan konsensus minimal 2 dari 3 juri sesuai regulasi IPSI
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ==================== MODAL KEPUTUSAN PEMENANG DISPLAY ==================== --}}
+        <div id="modal-pemenang-display" class="{{ $isPemenangAktif ? '' : 'hidden' }} fixed inset-0 z-[110] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-300">
+            @php
+                $dispCardClasses = 'bg-gradient-to-b from-slate-900 via-slate-950 to-black border-amber-500 shadow-[0_0_150px_rgba(245,158,11,0.6)]';
+                $dispBadgeClasses = 'bg-amber-600 border-amber-300 text-white shadow-[0_0_40px_rgba(245,158,11,0.8)]';
+                $dispGlowClasses = 'bg-amber-500 opacity-30';
+                $dispBadgeText = 'STATUS: MENUNGGU KEPUTUSAN';
+                $dispTitleText = 'HASIL PERTANDINGAN';
+                $dispSubText = '-';
+
+                if ($initPemenangSudut === 'Merah') {
+                    $dispCardClasses = 'bg-gradient-to-b from-red-950 via-slate-950 to-black border-red-500 shadow-[0_0_150px_rgba(239,68,68,0.7)]';
+                    $dispBadgeClasses = 'bg-red-600 border-red-300 text-white shadow-[0_0_40px_rgba(239,68,68,0.8)]';
+                    $dispGlowClasses = 'bg-red-500 opacity-40';
+                    $dispBadgeText = 'PEMENANG: SUDUT MERAH';
+                    $dispTitleText = $initPemenangNama ?: 'SUDUT MERAH';
+                    $dispSubText = $initPemenangKontingen ?: '-';
+                } elseif ($initPemenangSudut === 'Biru') {
+                    $dispCardClasses = 'bg-gradient-to-b from-blue-950 via-slate-950 to-black border-blue-500 shadow-[0_0_150px_rgba(59,130,246,0.7)]';
+                    $dispBadgeClasses = 'bg-blue-600 border-blue-300 text-white shadow-[0_0_40px_rgba(59,130,246,0.8)]';
+                    $dispGlowClasses = 'bg-blue-500 opacity-40';
+                    $dispBadgeText = 'PEMENANG: SUDUT BIRU';
+                    $dispTitleText = $initPemenangNama ?: 'SUDUT BIRU';
+                    $dispSubText = $initPemenangKontingen ?: '-';
+                } else {
+                    $dispBadgeText = 'HASIL IMBANG / SERI';
+                    $dispTitleText = 'HASIL IMBANG / SERI';
+                    $dispSubText = 'Seluruh 5 Kriteria Poin Sama Sesuai Regulasi IPSI';
+                }
+            @endphp
+            <div id="card-pemenang-display" class="relative max-w-5xl w-full rounded-3xl border-4 p-8 text-center text-white overflow-hidden transition-all duration-500 {{ $dispCardClasses }}">
+                
+                {{-- Dynamic Background Glows --}}
+                <div id="glow-pemenang-display-1" class="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 {{ $dispGlowClasses }}"></div>
+                <div id="glow-pemenang-display-2" class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 {{ $dispGlowClasses }}"></div>
+
+                <div class="relative z-10 flex flex-col items-center gap-6">
+                    
+                    {{-- Trophy & Event Header --}}
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl sm:text-5xl animate-bounce">🏆</span>
+                        <div class="text-left">
+                            <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-amber-300">DEWAN PERTANDINGAN PENCAK SILAT</span>
+                            <h4 class="text-lg sm:text-2xl font-black uppercase tracking-wide text-white drop-shadow">Partai {{ $partaiTanding->no_partai }} • {{ $partaiTanding->kelas }}</h4>
+                        </div>
+                    </div>
+
+                    {{-- Winner Badge (Corner) --}}
+                    <div id="badge-pemenang-display" class="inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 {{ $dispBadgeClasses }}">
+                        {{ $dispBadgeText }}
+                    </div>
+
+                    {{-- Pesilat Name & Kontingen --}}
+                    <div class="space-y-1.5 max-w-4xl">
+                        <h1 id="nama-pemenang-display" class="text-4xl sm:text-6xl xl:text-7xl font-black uppercase tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]">
+                            {{ $dispTitleText }}
+                        </h1>
+                        <p id="kontingen-pemenang-display" class="text-xl sm:text-3xl font-extrabold uppercase tracking-widest text-amber-300 drop-shadow-md">
+                            {{ $dispSubText }}
+                        </p>
+                    </div>
+
+                    {{-- Reason Pill --}}
+                    <div class="inline-flex items-center gap-2 py-2 px-6 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold text-base sm:text-xl shadow-lg">
+                        <span class="text-amber-300">Keputusan:</span>
+                        <span id="alasan-pemenang-display" class="underline underline-offset-4 decoration-amber-400 font-black">{{ $initPemenangAlasan ?: 'Menang Berdasarkan Regulasi' }}</span>
+                    </div>
+
+                    {{-- 5 Kriteria Quick Scoreboard --}}
+                    <div class="w-full max-w-4xl grid grid-cols-5 gap-3 pt-2">
+                        {{-- 1. Total Skor --}}
+                        <div class="bg-black/50 border border-white/15 rounded-2xl p-3 flex flex-col items-center justify-between">
+                            <span class="text-[11px] sm:text-xs font-bold text-white/70 uppercase">Total Skor</span>
+                            <div class="flex items-center gap-2 my-1">
+                                <span id="disp-skor-merah" class="text-lg sm:text-2xl font-black text-red-400">{{ $scoresTanding['merah']['total'] ?? 0 }}</span>
+                                <span class="text-xs text-white/40">-</span>
+                                <span id="disp-skor-biru" class="text-lg sm:text-2xl font-black text-blue-400">{{ $scoresTanding['biru']['total'] ?? 0 }}</span>
+                            </div>
+                            <span class="text-[9px] text-amber-300/80 font-semibold uppercase">1. Skor Bersih</span>
+                        </div>
+
+                        {{-- 2. Hukuman --}}
+                        <div class="bg-black/50 border border-white/15 rounded-2xl p-3 flex flex-col items-center justify-between">
+                            <span class="text-[11px] sm:text-xs font-bold text-white/70 uppercase">Hukuman</span>
+                            <div class="flex items-center gap-2 my-1">
+                                <span id="disp-hukuman-merah" class="text-lg sm:text-2xl font-black text-red-400">0</span>
+                                <span class="text-xs text-white/40">-</span>
+                                <span id="disp-hukuman-biru" class="text-lg sm:text-2xl font-black text-blue-400">0</span>
+                            </div>
+                            <span class="text-[9px] text-amber-300/80 font-semibold uppercase">2. Lebih Rendah</span>
+                        </div>
+
+                        {{-- 3. Jatuhan --}}
+                        <div class="bg-black/50 border border-white/15 rounded-2xl p-3 flex flex-col items-center justify-between">
+                            <span class="text-[11px] sm:text-xs font-bold text-white/70 uppercase">Jatuhan (3P)</span>
+                            <div class="flex items-center gap-2 my-1">
+                                <span id="disp-jatuhan-merah" class="text-lg sm:text-2xl font-black text-red-400">{{ ($scoresTanding['merah']['jatuhan_count'] ?? 0) * 3 }}</span>
+                                <span class="text-xs text-white/40">-</span>
+                                <span id="disp-jatuhan-biru" class="text-lg sm:text-2xl font-black text-blue-400">{{ ($scoresTanding['biru']['jatuhan_count'] ?? 0) * 3 }}</span>
+                            </div>
+                            <span class="text-[9px] text-amber-300/80 font-semibold uppercase">3. Nilai Jatuhan</span>
+                        </div>
+
+                        {{-- 4. Tendangan --}}
+                        <div class="bg-black/50 border border-white/15 rounded-2xl p-3 flex flex-col items-center justify-between">
+                            <span class="text-[11px] sm:text-xs font-bold text-white/70 uppercase">Tendangan (2P)</span>
+                            <div class="flex items-center gap-2 my-1">
+                                <span id="disp-tendangan-merah" class="text-lg sm:text-2xl font-black text-red-400">0</span>
+                                <span class="text-xs text-white/40">-</span>
+                                <span id="disp-tendangan-biru" class="text-lg sm:text-2xl font-black text-blue-400">0</span>
+                            </div>
+                            <span class="text-[9px] text-amber-300/80 font-semibold uppercase">4. Jumlah Teknik</span>
+                        </div>
+
+                        {{-- 5. Pukulan --}}
+                        <div class="bg-black/50 border border-white/15 rounded-2xl p-3 flex flex-col items-center justify-between">
+                            <span class="text-[11px] sm:text-xs font-bold text-white/70 uppercase">Pukulan (1P)</span>
+                            <div class="flex items-center gap-2 my-1">
+                                <span id="disp-pukulan-merah" class="text-lg sm:text-2xl font-black text-red-400">0</span>
+                                <span class="text-xs text-white/40">-</span>
+                                <span id="disp-pukulan-biru" class="text-lg sm:text-2xl font-black text-blue-400">0</span>
+                            </div>
+                            <span class="text-[9px] text-amber-300/80 font-semibold uppercase">5. Jumlah Teknik</span>
+                        </div>
+                    </div>
+
+                    {{-- Footer Info --}}
+                    <div class="text-xs sm:text-sm text-white/60 tracking-wider">
+                        Keputusan sah Dewan Pertandingan berdasarkan Regulasi Pertandingan Pencak Silat IPSI
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -483,7 +783,7 @@
                     if (el) el.innerText = formatTandingTime(localTimerTanding);
                 }
 
-                function setTimerState(running) {
+                function setTimerState(running, status = 'stop') {
                     const dot = document.getElementById('tanding-timer-dot');
                     if (running) {
                         isTimerRunning = true;
@@ -501,15 +801,20 @@
                         }, 1000);
                     } else {
                         isTimerRunning = false;
-                        if (dot) dot.className = "w-4 h-4 rounded-full bg-amber-400";
+                        if (dot) {
+                            dot.className = (status === 'pause') 
+                                ? "w-4 h-4 rounded-full bg-amber-400" 
+                                : "w-4 h-4 rounded-full bg-red-500";
+                        }
                         if (timerTandingInterval) clearInterval(timerTandingInterval);
                     }
                 }
 
                 if (isTimerRunning) {
-                    setTimerState(true);
+                    setTimerState(true, "{{ $statusTimer }}");
                 } else {
                     renderTandingTimer();
+                    setTimerState(false, "{{ $statusTimer }}");
                 }
 
                 // Render Score & Pelanggaran Helper
@@ -584,20 +889,25 @@
                 function updatePill(id, isActive, color) {
                     const el = document.getElementById(id);
                     if (!el) return;
+                    const isBiru = id.includes('biru');
+                    const bgInactive = isBiru ? 'bg-blue-950/60' : 'bg-red-950/60';
+                    const isBinaan = id.includes('binaan');
+                    const fontSize = isBinaan ? 'text-sm sm:text-base md:text-lg' : 'text-xs sm:text-sm md:text-base';
+
                     if (isActive) {
                         if (color === 'amber') {
-                            el.className = "w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300";
+                            el.className = `flex-1 py-2 px-1 rounded-xl ${fontSize} font-black flex items-center justify-center transition-all bg-amber-400 text-slate-950 shadow-md shadow-amber-400/40 ring-2 ring-amber-300`;
                         } else if (color === 'orange') {
-                            el.className = "px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all bg-orange-500 text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400";
+                            const isT2 = id.includes('teguran-2');
+                            const bgOrange = isT2 ? 'bg-orange-600' : 'bg-orange-500';
+                            el.className = `flex-1 py-2 px-1 rounded-xl ${fontSize} font-black flex items-center justify-center transition-all ${bgOrange} text-white shadow-md shadow-orange-500/40 ring-2 ring-orange-400`;
                         } else if (color === 'red') {
-                            el.className = "px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400";
+                            const isP2 = id.includes('peringatan-2');
+                            const bgRed = isP2 ? 'bg-red-700' : 'bg-red-600';
+                            el.className = `flex-1 py-2 px-1 rounded-xl ${fontSize} font-black flex items-center justify-center transition-all ${bgRed} text-white shadow-md shadow-red-600/40 ring-2 ring-red-400`;
                         }
                     } else {
-                        if (id.includes('binaan')) {
-                            el.className = "w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center transition-all bg-slate-950/60 text-white/50 border border-white/10";
-                        } else {
-                            el.className = "px-2 h-7 rounded-lg text-[11px] font-black flex items-center justify-center transition-all bg-slate-950/60 text-white/50 border border-white/10";
-                        }
+                        el.className = `flex-1 py-2 px-1 rounded-xl ${fontSize} font-black flex items-center justify-center transition-all ${bgInactive} text-white/50 border border-white/15`;
                     }
                 }
 
@@ -619,18 +929,19 @@
 
                     // Aktifkan efek 1 kali kedip (flash) hanya pada lampu juri yang klik
                     if (isBiru) {
-                        lamp.className = "lamp-box py-1.5 px-1 rounded-lg text-white font-black border-2 border-blue-400 lamp-blink-biru";
-                        if (dot) dot.className = "lamp-dot block w-2 h-2 rounded-full bg-white mx-auto mb-1";
+                        lamp.className = "lamp-box py-2 px-1 rounded-xl text-white font-black border-2 border-blue-400 lamp-blink-biru";
+                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white mx-auto mb-1";
                     } else {
-                        lamp.className = "lamp-box py-1.5 px-1 rounded-lg text-white font-black border-2 border-red-400 lamp-blink-merah";
-                        if (dot) dot.className = "lamp-dot block w-2 h-2 rounded-full bg-white mx-auto mb-1";
+                        lamp.className = "lamp-box py-2 px-1 rounded-xl text-white font-black border-2 border-red-400 lamp-blink-merah";
+                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white mx-auto mb-1";
                     }
 
                     // Reset kembali ke keadaan idle setelah 1x kedip (800ms)
                     lamp._resetTimer = setTimeout(() => {
                         lamp.classList.remove('lamp-blink-biru', 'lamp-blink-merah', 'lamp-blink-gold');
-                        lamp.className = "lamp-box py-1.5 px-1 rounded-lg bg-slate-800/90 border border-white/15 text-white/70 font-bold transition-all duration-150";
-                        if (dot) dot.className = "lamp-dot block w-2 h-2 rounded-full bg-white/40 mx-auto mb-1";
+                        const bgIdle = isBiru ? 'bg-blue-950/70 border-blue-400/30' : 'bg-red-950/70 border-red-400/30';
+                        lamp.className = `lamp-box py-2 px-1 rounded-xl ${bgIdle} border text-white/80 font-bold transition-all duration-150`;
+                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1";
                     }, 800);
                 }
 
@@ -646,7 +957,7 @@
                             console.log("Reverb Timer Tanding:", e);
                             localTimerTanding = parseInt(e.waktu) || 0;
                             renderTandingTimer();
-                            setTimerState(e.statusTimer === 'running');
+                            setTimerState(e.statusTimer === 'running', e.statusTimer);
                             if (e.babakAktif) {
                                 const babakBadge = document.getElementById('tanding-babak-badge');
                                 if (babakBadge) babakBadge.innerText = `BABAK ${e.babakAktif}`;
@@ -667,8 +978,278 @@
                                 renderTandingScores(e.scores);
                             }
                         });
+
+                        // 4. Verifikasi Juri (VAR) Real-time
+                        tandingChannel.listen('VerifikasiTandingUpdated', function(e) {
+                            console.log("Reverb Verifikasi Tanding on Display:", e);
+                            handleDisplayVerifikasi(e);
+                        });
+
+                        // 5. Keputusan Pemenang Real-time
+                        tandingChannel.listen('KeputusanPemenangTandingUpdated', function(e) {
+                            console.log("Reverb Keputusan Pemenang on Display:", e);
+                            handleDisplayKeputusanPemenang(e);
+                        });
                     }
+
+                    // Auto-refresh ke mode Standby jika pertandingan telah selesai (status 'Selesai')
+                    setInterval(async () => {
+                        try {
+                            const res = await fetch(`/admin/dewan/tanding/${partaiTandingId}/status-data`);
+                            const data = await res.json();
+                            if (data && data.success && data.partai) {
+                                if (data.partai.status_pertandingan === 'Selesai' && !data.partai.status_pemenang) {
+                                    document.body.style.opacity = 0;
+                                    document.body.style.transition = "opacity 0.4s ease";
+                                    setTimeout(() => { window.location.reload(); }, 400);
+                                }
+                            }
+                        } catch (e) {}
+                    }, 3500);
                 });
+
+                // Handler Modal Verifikasi Juri (VAR) Real-time
+                function handleDisplayVerifikasi(e) {
+                    const modal = document.getElementById('modal-verifikasi-display');
+                    const card = document.getElementById('card-verifikasi-display');
+                    const glow1 = document.getElementById('bg-verif-glow-1');
+                    const glow2 = document.getElementById('bg-verif-glow-2');
+                    const badge = document.getElementById('display-verif-badge');
+                    const title = document.getElementById('display-verif-title');
+                    const sub = document.getElementById('display-verif-sub');
+
+                    const j1 = document.getElementById('display-juri-vote-1');
+                    const j2 = document.getElementById('display-juri-vote-2');
+                    const j3 = document.getElementById('display-juri-vote-3');
+
+                    if (!modal) return;
+
+                    function setWaitingState(countVote) {
+                        modal.classList.remove('hidden');
+                        if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 border-indigo-500 shadow-[0_0_100px_rgba(99,102,241,0.6)] animate-in fade-in zoom-in-95";
+                        if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-indigo-500 pointer-events-none";
+                        if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-indigo-600 pointer-events-none";
+
+                        if (badge) {
+                            badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-indigo-600 border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.7)] animate-pulse";
+                            badge.innerText = "PROSES VERIFIKASI JURI";
+                        }
+
+                        if (title) {
+                            title.innerText = "MENUNGGU VALIDASI JURI";
+                            title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-indigo-200 drop-shadow-md animate-pulse";
+                        }
+
+                        if (sub) {
+                            const info = (countVote !== undefined && countVote > 0)
+                                ? `${countVote} DARI 3 JURI TELAH INPUT - MENUNGGU VALIDASI JURI`
+                                : "MENUNGGU KETIGA JURI SELESAI INPUT PILIHAN";
+                            sub.innerText = info;
+                            sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-indigo-300/80";
+                        }
+                    }
+
+                    if (e.action === 'start') {
+                        // Sesi verifikasi baru dimulai oleh Dewan -> Langsung tampilkan modal "Menunggu Validasi Juri"
+                        resetDisplayJuriVotes();
+                        setWaitingState(0);
+                    } else if (e.action === 'vote') {
+                        // Update rincian pilihan juri jika ada
+                        let countVoted = 0;
+                        if (e.jawaban) {
+                            updateDisplayJuriVote(j1, e.jawaban[1]);
+                            updateDisplayJuriVote(j2, e.jawaban[2]);
+                            updateDisplayJuriVote(j3, e.jawaban[3]);
+                            for (let k = 1; k <= 3; k++) {
+                                if (e.jawaban[k]) countVoted++;
+                            }
+                        }
+
+                        // Jika konsensus tercapai (2 juri memilih sama, atau 3 juri berbeda -> tidak valid)
+                        if (e.hasil) {
+                            modal.classList.remove('hidden');
+
+                            if (e.hasil === 'Biru') {
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-blue-900 via-blue-950 to-slate-950 border-blue-400 shadow-[0_0_120px_rgba(37,99,235,0.7)] animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-blue-500 pointer-events-none";
+                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-blue-600 pointer-events-none";
+
+                                if (badge) {
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-blue-600 border-blue-300 shadow-[0_0_40px_rgba(37,99,235,0.8)]";
+                                    badge.innerText = "SUDUT BIRU SAH";
+                                }
+
+                                const namaBiru = (e.pesertaBiru && e.pesertaBiru.nama) ? e.pesertaBiru.nama : "{{ $partaiTanding->pesertaBiru->nama ?? 'SUDUT BIRU' }}";
+                                const kontingenBiru = (e.pesertaBiru && e.pesertaBiru.kontingen) ? e.pesertaBiru.kontingen : "{{ $partaiTanding->pesertaBiru->kontingen ?? '-' }}";
+
+                                if (title) {
+                                    title.innerText = namaBiru;
+                                    title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white drop-shadow-md";
+                                }
+                                if (sub) {
+                                    sub.innerText = kontingenBiru;
+                                    sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-blue-200";
+                                }
+
+                            } else if (e.hasil === 'Merah') {
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-red-900 via-red-950 to-slate-950 border-red-400 shadow-[0_0_120px_rgba(220,38,38,0.7)] animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-red-500 pointer-events-none";
+                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-red-600 pointer-events-none";
+
+                                if (badge) {
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-red-600 border-red-300 shadow-[0_0_40px_rgba(220,38,38,0.8)]";
+                                    badge.innerText = "SUDUT MERAH SAH";
+                                }
+
+                                const namaMerah = (e.pesertaMerah && e.pesertaMerah.nama) ? e.pesertaMerah.nama : "{{ $partaiTanding->pesertaMerah->nama ?? 'SUDUT MERAH' }}";
+                                const kontingenMerah = (e.pesertaMerah && e.pesertaMerah.kontingen) ? e.pesertaMerah.kontingen : "{{ $partaiTanding->pesertaMerah->kontingen ?? '-' }}";
+
+                                if (title) {
+                                    title.innerText = namaMerah;
+                                    title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white drop-shadow-md";
+                                }
+                                if (sub) {
+                                    sub.innerText = kontingenMerah;
+                                    sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-red-200";
+                                }
+
+                            } else {
+                                // Hasil: Tidak Valid
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-slate-900 via-zinc-950 to-neutral-950 border-amber-500 shadow-[0_0_120px_rgba(245,158,11,0.5)] animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-30 bg-amber-500 pointer-events-none";
+                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-30 bg-amber-600 pointer-events-none";
+
+                                if (badge) {
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-amber-600 border-amber-300 shadow-[0_0_40px_rgba(245,158,11,0.6)]";
+                                    badge.innerText = "TIDAK VALID";
+                                }
+
+                                if (title) {
+                                    title.innerText = "KEPUTUSAN DIBATALKAN";
+                                    title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-amber-200 drop-shadow-md";
+                                }
+                                if (sub) {
+                                    sub.innerText = "TIDAK ADA POIN MASUK / TIDAK ADA KESEPAKATAN";
+                                    sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-amber-300/80";
+                                }
+                            }
+                        } else {
+                            // Masih menunggu juri selesai input -> tetap tampilkan modal menunggu validasi juri
+                            setWaitingState(countVoted);
+                        }
+                    } else if (e.action === 'close') {
+                        // Dewan menutup verifikasi
+                        modal.classList.add('hidden');
+                    }
+                }
+
+                function updateDisplayJuriVote(el, vote) {
+                    if (!el) return;
+                    if (!vote) {
+                        el.className = "py-2 px-3 rounded-xl font-bold text-sm sm:text-base uppercase tracking-wider bg-slate-800 text-white/50 border border-white/10";
+                        el.innerText = "Menunggu...";
+                    } else if (vote === 'Biru') {
+                        el.className = "py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider bg-blue-600 text-white border border-blue-300 shadow-md";
+                        el.innerText = "SUDUT BIRU";
+                    } else if (vote === 'Merah') {
+                        el.className = "py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider bg-red-600 text-white border border-red-300 shadow-md";
+                        el.innerText = "SUDUT MERAH";
+                    } else {
+                        el.className = "py-2 px-3 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider bg-slate-700 text-amber-300 border border-amber-400/50 shadow-md";
+                        el.innerText = "TIDAK VALID";
+                    }
+                }
+
+                function resetDisplayJuriVotes() {
+                    const j1 = document.getElementById('display-juri-vote-1');
+                    const j2 = document.getElementById('display-juri-vote-2');
+                    const j3 = document.getElementById('display-juri-vote-3');
+                    updateDisplayJuriVote(j1, null);
+                    updateDisplayJuriVote(j2, null);
+                    updateDisplayJuriVote(j3, null);
+                }
+
+                // Handler Modal Keputusan Pemenang Real-time di Display
+                function handleDisplayKeputusanPemenang(e) {
+                    const modal = document.getElementById('modal-pemenang-display');
+                    const card = document.getElementById('card-pemenang-display');
+                    const glow1 = document.getElementById('glow-pemenang-display-1');
+                    const glow2 = document.getElementById('glow-pemenang-display-2');
+                    const badge = document.getElementById('badge-pemenang-display');
+                    const nama = document.getElementById('nama-pemenang-display');
+                    const kontingen = document.getElementById('kontingen-pemenang-display');
+                    const alasan = document.getElementById('alasan-pemenang-display');
+
+                    if (!modal) return;
+
+                    if (e.action === 'close') {
+                        modal.classList.add('hidden');
+                        return;
+                    }
+
+                    if (e.action === 'show') {
+                        modal.classList.remove('hidden');
+
+                        if (e.pemenang === 'Merah') {
+                            if (card) card.className = "relative max-w-5xl w-full rounded-3xl border-4 p-8 text-center text-white overflow-hidden transition-all duration-500 bg-gradient-to-b from-red-950 via-slate-950 to-black border-red-500 shadow-[0_0_150px_rgba(239,68,68,0.7)]";
+                            if (glow1) glow1.className = "absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-red-500 opacity-40";
+                            if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-red-500 opacity-40";
+                            if (badge) {
+                                badge.innerText = "PEMENANG: SUDUT MERAH";
+                                badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-red-600 border-red-300 shadow-[0_0_40px_rgba(239,68,68,0.8)]";
+                            }
+                            if (nama) nama.innerText = e.pesertaPemenang ? e.pesertaPemenang.nama : (e.namaMerah || 'SUDUT MERAH');
+                            if (kontingen) kontingen.innerText = e.pesertaPemenang ? e.pesertaPemenang.kontingen : (e.kontingenMerah || '-');
+                        } else if (e.pemenang === 'Biru') {
+                            if (card) card.className = "relative max-w-5xl w-full rounded-3xl border-4 p-8 text-center text-white overflow-hidden transition-all duration-500 bg-gradient-to-b from-blue-950 via-slate-950 to-black border-blue-500 shadow-[0_0_150px_rgba(59,130,246,0.7)]";
+                            if (glow1) glow1.className = "absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-blue-500 opacity-40";
+                            if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-blue-500 opacity-40";
+                            if (badge) {
+                                badge.innerText = "PEMENANG: SUDUT BIRU";
+                                badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-blue-600 border-blue-300 shadow-[0_0_40px_rgba(59,130,246,0.8)]";
+                            }
+                            if (nama) nama.innerText = e.pesertaPemenang ? e.pesertaPemenang.nama : (e.namaBiru || 'SUDUT BIRU');
+                            if (kontingen) kontingen.innerText = e.pesertaPemenang ? e.pesertaPemenang.kontingen : (e.kontingenBiru || '-');
+                        } else {
+                            if (card) card.className = "relative max-w-5xl w-full rounded-3xl border-4 p-8 text-center text-white overflow-hidden transition-all duration-500 bg-gradient-to-b from-amber-950 via-slate-950 to-black border-amber-500 shadow-[0_0_150px_rgba(245,158,11,0.7)]";
+                            if (glow1) glow1.className = "absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-amber-500 opacity-30";
+                            if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-[130px] pointer-events-none transition-all duration-500 bg-amber-500 opacity-30";
+                            if (badge) {
+                                badge.innerText = "HASIL IMBANG / SERI";
+                                badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-amber-600 border-amber-300 shadow-[0_0_40px_rgba(245,158,11,0.8)]";
+                            }
+                            if (nama) nama.innerText = "HASIL IMBANG / SERI";
+                            if (kontingen) kontingen.innerText = "Seluruh 5 Kriteria Poin Sama Sesuai Regulasi IPSI";
+                        }
+
+                        if (alasan) alasan.innerText = e.alasan || '-';
+
+                        const elSkorM = document.getElementById('disp-skor-merah');
+                        const elSkorB = document.getElementById('disp-skor-biru');
+                        if (elSkorM) elSkorM.innerText = e.totalMerah ?? 0;
+                        if (elSkorB) elSkorB.innerText = e.totalBiru ?? 0;
+
+                        const elHukM = document.getElementById('disp-hukuman-merah');
+                        const elHukB = document.getElementById('disp-hukuman-biru');
+                        if (elHukM) elHukM.innerText = e.hukumanMerah ?? 0;
+                        if (elHukB) elHukB.innerText = e.hukumanBiru ?? 0;
+
+                        const elJatM = document.getElementById('disp-jatuhan-merah');
+                        const elJatB = document.getElementById('disp-jatuhan-biru');
+                        if (elJatM) elJatM.innerText = e.jatuhanMerah ?? 0;
+                        if (elJatB) elJatB.innerText = e.jatuhanBiru ?? 0;
+
+                        const elTenM = document.getElementById('disp-tendangan-merah');
+                        const elTenB = document.getElementById('disp-tendangan-biru');
+                        if (elTenM) elTenM.innerText = e.tendanganMerah ?? 0;
+                        if (elTenB) elTenB.innerText = e.tendanganBiru ?? 0;
+
+                        const elPukM = document.getElementById('disp-pukulan-merah');
+                        const elPukB = document.getElementById('disp-pukulan-biru');
+                        if (elPukM) elPukM.innerText = e.pukulanMerah ?? 0;
+                        if (elPukB) elPukB.innerText = e.pukulanBiru ?? 0;
+                    }
+                }
             })();
         </script>
     @elseif (!$partai)
@@ -677,17 +1258,25 @@
 
             {{-- Logo / Gambar --}}
             <div class="mb-4 flex justify-center">
-                <img src="{{ asset('smi.png') }}" alt="SMI Logo"
-                    class="h-[220px] md:h-[300px] w-auto object-contain opacity-90">
+                @if ($logoKiriSrc)
+                    <img src="{{ $logoKiriSrc }}" alt="Logo"
+                        class="h-[200px] md:h-[280px] w-auto object-contain opacity-90 drop-shadow-2xl">
+                @else
+                    <img src="{{ asset('smi.png') }}" alt="SMI Logo"
+                        class="h-[200px] md:h-[280px] w-auto object-contain opacity-90">
+                @endif
             </div>
 
             {{-- Box Standby --}}
             <div
-                class="animate-pulse bg-slate-800/80 border border-slate-700 rounded-3xl px-8 py-6 text-center shadow-2xl backdrop-blur-sm max-w-4xl w-full">
-                <h1 class="text-4xl md:text-5xl font-black text-slate-300 tracking-widest mb-2">
-                    STANDBY GELANGANG 1
+                class="animate-pulse bg-slate-800/80 border border-slate-700 rounded-3xl px-8 py-6 text-center shadow-2xl backdrop-blur-md max-w-4xl w-full">
+                <h1 class="text-4xl md:text-5xl font-black text-slate-300 tracking-widest mb-2 uppercase">
+                    STANDBY {{ $teksGelanggang }}
                 </h1>
-                <p class="text-base md:text-xl text-slate-500 uppercase tracking-widest">
+                <p class="text-base md:text-xl text-slate-400 uppercase tracking-widest font-semibold">
+                    {{ $teksKejuaraan }}
+                </p>
+                <p class="text-xs md:text-sm text-slate-500 uppercase tracking-widest mt-1">
                     Menunggu Pertandingan Dimulai oleh Operator
                 </p>
             </div>
@@ -725,11 +1314,11 @@
         @endphp
         <div class="h-[96vh] flex flex-col gap-3 p-3.5 text-white select-none">
             {{-- 0. TOP EVENT BAR (GRID 1:3:1 -> LOGO 1, INFORMASI PERTANDINGAN, LOGO 2) --}}
-            <div class="bg-slate-800/90 border border-slate-700 rounded-3xl px-6 py-2.5 grid grid-cols-5 items-center shadow-xl backdrop-blur-md shrink-0 gap-4">
+            <div class="bg-slate-800/90 border border-slate-700 rounded-3xl px-8 py-5 grid grid-cols-5 items-center shadow-xl backdrop-blur-md shrink-0 gap-4">
                 {{-- Grid 1: Logo Kiri (Logo 1) - Col 1 (Rasio 1) --}}
                 <div class="col-span-1 flex items-center justify-start">
-                    @if (file_exists(public_path('smi.png')))
-                        <img src="{{ asset('smi.png') }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
+                    @if ($logoKiriSrc)
+                        <img src="{{ $logoKiriSrc }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @elseif (file_exists(public_path('logo1.png')))
                         <img src="{{ asset('logo1.png') }}" alt="Logo 1" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @else
@@ -745,14 +1334,14 @@
                 {{-- Grid 2: Informasi Pertandingan - Col 3 (Rasio 3) --}}
                 <div class="col-span-3 flex flex-col items-center justify-center text-center">
                     <h1 class="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_4px_15px_rgba(245,158,11,0.4)] leading-tight whitespace-nowrap">
-                        PERTANDINGAN SMI CUP 2026
+                        {{ $teksKejuaraan }}
                     </h1>
                 </div>
 
                 {{-- Grid 3: Logo Kanan (Logo 2) - Col 1 (Rasio 1) --}}
                 <div class="col-span-1 flex items-center justify-end">
-                    @if (file_exists(public_path('logo2.png')))
-                        <img src="{{ asset('logo2.png') }}" alt="Logo 2" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
+                    @if ($logoKananSrc)
+                        <img src="{{ $logoKananSrc }}" alt="Logo 2" class="h-12 md:h-14 xl:h-16 max-w-full object-contain drop-shadow">
                     @else
                         {{-- Fallback SVG Logo 2 (Piala Juara) --}}
                         <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-700/80 border border-slate-600 flex items-center justify-center text-amber-300 shadow">
@@ -765,24 +1354,24 @@
             </div>
 
             {{-- HEADER: INFO PARTAI & TIMER --}}
-            <div class="flex justify-between items-stretch gap-6 h-32">
+            <div class="flex justify-between items-stretch gap-4 shrink-0">
                 <div
-                    class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 flex flex-col justify-center flex-1 shadow-lg">
-                    <div class="flex items-center gap-3 mb-2">
+                    class="bg-slate-800/80 border border-slate-700 rounded-3xl py-2 px-6 flex flex-col justify-center flex-1 shadow-lg">
+                    <div class="flex items-center gap-3">
                         <span
-                            class="px-4 py-1.5 bg-primary-600 text-white text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
-                            GELANGGANG {{ $partai->gelanggang ?? 'A' }} 1
+                            class="px-3.5 py-1.5 bg-primary-600 text-white text-xl font-black uppercase rounded-lg tracking-[0.2em]">
+                            {{ $teksGelanggang }}
                         </span>
                         <span
-                            class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
+                            class="px-3.5 py-1.5 bg-slate-700 text-slate-300 text-xl font-black uppercase rounded-lg tracking-[0.2em]">
                             PARTAI #{{ $partai->no_partai }}
                         </span>
                         <span
-                            class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em] border border-slate-600">
+                            class="px-3.5 py-1.5 bg-slate-700 text-slate-300 text-xl font-black uppercase rounded-lg tracking-[0.2em] border border-slate-600">
                             {{ $partai->kategori->nama_kategori ?? 'KATEGORI KOSONG' }}
                         </span>
                         <span
-                            class="px-4 py-1.5 bg-slate-700 text-slate-300 text-2xl font-black uppercase rounded-lg tracking-[0.2em]">
+                            class="px-3.5 py-1.5 bg-slate-700 text-slate-300 text-xl font-black uppercase rounded-lg tracking-[0.2em]">
                             {{ $partai->kelas->nama_kelas ?? ($partai->kelas->label_kelas ?? 'KATEGORI SENI') }}
                         </span>
                     </div>
@@ -790,9 +1379,9 @@
 
                 {{-- Bagian Timer di Display --}}
                 <div
-                    class="bg-slate-800 border border-slate-700 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                    class="bg-slate-800 border border-slate-700 rounded-3xl py-2 px-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
                     <div class="absolute top-0 w-full h-1 bg-primary-500"></div>
-                    <div class="text-8xl font-black text-white font-mono tracking-tighter tabular-nums" id="display-timer"
+                    <div class="text-6xl xl:text-7xl font-black text-white font-mono tracking-tighter tabular-nums" id="display-timer"
                         data-seconds="{{ $aktif->waktu_tampil ?? 0 }}" data-running="{{ $aktif->is_timer_running ?? 0 }}">
                         00:00
                     </div>
@@ -801,39 +1390,31 @@
 
             {{-- IDENTITAS ATLET --}}
             <div style="background-color: {{ $hexWarna }} !important;"
-                class="rounded-3xl p-8 flex justify-between items-center shadow-2xl ring-4 ring-white/10 border border-white/10 relative overflow-hidden transition-all duration-500 min-h-[160px]">
+                class="rounded-3xl p-8 shadow-2xl ring-4 ring-white/10 border border-white/10 relative overflow-hidden transition-all duration-500 min-h-[160px] flex items-center">
 
                 {{-- Dekorasi Background (Garis Putih Transparan) --}}
                 <div class="absolute top-0 right-0 w-64 h-full bg-white/10 skew-x-12 translate-x-16"></div>
 
-                <div class="relative z-20 w-full">
-                    {{-- Badge Label (Sudut / No Urut) --}}
-                    <div
-                        class="inline-block px-5 py-1.5 bg-slate-700 backdrop-blur-md text-white text-lg font-black uppercase tracking-[0.3em] rounded-xl mb-4 border border-white/20">
-                        {{ $labelIdentitas }}
+                <div class="relative z-20 w-full flex justify-between items-center gap-6">
+                    <div class="flex-1">
+                        <h2 class="text-5xl font-black text-white uppercase tracking-tight mb-2 drop-shadow-md">
+                            {{ $aktif->peserta->kontingen ?? '-' }}
+                        </h2>
+
+                        <p class="text-4xl font-bold {{ $teksWarna }} uppercase tracking-wide drop-shadow-sm">
+                            @foreach ($anggotaTim as $anggota)
+                                {{ $anggota->peserta->nama_peserta ?? ($anggota->peserta->nama ?? 'NAMA KOSONG') }}
+                                @if (!$loop->last)
+                                    &
+                                @endif
+                            @endforeach
+                        </p>
                     </div>
 
-                    <div class="flex justify-between items-end w-full">
-                        <div>
-                            <h2 class="text-5xl font-black text-white uppercase tracking-tight mb-2 drop-shadow-md">
-                                {{ $aktif->peserta->kontingen ?? '-' }}
-                            </h2>
-
-                            <p class="text-4xl font-bold {{ $teksWarna }} uppercase tracking-wide drop-shadow-sm">
-                                @foreach ($anggotaTim as $anggota)
-                                    {{ $anggota->peserta->nama_peserta ?? ($anggota->peserta->nama ?? 'NAMA KOSONG') }}
-                                    @if (!$loop->last)
-                                        &
-                                    @endif
-                                @endforeach
-                            </p>
-                        </div>
-
-                        <div class="opacity-20">
-                            <svg class="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                            </svg>
+                    {{-- Badge Label (NO TAMPIL / SUDUT) di posisi paling kanan sejajar informasi peserta --}}
+                    <div class="flex items-center gap-4 shrink-0">
+                        <div class="px-8 py-4 bg-slate-900/85 backdrop-blur-md text-white text-2xl xl:text-3xl font-black uppercase tracking-[0.25em] rounded-2xl border-2 border-black/30 shadow-2xl">
+                            {{ $labelIdentitas }}
                         </div>
                     </div>
                 </div>

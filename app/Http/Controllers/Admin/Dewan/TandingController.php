@@ -15,6 +15,8 @@ use App\Models\JatuhanTanding;
 use App\Events\TimerTandingUpdated;
 use App\Events\TandingScoreUpdated;
 use App\Events\JuriTandingInputReceived;
+use App\Events\VerifikasiTandingUpdated;
+use App\Events\KeputusanPemenangTandingUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -62,13 +64,17 @@ class TandingController extends Controller
         // Riwayat Log Aktivitas (Jatuhan, Pelanggaran, Poin Sah)
         $timeline = $this->getTimeline($partai->id);
 
+        // Evaluasi pemenang otomatis berdasarkan kriteria
+        $evaluasiPemenang = $this->evaluasiPemenang($partai->id);
+
         return view('pages.dewan.tanding', compact(
             'partai',
             'statusJuri',
             'scores',
             'verifikasiAktif',
             'riwayatVerifikasi',
-            'timeline'
+            'timeline',
+            'evaluasiPemenang'
         ));
     }
 
@@ -404,11 +410,11 @@ class TandingController extends Controller
     public function startVerifikasi(Request $request, $id)
     {
         $request->validate([
-            'keterangan' => 'required|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
             'babak' => 'nullable|integer|in:1,2,3',
         ]);
 
-        $partai = PartaiTanding::findOrFail($id);
+        $partai = PartaiTanding::with(['pesertaBiru', 'pesertaMerah'])->findOrFail($id);
         $babak = $request->babak ?: ($partai->babak_aktif ?: 1);
 
         // Jika ada verifikasi yang masih aktif sebelumnya, selesaikan dulu
@@ -419,15 +425,33 @@ class TandingController extends Controller
         $verifikasi = VerifikasiDewan::create([
             'id_partai' => $partai->id,
             'babak' => $babak,
-            'keterangan' => $request->keterangan,
+            'keterangan' => $request->keterangan ?: 'Verifikasi Juri (VAR)',
             'status' => 'Aktif',
         ]);
+
+        $jawabanMap = [
+            1 => null,
+            2 => null,
+            3 => null,
+        ];
+
+        broadcast(new VerifikasiTandingUpdated($partai->id, 'start', [
+            'verifikasiId' => $verifikasi->id,
+            'keterangan' => $verifikasi->keterangan,
+            'babak' => $verifikasi->babak,
+            'status' => 'Aktif',
+            'jawaban' => $jawabanMap,
+            'hasil' => null,
+            'pesertaBiru' => $partai->pesertaBiru ? ['nama' => $partai->pesertaBiru->nama, 'kontingen' => $partai->pesertaBiru->kontingen] : null,
+            'pesertaMerah' => $partai->pesertaMerah ? ['nama' => $partai->pesertaMerah->nama, 'kontingen' => $partai->pesertaMerah->kontingen] : null,
+        ]));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Verifikasi Juri (VAR) dimulai: ' . $verifikasi->keterangan,
                 'verifikasi' => $verifikasi,
+                'jawaban' => $jawabanMap,
             ]);
         }
 
@@ -441,24 +465,83 @@ class TandingController extends Controller
     {
         $request->validate([
             'no_juri' => 'required|integer|in:1,2,3',
-            'pilihan_sudut' => 'required|in:Merah,Biru,Batal',
+            'pilihan_sudut' => 'required|string|max:30',
         ]);
 
         $verifikasi = VerifikasiDewan::findOrFail($id_verifikasi);
+        $partai = PartaiTanding::with(['pesertaBiru', 'pesertaMerah'])->findOrFail($verifikasi->id_partai);
+
+        $pilihanInput = $request->pilihan_sudut;
+        // Normalisasi pilihan: Biru, Merah, atau Tidak Valid
+        if (in_array(strtolower($pilihanInput), ['batal', 'tidak valid', 'invalid'])) {
+            $pilihanSimpan = 'Tidak Valid';
+        } elseif (strtolower($pilihanInput) === 'biru') {
+            $pilihanSimpan = 'Biru';
+        } elseif (strtolower($pilihanInput) === 'merah') {
+            $pilihanSimpan = 'Merah';
+        } else {
+            $pilihanSimpan = 'Tidak Valid';
+        }
 
         $jawaban = JawabanVerifikasiJuri::updateOrCreate(
             ['id_verifikasi' => $verifikasi->id, 'no_juri' => $request->no_juri],
-            ['pilihan_sudut' => $request->pilihan_sudut]
+            ['pilihan_sudut' => $pilihanSimpan]
         );
 
         $semuaJawaban = JawabanVerifikasiJuri::where('id_verifikasi', $verifikasi->id)->get();
 
+        $jawabanMap = [
+            1 => null,
+            2 => null,
+            3 => null,
+        ];
+        $countBiru = 0;
+        $countMerah = 0;
+        $countTidakValid = 0;
+
+        foreach ($semuaJawaban as $v) {
+            $val = in_array($v->pilihan_sudut, ['Batal', 'Tidak Valid']) ? 'Tidak Valid' : $v->pilihan_sudut;
+            $jawabanMap[$v->no_juri] = $val;
+            if ($val === 'Biru') $countBiru++;
+            elseif ($val === 'Merah') $countMerah++;
+            elseif ($val === 'Tidak Valid') $countTidakValid++;
+        }
+
+        // Konsensus verifikasi IPSI:
+        // 1. Jika 2 juri menginput nilai yang sama -> salah satu sudut yang dapat verifikasi / tidak valid
+        // 2. Jika 3 juri input nilai: biru, merah, tidak valid -> tidak valid
+        $hasil = null;
+        if ($countBiru >= 2) {
+            $hasil = 'Biru';
+        } elseif ($countMerah >= 2) {
+            $hasil = 'Merah';
+        } elseif ($countTidakValid >= 2) {
+            $hasil = 'Tidak Valid';
+        } elseif ($semuaJawaban->count() >= 3) {
+            // Semua 3 juri telah input dan tidak ada yang mendapat 2 suara (misal: 1 Biru, 1 Merah, 1 Tidak Valid)
+            $hasil = 'Tidak Valid';
+        }
+
+        broadcast(new VerifikasiTandingUpdated($partai->id, 'vote', [
+            'verifikasiId' => $verifikasi->id,
+            'keterangan' => $verifikasi->keterangan,
+            'babak' => $verifikasi->babak,
+            'status' => 'Aktif',
+            'noJuri' => (int)$request->no_juri,
+            'pilihan' => $pilihanSimpan,
+            'jawaban' => $jawabanMap,
+            'hasil' => $hasil,
+            'pesertaBiru' => $partai->pesertaBiru ? ['nama' => $partai->pesertaBiru->nama, 'kontingen' => $partai->pesertaBiru->kontingen] : null,
+            'pesertaMerah' => $partai->pesertaMerah ? ['nama' => $partai->pesertaMerah->nama, 'kontingen' => $partai->pesertaMerah->kontingen] : null,
+        ]));
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Jawaban Juri {$request->no_juri}: {$request->pilihan_sudut}",
+                'message' => "Jawaban Juri {$request->no_juri}: {$pilihanSimpan}",
                 'jawaban' => $jawaban,
-                'semua_jawaban' => $semuaJawaban,
+                'jawaban_map' => $jawabanMap,
+                'hasil' => $hasil,
             ]);
         }
 
@@ -473,7 +556,7 @@ class TandingController extends Controller
         $verifikasi = VerifikasiDewan::findOrFail($id_verifikasi);
         $partai = PartaiTanding::findOrFail($verifikasi->id_partai);
 
-        $keputusan = $request->input('keputusan'); // e.g. 'jatuhan_biru', 'jatuhan_merah', 'sah_biru', 'sah_merah', 'batal'
+        $keputusan = $request->input('keputusan'); // e.g. 'jatuhan_biru', 'jatuhan_merah', 'sah_biru_tendangan', 'sah_merah_tendangan', 'batal', 'tutup'
 
         // Eksekusi otomatis jika keputusan menghasilkan poin/jatuhan
         if ($keputusan === 'jatuhan_biru') {
@@ -521,6 +604,13 @@ class TandingController extends Controller
         }
 
         $verifikasi->update(['status' => 'Selesai']);
+
+        // Broadcast penutupan modal verifikasi ke seluruh client (Display, Dewan, Juri)
+        broadcast(new VerifikasiTandingUpdated($partai->id, 'close', [
+            'verifikasiId' => $verifikasi->id,
+            'status' => 'Selesai',
+            'keputusan' => $keputusan,
+        ]));
 
         $scores = $this->calculateScores($partai->id);
         broadcast(new TandingScoreUpdated($partai->id, $scores, $partai->babak_aktif ?: 1));
@@ -1112,5 +1202,237 @@ class TandingController extends Controller
         }
 
         return $events->sortByDesc('created_at')->values()->take(30);
+    }
+
+    /**
+     * Helper: Menghitung dan mengevaluasi pemenang otomatis berdasarkan 5 kriteria regulasi IPSI:
+     * 1. Bandingkan Total Skor
+     * 2. Jika sama -> Bandingkan Nilai Hukuman: (T1*1 + T2*2 + P1*5 + P2*10) (lebih rendah menang)
+     * 3. Jika sama -> Bandingkan Nilai Jatuhan (3 Poin) (lebih tinggi menang)
+     * 4. Jika sama -> Bandingkan Nilai Tendangan (2 Poin) (lebih banyak menang)
+     * 5. Jika sama -> Bandingkan Nilai Pukulan (1 Poin) (lebih banyak menang)
+     * Jika semua 5 kriteria masih sama -> Hasil Seri
+     */
+    public function evaluasiPemenang($idPartai)
+    {
+        $partai = PartaiTanding::with(['pesertaMerah', 'pesertaBiru'])->findOrFail($idPartai);
+
+        // 1. Total Skor Bersih
+        $scores = $this->calculateScores($partai->id);
+        $totalSumMerah = floatval($scores['merah']['total'] ?? 0);
+        $totalSumBiru = floatval($scores['biru']['total'] ?? 0);
+
+        // 2. Nilai Hukuman
+        $pelanggaran = PelanggaranTanding::where('id_partai', $partai->id)->get();
+        $teguran1Merah = $pelanggaran->where('sudut', 'Merah')->where('jenis_pelanggaran', 'Teguran 1')->count();
+        $teguran2Merah = $pelanggaran->where('sudut', 'Merah')->where('jenis_pelanggaran', 'Teguran 2')->count();
+        $peringatan1Merah = $pelanggaran->where('sudut', 'Merah')->where('jenis_pelanggaran', 'Peringatan 1')->count();
+        $peringatan2Merah = $pelanggaran->where('sudut', 'Merah')->where('jenis_pelanggaran', 'Peringatan 2')->count();
+        $hukumanMerah = ($teguran1Merah * 1) + ($teguran2Merah * 2) + ($peringatan1Merah * 5) + ($peringatan2Merah * 10);
+
+        $teguran1Biru = $pelanggaran->where('sudut', 'Biru')->where('jenis_pelanggaran', 'Teguran 1')->count();
+        $teguran2Biru = $pelanggaran->where('sudut', 'Biru')->where('jenis_pelanggaran', 'Teguran 2')->count();
+        $peringatan1Biru = $pelanggaran->where('sudut', 'Biru')->where('jenis_pelanggaran', 'Peringatan 1')->count();
+        $peringatan2Biru = $pelanggaran->where('sudut', 'Biru')->where('jenis_pelanggaran', 'Peringatan 2')->count();
+        $hukumanBiru = ($teguran1Biru * 1) + ($teguran2Biru * 2) + ($peringatan1Biru * 5) + ($peringatan2Biru * 10);
+
+        // 3. Nilai Jatuhan (3 Poin)
+        $jatuhan = JatuhanTanding::where('id_partai', $partai->id)->get();
+        $totalJatuhanCountMerah = $jatuhan->where('sudut', 'Merah')->count();
+        $totalJatuhanCountBiru = $jatuhan->where('sudut', 'Biru')->count();
+        $totalJatuhanMerah = $totalJatuhanCountMerah * 3;
+        $totalJatuhanBiru = $totalJatuhanCountBiru * 3;
+
+        // 4 & 5. Nilai Tendangan (2 Poin) & Nilai Pukulan (1 Poin)
+        $poinSah = PoinSahTanding::where('id_partai', $partai->id)->get();
+        $totalTendanganMerah = $poinSah->where('sudut', 'Merah')->where('poin_masuk', 2)->count();
+        $totalTendanganBiru = $poinSah->where('sudut', 'Biru')->where('poin_masuk', 2)->count();
+        $totalPukulanMerah = $poinSah->where('sudut', 'Merah')->where('poin_masuk', 1)->count();
+        $totalPukulanBiru = $poinSah->where('sudut', 'Biru')->where('poin_masuk', 1)->count();
+
+        $pemenang = null;
+        $alasan = '';
+        $kriteriaTahap = 1;
+
+        // --- CEK DISKUALIFIKASI TERLEBIH DAHULU ---
+        $isDisqMerah = $scores['merah']['is_disq'] ?? false;
+        $isDisqBiru = $scores['biru']['is_disq'] ?? false;
+
+        if ($isDisqMerah && !$isDisqBiru) {
+            $pemenang = 'BIRU';
+            $alasan = 'Menang Diskualifikasi (Sudut Merah Didiskualifikasi)';
+            $kriteriaTahap = 1;
+        } elseif ($isDisqBiru && !$isDisqMerah) {
+            $pemenang = 'MERAH';
+            $alasan = 'Menang Diskualifikasi (Sudut Biru Didiskualifikasi)';
+            $kriteriaTahap = 1;
+        } elseif ($totalSumMerah > $totalSumBiru) {
+            $pemenang = 'MERAH';
+            $alasan = 'Menang berdasarkan total nilai';
+            $kriteriaTahap = 1;
+        } elseif ($totalSumBiru > $totalSumMerah) {
+            $pemenang = 'BIRU';
+            $alasan = 'Menang berdasarkan total nilai';
+            $kriteriaTahap = 1;
+        } else {
+            // Tahap 2: Nilai Hukuman (Lebih rendah menang)
+            if ($hukumanMerah < $hukumanBiru) {
+                $pemenang = 'MERAH';
+                $alasan = 'Hukuman lebih rendah';
+                $kriteriaTahap = 2;
+            } elseif ($hukumanBiru < $hukumanMerah) {
+                $pemenang = 'BIRU';
+                $alasan = 'Hukuman lebih rendah';
+                $kriteriaTahap = 2;
+            } else {
+                // Tahap 3: Nilai Jatuhan (3 Poin)
+                if ($totalJatuhanMerah > $totalJatuhanBiru) {
+                    $pemenang = 'MERAH';
+                    $alasan = 'Nilai jatuhan lebih tinggi';
+                    $kriteriaTahap = 3;
+                } elseif ($totalJatuhanBiru > $totalJatuhanMerah) {
+                    $pemenang = 'BIRU';
+                    $alasan = 'Nilai jatuhan lebih tinggi';
+                    $kriteriaTahap = 3;
+                } else {
+                    // Tahap 4: Nilai Tendangan (2 Poin)
+                    if ($totalTendanganMerah > $totalTendanganBiru) {
+                        $pemenang = 'MERAH';
+                        $alasan = 'Nilai tendangan lebih banyak';
+                        $kriteriaTahap = 4;
+                    } elseif ($totalTendanganBiru > $totalTendanganMerah) {
+                        $pemenang = 'BIRU';
+                        $alasan = 'Nilai tendangan lebih banyak';
+                        $kriteriaTahap = 4;
+                    } else {
+                        // Tahap 5: Nilai Pukulan (1 Poin)
+                        if ($totalPukulanMerah > $totalPukulanBiru) {
+                            $pemenang = 'MERAH';
+                            $alasan = 'Nilai pukulan lebih banyak';
+                            $kriteriaTahap = 5;
+                        } elseif ($totalPukulanBiru > $totalPukulanMerah) {
+                            $pemenang = 'BIRU';
+                            $alasan = 'Nilai pukulan lebih banyak';
+                            $kriteriaTahap = 5;
+                        } else {
+                            // Jika semua 5 kriteria masih sama -> Hasil Seri
+                            $pemenang = 'BELUM DITENTUKAN';
+                            $alasan = 'Hasil Seri (Semua Kriteria Poin Sama)';
+                            $kriteriaTahap = 5;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Tentukan relasi ID pemenang
+        $idPemenang = null;
+        $sudutPemenang = null;
+        $pesertaPemenang = null;
+
+        if ($pemenang === 'MERAH') {
+            $idPemenang = $partai->id_merah;
+            $sudutPemenang = 'Merah';
+            $pesertaPemenang = $partai->pesertaMerah;
+        } elseif ($pemenang === 'BIRU') {
+            $idPemenang = $partai->id_biru;
+            $sudutPemenang = 'Biru';
+            $pesertaPemenang = $partai->pesertaBiru;
+        } else {
+            $sudutPemenang = $pemenang; // 'BELUM DITENTUKAN'
+        }
+
+        return [
+            'pemenang' => $sudutPemenang,
+            'sudut' => $sudutPemenang,
+            'id_pemenang' => $idPemenang,
+            'pesertaPemenang' => $pesertaPemenang ? [
+                'nama' => $pesertaPemenang->nama,
+                'kontingen' => $pesertaPemenang->kontingen
+            ] : null,
+            'namaMerah' => $partai->pesertaMerah ? $partai->pesertaMerah->nama : 'Sudut Merah',
+            'namaBiru' => $partai->pesertaBiru ? $partai->pesertaBiru->nama : 'Sudut Biru',
+            'kontingenMerah' => $partai->pesertaMerah ? $partai->pesertaMerah->kontingen : '-',
+            'kontingenBiru' => $partai->pesertaBiru ? $partai->pesertaBiru->kontingen : '-',
+            'alasan' => $alasan,
+            'kriteriaTahap' => $kriteriaTahap,
+            'totalMerah' => $totalSumMerah,
+            'totalBiru' => $totalSumBiru,
+            'hukumanMerah' => $hukumanMerah,
+            'hukumanBiru' => $hukumanBiru,
+            'jatuhanMerah' => $totalJatuhanMerah,
+            'jatuhanBiru' => $totalJatuhanBiru,
+            'tendanganMerah' => $totalTendanganMerah,
+            'tendanganBiru' => $totalTendanganBiru,
+            'pukulanMerah' => $totalPukulanMerah,
+            'pukulanBiru' => $totalPukulanBiru,
+            'statusPemenang' => 1,
+        ];
+    }
+
+    /**
+     * Menghitung dan menetapkan Keputusan Pemenang Partai Tanding sesuai kriteria IPSI (5 Tahapan).
+     */
+    public function hitungKeputusanPemenang(Request $request, $id)
+    {
+        $partai = PartaiTanding::findOrFail($id);
+        $payload = $this->evaluasiPemenang($partai->id);
+
+        // Update database partai_tanding tanpa mengubah status_pertandingan
+        $partai->update([
+            'id_pemenang' => $payload['id_pemenang'],
+            'sudut_pemenang' => $payload['sudut'],
+            'alasan_pemenang' => $payload['alasan'],
+            'status_pemenang' => 1,
+        ]);
+
+        // Broadcast ke dewan & display
+        broadcast(new KeputusanPemenangTandingUpdated($partai->id, 'show', $payload));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Keputusan pemenang berhasil ditetapkan: ' . ($payload['sudut'] ?: $payload['alasan']),
+                'data' => $payload,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Keputusan pemenang ditetapkan: ' . ($payload['sudut'] ?: $payload['alasan']));
+    }
+
+    /**
+     * Menutup modal Keputusan Pemenang pada Dewan dan Display.
+     */
+    public function closeKeputusanPemenang(Request $request, $id)
+    {
+        $partai = PartaiTanding::findOrFail($id);
+        $partai->update([
+            'status_pemenang' => 0,
+        ]);
+
+        broadcast(new KeputusanPemenangTandingUpdated($partai->id, 'close', [
+            'statusPemenang' => 0,
+        ]));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Modal keputusan pemenang berhasil ditutup di Dewan dan Display.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Modal keputusan pemenang ditutup.');
+    }
+
+    /**
+     * Mengambil data evaluasi kriteria pemenang secara asynchronous (JSON).
+     */
+    public function getEvaluasiPemenang($id)
+    {
+        $payload = $this->evaluasiPemenang($id);
+        return response()->json([
+            'success' => true,
+            'data' => $payload,
+        ]);
     }
 }

@@ -151,7 +151,7 @@
     <div id="tab-content-partai" class="space-y-4">
         {{-- Filter & Pencarian --}}
         <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <form action="{{ route('admin.manajemen.tanding.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <form action="{{ route('admin.manajemen.tanding.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
                 <input type="hidden" name="tab" value="partai">
                 
                 {{-- Input Cari --}}
@@ -189,6 +189,17 @@
                     </select>
                 </div>
 
+                {{-- Pilihan Jumlah Per Halaman --}}
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-gray-500 uppercase">Per Halaman</label>
+                    <select name="per_page" onchange="this.form.submit()" class="w-full h-9 px-3 text-xs rounded-xl border border-gray-200 focus:border-primary-500 outline-none bg-white font-semibold text-gray-700">
+                        <option value="5" {{ request('per_page') == 5 ? 'selected' : '' }}>5 data</option>
+                        <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10 data</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25 data</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 data</option>
+                    </select>
+                </div>
+
                 {{-- Tombol Aksi Filter --}}
                 <div class="flex items-center gap-2">
                     <button type="submit"
@@ -198,7 +209,7 @@
                         </svg>
                         Filter
                     </button>
-                    @if(request()->hasAny(['search', 'status', 'fase_babak']))
+                    @if(request()->hasAny(['search', 'status', 'fase_babak', 'per_page']))
                         <a href="{{ route('admin.manajemen.tanding.index') }}"
                             class="h-9 px-3 border border-gray-200 hover:bg-gray-100 text-gray-600 rounded-xl text-xs font-semibold flex items-center justify-center transition-all">
                             Reset
@@ -458,11 +469,9 @@
             </div>
 
             {{-- Pagination Partai --}}
-            @if ($partais->hasPages())
-                <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/50">
-                    {{ $partais->links() }}
-                </div>
-            @endif
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                {{ $partais->links() }}
+            </div>
         </div>
     </div>
 
@@ -480,6 +489,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
                 </div>
+                <select name="per_page_atlet" onchange="this.form.submit()" class="h-10 px-3 text-xs rounded-xl border border-gray-200 focus:border-primary-500 outline-none bg-white font-semibold text-gray-700">
+                    <option value="10" {{ request('per_page_atlet') == 10 ? 'selected' : '' }}>10 atlet/hal</option>
+                    <option value="15" {{ request('per_page_atlet', 15) == 15 ? 'selected' : '' }}>15 atlet/hal</option>
+                    <option value="30" {{ request('per_page_atlet') == 30 ? 'selected' : '' }}>30 atlet/hal</option>
+                    <option value="50" {{ request('per_page_atlet') == 50 ? 'selected' : '' }}>50 atlet/hal</option>
+                </select>
                 <button type="submit"
                     class="h-10 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm">
                     Cari Atlet
@@ -575,11 +590,9 @@
                 </table>
             </div>
 
-            @if ($atlets->hasPages())
-                <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/50">
-                    {{ $atlets->links() }}
-                </div>
-            @endif
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                {{ $atlets->links() }}
+            </div>
         </div>
     </div>
 

@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator; // Tambahkan ini
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Schema;
+use App\Models\PengaturanDisplay;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('*', function ($view) {
+            try {
+                if (Schema::hasTable('pengaturan_display')) {
+                    $view->with('pengaturanDisplay', PengaturanDisplay::getSetting());
+                }
+            } catch (\Throwable $e) {}
+        });
     }
 }
