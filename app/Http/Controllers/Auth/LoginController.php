@@ -13,6 +13,12 @@ class LoginController extends Controller
      */
     public function index()
     {
+        if (Auth::check()) {
+            if (Auth::user()->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+            return redirect()->route('juri.dashboard');
+        }
         return view('auth.login');
     }
 

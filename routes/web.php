@@ -119,13 +119,26 @@ Route::get('/dewan/display', function (\Illuminate\Http\Request $request) {
 
 })->name('dewan.display');
 
+// Status data untuk Polling Display Penonton (Publik / Tanpa Login)
+Route::get('/dewan/tanding/{id}/status-data', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData'])->name('dewan.tanding.status-data');
+Route::get('/admin/dewan/tanding/{id}/status-data', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData']);
+
 Route::get('/', function () {
+    if (auth()->check()) {
+        if (auth()->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('juri.dashboard');
+    }
     return redirect()->route('login');
 });
+
 Route::get('/dewan', function () {
     return view('pages.dewan.index');
-});
+})->middleware('admin')->name('dewan.index');
+
 Route::prefix('admin')
+    ->middleware('admin')
     ->name('admin.')->group(function () {
 
         // --- 1. DASHBOARD & PROFILE ---
@@ -367,12 +380,11 @@ Route::get('/api/cek-partai-aktif', function () {
     ]);
 });
 
+Route::middleware('juri')->group(function () {
 
-Route::get('/juri/dashboard', function () {
-
-    return view('pages.juri.dashboard');
-
-})->name('juri.dashboard');
+    Route::get('/juri/dashboard', function () {
+        return view('pages.juri.dashboard');
+    })->name('juri.dashboard');
 
 // 2. Route Halaman Utama Juri (Hanya butuh nomor Juri, misal: /juri/solo/1)
 Route::get('/juri/solo/{no_juri}', function ($no_juri) {
@@ -692,12 +704,22 @@ Route::post('/juri/pool/tunggal-regu/simpan-nilai/{id_partai}/{no_juri}/{no_urut
 Route::post('/juri/tunggal/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'inputNilaiJuri'])->name('juri.tunggal.input-nilai');
 Route::post('/juri/regu/input-nilai/{id_partai}/{no_juri}/{sudut}', [App\Http\Controllers\Admin\Manajemen\ReguController::class, 'inputNilaiJuri'])->name('juri.regu.input-nilai');
 
-Route::post('/juri/tunggal/simpan-nilai/{id_detail}/{no_juri}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'simpanNilaiJuri'])->name('juri.tunggal.simpan-nilai-final');
-Route::post('/juri/tunggal/selesai/{id_partai}/{sudut}', [TunggalController::class, 'selesai'])->name('juri.tunggal.selesai');
-Route::post('/juri/regu/simpan-nilai/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'simpanNilaiJuri'])->name('juri.regu.simpan-nilai-final');
+    Route::post('/juri/tunggal/simpan-nilai/{id_detail}/{no_juri}', [App\Http\Controllers\Admin\Manajemen\TunggalController::class, 'simpanNilaiJuri'])->name('juri.tunggal.simpan-nilai-final');
+    Route::post('/juri/tunggal/selesai/{id_partai}/{sudut}', [TunggalController::class, 'selesai'])->name('juri.tunggal.selesai');
+    Route::post('/juri/regu/simpan-nilai/{id_detail}/{no_juri}', [\App\Http\Controllers\Admin\Manajemen\ReguController::class, 'simpanNilaiJuri'])->name('juri.regu.simpan-nilai-final');
 
-// Route baru untuk Kontrol Dewan Solo
-Route::get('/dewan/solo/{id}/{sudut}', function ($id, $sudut) {
+    // Endpoint input juri tanding yang diakses oleh tablet juri (diizinkan untuk role juri & admin)
+    Route::post('/dewan/tanding/{id}/input-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput'])
+        ->name('dewan.tanding.input-juri');
+});
+
+// ==============================================
+// ROUTE PANEL KONTROL DEWAN (ADMIN / DEWAN)
+// ==============================================
+Route::middleware('admin')->group(function () {
+
+    // Route untuk Kontrol Dewan Solo
+    Route::get('/dewan/solo/{id}/{sudut}', function ($id, $sudut) {
     // Mengambil data partai untuk ditampilkan di kontrol dewan
     $partai = \App\Models\Partai::with(['kelas', 'detail_peserta.peserta'])->findOrFail($id);
     // --- TAMBAHAN LOGIKA AUTO-GENERATE JURI ---
@@ -910,10 +932,8 @@ Route::prefix('dewan')->name('dewan.')->group(function () {
     Route::post('/pool/toggle-status-input/{id_partai}/{no_juri}', [\App\Http\Controllers\Admin\Dewan\PoolController::class, 'toggleStatusInput'])
         ->name('pool.toggle-status-input');
 
-    // Rute Dewan Tanding (Akses Langsung)
+    // Rute Dewan Tanding (Akses Langsung Khusus Dewan/Admin)
     Route::get('/tanding/{id}', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'index'])->name('tanding');
-    Route::post('/tanding/{id}/input-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput'])->name('tanding.input-juri');
-    Route::get('/tanding/{id}/status-data', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData'])->name('tanding.status-data');
     Route::post('/tanding/{id}/toggle-juri/{no_juri}', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'toggleJuri'])->name('tanding.toggle-juri');
     Route::post('/tanding/{id}/toggle-all-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'toggleAllJuri'])->name('tanding.toggle-all-juri');
     Route::post('/tanding/{id}/update-timer', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateTimer'])->name('tanding.update-timer');
@@ -921,9 +941,5 @@ Route::prefix('dewan')->name('dewan.')->group(function () {
     Route::post('/tanding/{id}/keputusan-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang'])->name('tanding.keputusan-pemenang');
     Route::post('/tanding/{id}/close-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'closeKeputusanPemenang'])->name('tanding.close-pemenang');
 });
-
-// Fallback langsung untuk input juri tanding
-Route::post('/dewan/tanding/{id}/input-juri', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput']);
-Route::post('/dewan/tanding/{id}/keputusan-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang']);
-Route::post('/dewan/tanding/{id}/close-pemenang', [\App\Http\Controllers\Admin\Dewan\TandingController::class, 'closeKeputusanPemenang']);
+});
 
