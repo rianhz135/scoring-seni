@@ -275,22 +275,25 @@
                 <div id="modal-body-data" class="hidden space-y-6">
 
                     {{-- 1. WINNER BANNER --}}
-                    <div id="winner-banner" class="rounded-2xl p-4 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-gray-950 shadow-md border border-yellow-300 flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-12 h-12 rounded-2xl bg-white/90 shadow-sm flex items-center justify-center shrink-0">
-                                <svg class="w-7 h-7 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                    <div id="winner-banner" class="winner-banner rounded-2xl p-4 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 relative overflow-hidden">
+                        {{-- Dekorasi Garis Putih Transparan seperti di Display --}}
+                        <div class="absolute top-0 right-0 w-48 h-full bg-white/10 skew-x-12 translate-x-12 pointer-events-none"></div>
+
+                        <div class="flex items-center gap-3.5 relative z-10">
+                            <div id="modal-pemenang-icon-box" class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                                <svg id="modal-pemenang-trophy-icon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                                 </svg>
                             </div>
                             <div>
-                                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-yellow-900 text-yellow-100">PEMENANG PERTANDINGAN</span>
-                                <h3 id="modal-pemenang-nama" class="text-lg font-black tracking-tight leading-tight mt-0.5">Nama Pemenang</h3>
-                                <p id="modal-pemenang-kontingen" class="text-xs font-bold text-gray-800">Kontingen</p>
+                                <span id="modal-pemenang-badge" class="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full inline-block">PEMENANG PERTANDINGAN</span>
+                                <h3 id="modal-pemenang-nama" class="text-lg font-black tracking-tight leading-tight mt-0.5 text-white">Nama Pemenang</h3>
+                                <p id="modal-pemenang-kontingen" class="text-xs font-bold mt-0.5">Kontingen</p>
                             </div>
                         </div>
-                        <div class="text-right sm:border-l sm:border-yellow-600/30 sm:pl-4">
-                            <span class="text-[10px] font-bold uppercase text-gray-800 block">Kriteria / Alasan:</span>
-                            <span id="modal-pemenang-alasan" class="text-xs font-black bg-white/70 px-3 py-1 rounded-lg inline-block mt-0.5">Menang berdasarkan total nilai</span>
+                        <div id="modal-pemenang-alasan-wrapper" class="text-right sm:border-l sm:pl-4 relative z-10">
+                            <span id="modal-pemenang-alasan-label" class="text-[10px] font-bold uppercase block">Kriteria / Alasan:</span>
+                            <span id="modal-pemenang-alasan" class="text-xs font-black px-3 py-1 rounded-lg inline-block mt-0.5">Menang berdasarkan total nilai</span>
                         </div>
                     </div>
 
@@ -510,16 +513,52 @@
 
             // Pemenang banner
             const winnerBanner = document.getElementById('winner-banner');
+            const pemenangBadge = document.getElementById('modal-pemenang-badge');
             const pemenangNama = document.getElementById('modal-pemenang-nama');
             const pemenangKontingen = document.getElementById('modal-pemenang-kontingen');
+            const pemenangAlasanWrapper = document.getElementById('modal-pemenang-alasan-wrapper');
+            const pemenangAlasanLabel = document.getElementById('modal-pemenang-alasan-label');
             const pemenangAlasan = document.getElementById('modal-pemenang-alasan');
+            const trophyIcon = document.getElementById('modal-pemenang-trophy-icon');
+            const iconBox = document.getElementById('modal-pemenang-icon-box');
 
             if (p.sudut_pemenang) {
                 winnerBanner.classList.remove('hidden');
-                const winData = p.pemenang || (p.sudut_pemenang === 'Biru' ? p.peserta_biru : p.peserta_merah);
+                const isBiru = (p.sudut_pemenang.toLowerCase() === 'biru');
+                const winData = p.pemenang || (isBiru ? p.peserta_biru : p.peserta_merah);
+                const cornerColor = isBiru ? '#2563eb' : '#dc2626';
+
                 pemenangNama.innerText = `SUDUT ${p.sudut_pemenang.toUpperCase()} - ${winData ? winData.nama : '-'}`;
                 pemenangKontingen.innerText = winData ? winData.kontingen : '-';
                 pemenangAlasan.innerText = p.alasan_pemenang || evaluasi.alasan || 'Menang Berdasarkan Aturan Pertandingan';
+
+                // Terapkan warna sudut langsung ke SVG & Container agar tidak mewarisi text-white
+                if (iconBox) iconBox.style.color = cornerColor;
+                if (trophyIcon) {
+                    trophyIcon.setAttribute('fill', cornerColor);
+                    trophyIcon.style.fill = cornerColor;
+                    trophyIcon.style.color = cornerColor;
+                }
+
+                if (isBiru) {
+                    // Warna Sudut Biru (Solid #2563eb persis seperti di display)
+                    winnerBanner.style.backgroundColor = '#2563eb';
+                    winnerBanner.className = "winner-banner rounded-2xl p-4 text-white shadow-lg border border-blue-400/40 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 relative overflow-hidden";
+                    if (pemenangBadge) pemenangBadge.className = "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-950/60 text-blue-100 border border-white/20 inline-block";
+                    if (pemenangKontingen) pemenangKontingen.className = "text-xs font-bold text-blue-100 mt-0.5";
+                    if (pemenangAlasanWrapper) pemenangAlasanWrapper.className = "text-right sm:border-l sm:border-white/20 sm:pl-4 relative z-10";
+                    if (pemenangAlasanLabel) pemenangAlasanLabel.className = "text-[10px] font-bold uppercase text-blue-100/90 block";
+                    if (pemenangAlasan) pemenangAlasan.className = "text-xs font-black bg-blue-950/60 text-white border border-white/20 px-3 py-1 rounded-lg inline-block mt-0.5";
+                } else {
+                    // Warna Sudut Merah (Solid #dc2626 persis seperti di display)
+                    winnerBanner.style.backgroundColor = '#dc2626';
+                    winnerBanner.className = "winner-banner rounded-2xl p-4 text-white shadow-lg border border-red-400/40 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 relative overflow-hidden";
+                    if (pemenangBadge) pemenangBadge.className = "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-red-950/60 text-red-100 border border-white/20 inline-block";
+                    if (pemenangKontingen) pemenangKontingen.className = "text-xs font-bold text-red-100 mt-0.5";
+                    if (pemenangAlasanWrapper) pemenangAlasanWrapper.className = "text-right sm:border-l sm:border-white/20 sm:pl-4 relative z-10";
+                    if (pemenangAlasanLabel) pemenangAlasanLabel.className = "text-[10px] font-bold uppercase text-red-100/90 block";
+                    if (pemenangAlasan) pemenangAlasan.className = "text-xs font-black bg-red-950/60 text-white border border-white/20 px-3 py-1 rounded-lg inline-block mt-0.5";
+                }
             } else {
                 winnerBanner.classList.add('hidden');
             }

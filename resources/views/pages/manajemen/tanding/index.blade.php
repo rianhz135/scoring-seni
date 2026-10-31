@@ -383,25 +383,15 @@
                                                 Masuk Panel Dewan
                                             </a>
 
-                                            {{-- Ganti Babak & Tentukan Pemenang --}}
-                                            <div class="grid grid-cols-2 gap-1.5">
-                                                <button type="button"
-                                                    onclick="openBabakModal('{{ $partai->id }}', '{{ $partai->no_partai }}', '{{ $partai->babak_aktif ?: 1 }}')"
-                                                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1">
-                                                    <svg class="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                                    </svg>
-                                                    Babak
-                                                </button>
-                                                <button type="button"
-                                                    onclick="openPemenangModal('{{ $partai->id }}', '{{ $partai->no_partai }}', '{{ $partai->pesertaBiru ? $partai->pesertaBiru->id : '' }}', '{{ $partai->pesertaBiru ? addslashes($partai->pesertaBiru->nama) : '' }}', '{{ $partai->pesertaMerah ? $partai->pesertaMerah->id : '' }}', '{{ $partai->pesertaMerah ? addslashes($partai->pesertaMerah->nama) : '' }}')"
-                                                    class="bg-primary-600 hover:bg-primary-700 text-white py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm">
-                                                    <svg class="w-3 h-3 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                    </svg>
-                                                    Pemenang
-                                                </button>
-                                            </div>
+                                            {{-- Ganti Babak --}}
+                                            <button type="button"
+                                                onclick="openBabakModal('{{ $partai->id }}', '{{ $partai->no_partai }}', '{{ $partai->babak_aktif ?: 1 }}')"
+                                                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1">
+                                                <svg class="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                                </svg>
+                                                Ganti Babak
+                                            </button>
 
                                             <form action="{{ route('admin.manajemen.tanding.selesai', $partai->id) }}" method="POST">
                                                 @csrf
@@ -411,28 +401,13 @@
                                                 </button>
                                             </form>
                                         @else
-                                            {{-- Selesai: Tampilkan Tombol Reset --}}
-                                            <div class="flex items-center gap-1">
-                                                <button type="button"
-                                                    onclick="openPemenangModal('{{ $partai->id }}', '{{ $partai->no_partai }}', '{{ $partai->pesertaBiru ? $partai->pesertaBiru->id : '' }}', '{{ $partai->pesertaBiru ? addslashes($partai->pesertaBiru->nama) : '' }}', '{{ $partai->pesertaMerah ? $partai->pesertaMerah->id : '' }}', '{{ $partai->pesertaMerah ? addslashes($partai->pesertaMerah->nama) : '' }}', '{{ $partai->id_pemenang }}')"
-                                                    class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 py-1.5 px-2 rounded-lg text-[11px] font-semibold border border-gray-200 transition-all flex items-center justify-center gap-1">
-                                                    Ubah Juara
-                                                </button>
-                                                <button type="button"
-                                                    onclick="confirmReset('{{ $partai->id }}', '{{ $partai->no_partai }}')"
-                                                    class="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                                                    title="Reset Partai">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                                    </svg>
-                                                </button>
+                                            {{-- Selesai --}}
+                                            <div class="w-full bg-emerald-50 border border-emerald-200 text-emerald-700 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5">
+                                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                                Partai Selesai
                                             </div>
-
-                                            <form id="reset-form-{{ $partai->id }}"
-                                                action="{{ route('admin.manajemen.tanding.reset', $partai->id) }}"
-                                                method="POST" style="display: none;">
-                                                @csrf
-                                            </form>
                                         @endif
 
                                         {{-- Link Edit Partai --}}
@@ -637,82 +612,6 @@
         </div>
     </div>
 
-    {{-- MODAL TENTUKAN PEMENANG --}}
-    <div id="modal-pemenang" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-100 transform transition-all">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-900">Tentukan Pemenang Partai</h3>
-                </div>
-                <button type="button" onclick="closePemenangModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            <p id="pemenang-modal-desc" class="text-xs text-gray-500 mb-5">Pilih atlet sudut yang dinyatakan memenangkan pertandingan ini:</p>
-
-            <form id="form-set-pemenang" method="POST" action="">
-                @csrf
-                <div class="space-y-3 mb-6">
-                    {{-- Opsi Sudut Biru --}}
-                    <label id="label-opsi-biru" class="block cursor-pointer">
-                        <input type="radio" name="id_pemenang" id="radio-pemenang-biru" value="" class="peer sr-only">
-                        <div class="p-4 rounded-xl border-2 border-blue-100 bg-blue-50/50 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:shadow-sm transition-all flex items-center justify-between">
-                            <div>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-600 text-white">Sudut Biru</span>
-                                <p id="nama-pemenang-biru" class="text-sm font-bold text-blue-900 mt-1">-</p>
-                            </div>
-                            <div class="w-5 h-5 rounded-full border-2 border-blue-300 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center">
-                                <span class="w-2 h-2 rounded-full bg-white hidden peer-checked:block"></span>
-                            </div>
-                        </div>
-                    </label>
-
-                    {{-- Opsi Sudut Merah --}}
-                    <label id="label-opsi-merah" class="block cursor-pointer">
-                        <input type="radio" name="id_pemenang" id="radio-pemenang-merah" value="" class="peer sr-only">
-                        <div class="p-4 rounded-xl border-2 border-red-100 bg-red-50/50 peer-checked:border-red-600 peer-checked:bg-red-50 peer-checked:shadow-sm transition-all flex items-center justify-between">
-                            <div>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-600 text-white">Sudut Merah</span>
-                                <p id="nama-pemenang-merah" class="text-sm font-bold text-red-900 mt-1">-</p>
-                            </div>
-                            <div class="w-5 h-5 rounded-full border-2 border-red-300 peer-checked:border-red-600 peer-checked:bg-red-600 flex items-center justify-center">
-                                <span class="w-2 h-2 rounded-full bg-white hidden peer-checked:block"></span>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-5 text-[11px] text-amber-800">
-                    <p class="font-bold flex items-center gap-1">
-                        <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Pembaruan Otomatis Bagan
-                    </p>
-                    <p class="mt-0.5 text-amber-700">Jika partai berikutnya menunggu pemenang dari partai ini, atlet pemenang akan otomatis diisi ke jadwal babak selanjutnya.</p>
-                </div>
-
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="closePemenangModal()"
-                        class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-all">
-                        Batal
-                    </button>
-                    <button type="submit"
-                        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
-                        Tetapkan Pemenang
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
@@ -763,75 +662,6 @@
 
     function closeBabakModal() {
         document.getElementById('modal-babak').classList.add('hidden');
-    }
-
-    // Modal Tentukan Pemenang
-    function openPemenangModal(id, noPartai, idBiru, namaBiru, idMerah, namaMerah, idPemenang = null) {
-        const form = document.getElementById('form-set-pemenang');
-        form.action = `/admin/manajemen/tanding/${id}/set-pemenang`;
-        document.getElementById('pemenang-modal-desc').innerText = `Pilih atlet sudut pemenang untuk Partai #${noPartai}:`;
-
-        const radioBiru = document.getElementById('radio-pemenang-biru');
-        const radioMerah = document.getElementById('radio-pemenang-merah');
-        const labelBiru = document.getElementById('label-opsi-biru');
-        const labelMerah = document.getElementById('label-opsi-merah');
-
-        if (idBiru && namaBiru) {
-            radioBiru.value = idBiru;
-            radioBiru.disabled = false;
-            document.getElementById('nama-pemenang-biru').innerText = namaBiru;
-            labelBiru.classList.remove('opacity-40', 'pointer-events-none');
-            if (idPemenang && idPemenang == idBiru) {
-                radioBiru.checked = true;
-            } else if (!idPemenang) {
-                radioBiru.checked = true;
-            }
-        } else {
-            radioBiru.disabled = true;
-            document.getElementById('nama-pemenang-biru').innerText = 'Atlet Belum Ditentukan';
-            labelBiru.classList.add('opacity-40', 'pointer-events-none');
-        }
-
-        if (idMerah && namaMerah) {
-            radioMerah.value = idMerah;
-            radioMerah.disabled = false;
-            document.getElementById('nama-pemenang-merah').innerText = namaMerah;
-            labelMerah.classList.remove('opacity-40', 'pointer-events-none');
-            if (idPemenang && idPemenang == idMerah) {
-                radioMerah.checked = true;
-            } else if (!idBiru) {
-                radioMerah.checked = true;
-            }
-        } else {
-            radioMerah.disabled = true;
-            document.getElementById('nama-pemenang-merah').innerText = 'Atlet Belum Ditentukan';
-            labelMerah.classList.add('opacity-40', 'pointer-events-none');
-        }
-
-        document.getElementById('modal-pemenang').classList.remove('hidden');
-    }
-
-    function closePemenangModal() {
-        document.getElementById('modal-pemenang').classList.add('hidden');
-    }
-
-    // SweetAlert Konfirmasi Reset
-    function confirmReset(id, noPartai) {
-        Swal.fire({
-            title: `Reset Partai #${noPartai}?`,
-            text: "Status pertandingan akan dikembalikan ke Belum Dimulai dan pemenang akan dikosongkan.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Ya, Reset!',
-            cancelButtonText: 'Batal',
-            borderRadius: '1rem',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('reset-form-' + id).submit();
-            }
-        });
     }
 
     // Flash Toast Notifications

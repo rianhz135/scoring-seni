@@ -10,48 +10,42 @@
         @keyframes juriBlinkBiru {
             0% {
                 background-color: #2563eb;
-                border-color: #93c5fd;
+                border-color: #bfdbfe;
                 color: #ffffff;
-                box-shadow: 0 0 25px #3b82f6, 0 0 35px #60a5fa;
-                transform: scale(1.08);
+                box-shadow: 0 0 20px #3b82f6, inset 0 0 10px rgba(255, 255, 255, 0.5);
             }
             60% {
                 background-color: #2563eb;
                 border-color: #93c5fd;
                 color: #ffffff;
-                box-shadow: 0 0 20px #3b82f6;
-                transform: scale(1.05);
+                box-shadow: 0 0 15px #3b82f6, inset 0 0 8px rgba(255, 255, 255, 0.4);
             }
             100% {
                 background-color: rgba(23, 37, 84, 0.7);
                 border-color: rgba(96, 165, 250, 0.3);
                 color: #ffffff;
                 box-shadow: none;
-                transform: scale(1);
             }
         }
 
         @keyframes juriBlinkMerah {
             0% {
                 background-color: #dc2626;
-                border-color: #fca5a5;
+                border-color: #fecaca;
                 color: #ffffff;
-                box-shadow: 0 0 25px #ef4444, 0 0 35px #f87171;
-                transform: scale(1.08);
+                box-shadow: 0 0 20px #ef4444, inset 0 0 10px rgba(255, 255, 255, 0.5);
             }
             60% {
                 background-color: #dc2626;
                 border-color: #fca5a5;
                 color: #ffffff;
-                box-shadow: 0 0 20px #ef4444;
-                transform: scale(1.05);
+                box-shadow: 0 0 15px #ef4444, inset 0 0 8px rgba(255, 255, 255, 0.4);
             }
             100% {
                 background-color: rgba(69, 10, 10, 0.7);
                 border-color: rgba(248, 113, 113, 0.3);
                 color: #ffffff;
                 box-shadow: none;
-                transform: scale(1);
             }
         }
 
@@ -60,22 +54,19 @@
                 background-color: #eab308;
                 border-color: #fef08a;
                 color: #0f172a;
-                box-shadow: 0 0 30px #facc15, 0 0 45px #eab308;
-                transform: scale(1.12);
+                box-shadow: 0 0 25px #facc15, inset 0 0 10px rgba(255, 255, 255, 0.5);
             }
             70% {
                 background-color: #eab308;
                 border-color: #fef08a;
                 color: #0f172a;
-                box-shadow: 0 0 25px #facc15;
-                transform: scale(1.08);
+                box-shadow: 0 0 18px #facc15;
             }
             100% {
                 background-color: rgba(30, 41, 59, 0.8);
                 border-color: rgba(51, 65, 85, 0.8);
-                color: #94a3b8;
+                color: #ffffff;
                 box-shadow: none;
-                transform: scale(1);
             }
         }
 
@@ -157,17 +148,22 @@
                 $cBiru = 0;
                 $cMerah = 0;
                 $cTidakValid = 0;
-                foreach ($verifikasiAktif->jawabanJuri as $jj) {
-                    $val = in_array($jj->pilihan_sudut, ['Batal', 'Tidak Valid']) ? 'Tidak Valid' : $jj->pilihan_sudut;
-                    $initJawaban[$jj->no_juri] = $val;
-                    if ($val === 'Biru') $cBiru++;
-                    elseif ($val === 'Merah') $cMerah++;
-                    elseif ($val === 'Tidak Valid') $cTidakValid++;
+                $totalJawabanCount = $verifikasiAktif->jawabanJuri ? $verifikasiAktif->jawabanJuri->count() : 0;
+                if ($verifikasiAktif->jawabanJuri) {
+                    foreach ($verifikasiAktif->jawabanJuri as $jj) {
+                        $val = in_array($jj->pilihan_sudut, ['Batal', 'Tidak Valid']) ? 'Tidak Valid' : $jj->pilihan_sudut;
+                        $initJawaban[$jj->no_juri] = $val;
+                        if ($val === 'Biru') $cBiru++;
+                        elseif ($val === 'Merah') $cMerah++;
+                        elseif ($val === 'Tidak Valid') $cTidakValid++;
+                    }
                 }
-                if ($cBiru >= 2) $initVerifHasil = 'Biru';
-                elseif ($cMerah >= 2) $initVerifHasil = 'Merah';
-                elseif ($cTidakValid >= 2) $initVerifHasil = 'Tidak Valid';
-                elseif ($verifikasiAktif->jawabanJuri->count() >= 3) $initVerifHasil = 'Tidak Valid';
+                // Hanya tampilkan hasil jika KETIGA juri telah menginput
+                if ($totalJawabanCount >= 3) {
+                    if ($cBiru >= 2) $initVerifHasil = 'Biru';
+                    elseif ($cMerah >= 2) $initVerifHasil = 'Merah';
+                    else $initVerifHasil = 'Tidak Valid';
+                }
             }
 
             // Evaluasi inisial keputusan pemenang jika ada saat load
@@ -350,17 +346,14 @@
                                         <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+1</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-biru-pukulan-1" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J1</span>
+                                        <div id="lamp-biru-pukulan-1" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 1</span>
                                         </div>
-                                        <div id="lamp-biru-pukulan-2" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J2</span>
+                                        <div id="lamp-biru-pukulan-2" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 2</span>
                                         </div>
-                                        <div id="lamp-biru-pukulan-3" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J3</span>
+                                        <div id="lamp-biru-pukulan-3" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -371,17 +364,14 @@
                                         <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+2</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-biru-tendangan-1" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J1</span>
+                                        <div id="lamp-biru-tendangan-1" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 1</span>
                                         </div>
-                                        <div id="lamp-biru-tendangan-2" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J2</span>
+                                        <div id="lamp-biru-tendangan-2" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 2</span>
                                         </div>
-                                        <div id="lamp-biru-tendangan-3" class="lamp-box py-2 px-1 rounded-xl bg-blue-950/70 border border-blue-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J3</span>
+                                        <div id="lamp-biru-tendangan-3" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-blue-950/70 border-2 border-blue-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -472,17 +462,14 @@
                                         <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+1</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-merah-pukulan-1" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J1</span>
+                                        <div id="lamp-merah-pukulan-1" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 1</span>
                                         </div>
-                                        <div id="lamp-merah-pukulan-2" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J2</span>
+                                        <div id="lamp-merah-pukulan-2" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 2</span>
                                         </div>
-                                        <div id="lamp-merah-pukulan-3" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J3</span>
+                                        <div id="lamp-merah-pukulan-3" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -493,17 +480,14 @@
                                         <span class="text-xs sm:text-sm font-black px-2 py-0.5 rounded-lg bg-white/25 text-white shadow-sm">+2</span>
                                     </div>
                                     <div class="grid grid-cols-3 gap-1 text-center">
-                                        <div id="lamp-merah-tendangan-1" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J1</span>
+                                        <div id="lamp-merah-tendangan-1" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 1</span>
                                         </div>
-                                        <div id="lamp-merah-tendangan-2" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J2</span>
+                                        <div id="lamp-merah-tendangan-2" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 2</span>
                                         </div>
-                                        <div id="lamp-merah-tendangan-3" class="lamp-box py-2 px-1 rounded-xl bg-red-950/70 border border-red-400/30 text-white/80 font-bold transition-all duration-150">
-                                            <span class="lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1"></span>
-                                            <span class="text-xs sm:text-sm font-bold">J3</span>
+                                        <div id="lamp-merah-tendangan-3" class="lamp-box flex-1 min-w-0 py-2.5 px-1 rounded-xl bg-red-950/70 border-2 border-red-400/30 text-white font-black flex items-center justify-center transition-colors duration-150">
+                                            <span class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white">JURI 3</span>
                                         </div>
                                     </div>
                                 </div>
@@ -519,58 +503,50 @@
         <div id="modal-verifikasi-display" class="{{ $isVerifikasiAktif ? '' : 'hidden' }} fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-300">
             @php
                 if ($initVerifHasil === 'Biru') {
-                    $cardClasses = 'bg-gradient-to-b from-blue-900 via-blue-950 to-slate-950 border-blue-400 shadow-[0_0_120px_rgba(37,99,235,0.7)]';
-                    $badgeClasses = 'bg-blue-600 border-blue-300 text-white shadow-[0_0_40px_rgba(37,99,235,0.8)]';
-                    $glow1Classes = 'opacity-40 bg-blue-500';
-                    $glow2Classes = 'opacity-40 bg-blue-600';
+                    $cardClasses = 'bg-blue-950 border-white shadow-2xl';
+                    $badgeClasses = 'bg-blue-600 border-blue-300 text-white shadow-xl';
                     $badgeText = 'SUDUT BIRU SAH';
                     $titleText = $partaiTanding->pesertaBiru->nama ?? 'SUDUT BIRU';
                     $titleClasses = 'text-white';
                     $subText = $partaiTanding->pesertaBiru->kontingen ?? '-';
                     $subClasses = 'text-blue-200';
                 } elseif ($initVerifHasil === 'Merah') {
-                    $cardClasses = 'bg-gradient-to-b from-red-900 via-red-950 to-slate-950 border-red-400 shadow-[0_0_120px_rgba(220,38,38,0.7)]';
-                    $badgeClasses = 'bg-red-600 border-red-300 text-white shadow-[0_0_40px_rgba(220,38,38,0.8)]';
-                    $glow1Classes = 'opacity-40 bg-red-500';
-                    $glow2Classes = 'opacity-40 bg-red-600';
+                    $cardClasses = 'bg-red-950 border-white shadow-2xl';
+                    $badgeClasses = 'bg-red-600 border-red-300 text-white shadow-xl';
                     $badgeText = 'SUDUT MERAH SAH';
                     $titleText = $partaiTanding->pesertaMerah->nama ?? 'SUDUT MERAH';
                     $titleClasses = 'text-white';
                     $subText = $partaiTanding->pesertaMerah->kontingen ?? '-';
                     $subClasses = 'text-red-200';
                 } elseif ($initVerifHasil === 'Tidak Valid') {
-                    $cardClasses = 'bg-gradient-to-b from-slate-900 via-zinc-950 to-neutral-950 border-amber-500 shadow-[0_0_120px_rgba(245,158,11,0.5)]';
-                    $badgeClasses = 'bg-amber-600 border-amber-300 text-white shadow-[0_0_40px_rgba(245,158,11,0.6)]';
-                    $glow1Classes = 'opacity-30 bg-amber-500';
-                    $glow2Classes = 'opacity-30 bg-amber-600';
+                    $cardClasses = 'bg-slate-900 border-white shadow-2xl';
+                    $badgeClasses = 'bg-amber-600 border-amber-300 text-white shadow-xl';
                     $badgeText = 'TIDAK VALID';
                     $titleText = 'KEPUTUSAN DIBATALKAN';
                     $titleClasses = 'text-amber-200';
                     $subText = 'TIDAK ADA POIN MASUK / TIDAK ADA KESEPAKATAN';
                     $subClasses = 'text-amber-300/80';
                 } else {
-                    // Default saat menunggu validasi ketiga juri
-                    $cardClasses = 'bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 border-indigo-500 shadow-[0_0_100px_rgba(99,102,241,0.6)]';
-                    $badgeClasses = 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_30px_rgba(99,102,241,0.7)] animate-pulse';
-                    $glow1Classes = 'opacity-40 bg-indigo-500';
-                    $glow2Classes = 'opacity-40 bg-indigo-600';
+                    // Default saat proses verifikasi juri (Template Hijau Solid dengan Border Putih)
+                    $cardClasses = 'bg-emerald-950 border-white shadow-2xl';
+                    $badgeClasses = 'bg-emerald-600 border-emerald-400 text-white shadow-xl';
                     $badgeText = 'PROSES VERIFIKASI JURI';
-                    $titleText = 'MENUNGGU VALIDASI JURI';
-                    $titleClasses = 'text-indigo-200 animate-pulse';
-                    $subText = 'MENUNGGU KETIGA JURI SELESAI INPUT PILIHAN';
-                    $subClasses = 'text-indigo-300/80';
+                    $titleText = 'SEDANG MEMPROSES VERIFIKASI';
+                    $titleClasses = 'text-emerald-200';
+                    $subText = 'MENUNGGU KEPUTUSAN SEMUA JURI';
+                    $subClasses = 'text-white';
                 }
             @endphp
-            <div id="card-verifikasi-display" class="w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 {{ $cardClasses }}">
-                {{-- Glow background decorator --}}
-                <div id="bg-verif-glow-1" class="absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl pointer-events-none {{ $glow1Classes }}"></div>
-                <div id="bg-verif-glow-2" class="absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl pointer-events-none {{ $glow2Classes }}"></div>
+            <div id="card-verifikasi-display" class="w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 border-white {{ $cardClasses }}">
+                {{-- Glow background decorator (dinonaktifkan agar tidak ada efek gradasi) --}}
+                <div id="bg-verif-glow-1" class="hidden"></div>
+                <div id="bg-verif-glow-2" class="hidden"></div>
 
                 <div class="relative z-10 space-y-6">
                     {{-- Header Badge --}}
                     <div class="flex items-center justify-center gap-3">
                         <span class="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-black tracking-widest uppercase bg-white/10 border border-white/20 text-white shadow-md">
-                            <svg class="w-5 h-5 text-amber-400 animate-spin" style="animation-duration: 4s;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                             <span>HASIL KEPUTUSAN VERIFIKASI JURI (VAR)</span>
@@ -592,8 +568,18 @@
                         </p>
                     </div>
 
-                    {{-- Juri Votes Breakdown (3 Cards) --}}
-                    <div class="pt-5 border-t border-white/20">
+                    {{-- Tampilan Saat Sedang Proses (Hanya muncul saat proses verifikasi berlangsung - tanpa dot animasi, tanpa gradasi) --}}
+                    <div id="display-verif-processing" class="{{ $initVerifHasil ? 'hidden' : '' }} py-6 flex flex-col items-center justify-center">
+                        <p class="text-lg sm:text-xl font-bold uppercase tracking-wider text-emerald-300">
+                            JURI SEDANG MELAKUKAN PENILAIAN
+                        </p>
+                        <p class="text-xs sm:text-sm text-white/80 mt-1 font-medium">
+                            Menunggu keputusan dari ketiga juri
+                        </p>
+                    </div>
+
+                    {{-- Juri Votes Breakdown (3 Cards) - HANYA TAMPIL SETELAH SEMUA JURI INPUT --}}
+                    <div id="display-verif-breakdown" class="{{ $initVerifHasil ? '' : 'hidden' }} pt-5 border-t border-white/20">
                         <p class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70 mb-3">
                             RINCIAN PILIHAN JURI
                         </p>
@@ -917,8 +903,8 @@
                     const lamp = document.getElementById(lampId);
                     if (!lamp) return;
 
-                    const dot = lamp.querySelector('.lamp-dot');
                     const isBiru = (sudut.toLowerCase() === 'biru');
+                    const blinkClass = isBiru ? 'lamp-blink-biru' : 'lamp-blink-merah';
 
                     // Bersihkan timer reset sebelumnya jika juri klik berkali-kali
                     if (lamp._resetTimer) clearTimeout(lamp._resetTimer);
@@ -927,21 +913,12 @@
                     lamp.classList.remove('lamp-blink-biru', 'lamp-blink-merah', 'lamp-blink-gold');
                     void lamp.offsetWidth;
 
-                    // Aktifkan efek 1 kali kedip (flash) hanya pada lampu juri yang klik
-                    if (isBiru) {
-                        lamp.className = "lamp-box py-2 px-1 rounded-xl text-white font-black border-2 border-blue-400 lamp-blink-biru";
-                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white mx-auto mb-1";
-                    } else {
-                        lamp.className = "lamp-box py-2 px-1 rounded-xl text-white font-black border-2 border-red-400 lamp-blink-merah";
-                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white mx-auto mb-1";
-                    }
+                    // Aktifkan efek kedip tanpa merusak layout atau menggeser elemen
+                    lamp.classList.add(blinkClass);
 
                     // Reset kembali ke keadaan idle setelah 1x kedip (800ms)
                     lamp._resetTimer = setTimeout(() => {
                         lamp.classList.remove('lamp-blink-biru', 'lamp-blink-merah', 'lamp-blink-gold');
-                        const bgIdle = isBiru ? 'bg-blue-950/70 border-blue-400/30' : 'bg-red-950/70 border-red-400/30';
-                        lamp.className = `lamp-box py-2 px-1 rounded-xl ${bgIdle} border text-white/80 font-bold transition-all duration-150`;
-                        if (dot) dot.className = "lamp-dot block w-2.5 h-2.5 rounded-full bg-white/40 mx-auto mb-1";
                     }, 800);
                 }
 
@@ -1017,6 +994,8 @@
                     const badge = document.getElementById('display-verif-badge');
                     const title = document.getElementById('display-verif-title');
                     const sub = document.getElementById('display-verif-sub');
+                    const processingEl = document.getElementById('display-verif-processing');
+                    const breakdownEl = document.getElementById('display-verif-breakdown');
 
                     const j1 = document.getElementById('display-juri-vote-1');
                     const j2 = document.getElementById('display-juri-vote-2');
@@ -1024,58 +1003,78 @@
 
                     if (!modal) return;
 
-                    function setWaitingState(countVote) {
+                    function setWaitingState() {
                         modal.classList.remove('hidden');
-                        if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 border-indigo-500 shadow-[0_0_100px_rgba(99,102,241,0.6)] animate-in fade-in zoom-in-95";
-                        if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-indigo-500 pointer-events-none";
-                        if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-indigo-600 pointer-events-none";
+                        if (processingEl) processingEl.classList.remove('hidden');
+                        if (breakdownEl) breakdownEl.classList.add('hidden');
+
+                        if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 border-white bg-emerald-950 animate-in fade-in zoom-in-95";
+                        if (glow1) glow1.className = "hidden";
+                        if (glow2) glow2.className = "hidden";
 
                         if (badge) {
-                            badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-indigo-600 border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.7)] animate-pulse";
+                            badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-xl border-2 bg-emerald-600 border-emerald-400";
                             badge.innerText = "PROSES VERIFIKASI JURI";
                         }
 
                         if (title) {
-                            title.innerText = "MENUNGGU VALIDASI JURI";
-                            title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-indigo-200 drop-shadow-md animate-pulse";
+                            title.innerText = "SEDANG MEMPROSES VERIFIKASI";
+                            title.className = "text-3xl sm:text-4xl xl:text-5xl font-black uppercase tracking-tight text-emerald-200 drop-shadow-md";
                         }
 
                         if (sub) {
-                            const info = (countVote !== undefined && countVote > 0)
-                                ? `${countVote} DARI 3 JURI TELAH INPUT - MENUNGGU VALIDASI JURI`
-                                : "MENUNGGU KETIGA JURI SELESAI INPUT PILIHAN";
-                            sub.innerText = info;
-                            sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-indigo-300/80";
+                            sub.innerText = "MENUNGGU KEPUTUSAN SEMUA JURI";
+                            sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-white";
                         }
                     }
 
                     if (e.action === 'start') {
-                        // Sesi verifikasi baru dimulai oleh Dewan -> Langsung tampilkan modal "Menunggu Validasi Juri"
+                        // Sesi verifikasi baru dimulai oleh Dewan -> Langsung tampilkan template proses hijau
                         resetDisplayJuriVotes();
-                        setWaitingState(0);
+                        setWaitingState();
                     } else if (e.action === 'vote') {
-                        // Update rincian pilihan juri jika ada
+                        // Hitung berapa juri yang sudah input
                         let countVoted = 0;
                         if (e.jawaban) {
-                            updateDisplayJuriVote(j1, e.jawaban[1]);
-                            updateDisplayJuriVote(j2, e.jawaban[2]);
-                            updateDisplayJuriVote(j3, e.jawaban[3]);
                             for (let k = 1; k <= 3; k++) {
                                 if (e.jawaban[k]) countVoted++;
                             }
                         }
 
-                        // Jika konsensus tercapai (2 juri memilih sama, atau 3 juri berbeda -> tidak valid)
-                        if (e.hasil) {
-                            modal.classList.remove('hidden');
+                        const semuaSudahInput = (countVoted >= 3);
 
-                            if (e.hasil === 'Biru') {
-                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-blue-900 via-blue-950 to-slate-950 border-blue-400 shadow-[0_0_120px_rgba(37,99,235,0.7)] animate-in fade-in zoom-in-95";
-                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-blue-500 pointer-events-none";
-                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-blue-600 pointer-events-none";
+                        // HANYA ketika SEMUA 3 juri telah input, baru tampilkan hasil dan rincian pilihan juri
+                        if (semuaSudahInput) {
+                            modal.classList.remove('hidden');
+                            if (processingEl) processingEl.classList.add('hidden');
+                            if (breakdownEl) breakdownEl.classList.remove('hidden');
+
+                            if (e.jawaban) {
+                                updateDisplayJuriVote(j1, e.jawaban[1]);
+                                updateDisplayJuriVote(j2, e.jawaban[2]);
+                                updateDisplayJuriVote(j3, e.jawaban[3]);
+                            }
+
+                            // Tentukan hasil verifikasi
+                            let hasilAkhir = e.hasil;
+                            if (!hasilAkhir && e.jawaban) {
+                                let cB = 0, cM = 0;
+                                for (let k = 1; k <= 3; k++) {
+                                    if (e.jawaban[k] === 'Biru') cB++;
+                                    else if (e.jawaban[k] === 'Merah') cM++;
+                                }
+                                if (cB >= 2) hasilAkhir = 'Biru';
+                                else if (cM >= 2) hasilAkhir = 'Merah';
+                                else hasilAkhir = 'Tidak Valid';
+                            }
+
+                            if (hasilAkhir === 'Biru') {
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 border-white bg-blue-950 animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "hidden";
+                                if (glow2) glow2.className = "hidden";
 
                                 if (badge) {
-                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-blue-600 border-blue-300 shadow-[0_0_40px_rgba(37,99,235,0.8)]";
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-xl border-2 bg-blue-600 border-blue-300";
                                     badge.innerText = "SUDUT BIRU SAH";
                                 }
 
@@ -1091,13 +1090,13 @@
                                     sub.className = "text-xl sm:text-2xl font-bold uppercase tracking-wider text-blue-200";
                                 }
 
-                            } else if (e.hasil === 'Merah') {
-                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-red-900 via-red-950 to-slate-950 border-red-400 shadow-[0_0_120px_rgba(220,38,38,0.7)] animate-in fade-in zoom-in-95";
-                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-red-500 pointer-events-none";
-                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-40 bg-red-600 pointer-events-none";
+                            } else if (hasilAkhir === 'Merah') {
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 border-white bg-red-950 animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "hidden";
+                                if (glow2) glow2.className = "hidden";
 
                                 if (badge) {
-                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-red-600 border-red-300 shadow-[0_0_40px_rgba(220,38,38,0.8)]";
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-xl border-2 bg-red-600 border-red-300";
                                     badge.innerText = "SUDUT MERAH SAH";
                                 }
 
@@ -1115,12 +1114,12 @@
 
                             } else {
                                 // Hasil: Tidak Valid
-                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 bg-gradient-to-b from-slate-900 via-zinc-950 to-neutral-950 border-amber-500 shadow-[0_0_120px_rgba(245,158,11,0.5)] animate-in fade-in zoom-in-95";
-                                if (glow1) glow1.className = "absolute -top-32 -left-32 w-80 h-80 rounded-full blur-3xl opacity-30 bg-amber-500 pointer-events-none";
-                                if (glow2) glow2.className = "absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-3xl opacity-30 bg-amber-600 pointer-events-none";
+                                if (card) card.className = "w-full max-w-4xl rounded-3xl p-8 sm:p-10 text-center transform transition-all duration-300 shadow-2xl relative overflow-hidden border-4 border-white bg-slate-900 animate-in fade-in zoom-in-95";
+                                if (glow1) glow1.className = "hidden";
+                                if (glow2) glow2.className = "hidden";
 
                                 if (badge) {
-                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-2xl border-2 bg-amber-600 border-amber-300 shadow-[0_0_40px_rgba(245,158,11,0.6)]";
+                                    badge.className = "inline-block py-3 px-10 rounded-2xl text-2xl sm:text-4xl xl:text-5xl font-black uppercase tracking-wider text-white shadow-xl border-2 bg-amber-600 border-amber-300";
                                     badge.innerText = "TIDAK VALID";
                                 }
 
@@ -1134,8 +1133,8 @@
                                 }
                             }
                         } else {
-                            // Masih menunggu juri selesai input -> tetap tampilkan modal menunggu validasi juri
-                            setWaitingState(countVoted);
+                            // Belum semua juri input -> Tetap tampilkan template proses hijau tanpa rincian pilihan juri
+                            setWaitingState();
                         }
                     } else if (e.action === 'close') {
                         // Dewan menutup verifikasi

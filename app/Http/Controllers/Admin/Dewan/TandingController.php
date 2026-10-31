@@ -128,8 +128,13 @@ class TandingController extends Controller
     public function toggleAllJuri(Request $request, $id)
     {
         $partai = PartaiTanding::findOrFail($id);
-        $action = $request->input('action', 'active'); // 'active' atau 'pause'
-        $isActive = ($action === 'active');
+        $action = $request->input('action');
+        if ($action === null) {
+            $anyActive = StatusKontrolJuriTanding::where('id_partai', $partai->id)->where('is_active', true)->exists();
+            $isActive = !$anyActive;
+        } else {
+            $isActive = ($action === 'active');
+        }
 
         if (Schema::hasTable('status_kontrol_juri_tanding')) {
             for ($noJuri = 1; $noJuri <= 3; $noJuri++) {
@@ -1434,5 +1439,56 @@ class TandingController extends Controller
             'success' => true,
             'data' => $payload,
         ]);
+    }
+
+    /**
+     * Menyelesaikan partai pertandingan dan menetapkan pemenang resmi dari panel Dewan.
+     */
+    public function selesaiPartai(Request $request, $id)
+    {
+        $partai = PartaiTanding::findOrFail($id);
+
+        // Otomatis tentukan pemenang berdasarkan 5 kriteria regulasi IPSI
+        $evaluasi = $this->evaluasiPemenang($partai->id);
+        
+        $idPemenang = $evaluasi['id_pemenang'] ?? ($request->input('id_pemenang') ?: null);
+
+        if (!$idPemenang) {
+            return redirect()->back()->with('error', 'Tidak dapat menyelesaikan partai: Hasil masih imbang / belum ada pemenang berdasarkan 5 kriteria!');
+        }
+
+        if ($partai->id_merah != $idPemenang && $partai->id_biru != $idPemenang) {
+            return redirect()->back()->with('error', 'Pemenang harus merupakan atlet dari sudut merah atau biru pada partai ini!');
+        }
+
+        $sudutPemenang = ($idPemenang == $partai->id_merah) ? 'Merah' : (($idPemenang == $partai->id_biru) ? 'Biru' : null);
+        $alasanPemenang = $evaluasi['alasan'] ?? ($request->input('alasan_pemenang') ?: 'Pemenang otomatis berdasarkan kriteria');
+
+        $partai->update([
+            'id_pemenang' => $idPemenang,
+            'sudut_pemenang' => $sudutPemenang,
+            'alasan_pemenang' => $alasanPemenang,
+            'status_pertandingan' => 'Selesai',
+            'status_timer' => 'stop',
+            'status_pemenang' => 0,
+        ]);
+
+        // Otomatis isi pemenang ke partai berikutnya jika ada sistem bagan yang menunggu partai ini
+        PartaiTanding::where('menunggu_pemenang_biru_dari', $partai->no_partai)
+            ->update(['id_biru' => $idPemenang]);
+
+        PartaiTanding::where('menunggu_pemenang_merah_dari', $partai->no_partai)
+            ->update(['id_merah' => $idPemenang]);
+
+        $pemenang = PesertaTanding::find($idPemenang);
+        $namaPemenang = $pemenang ? $pemenang->nama : 'Atlet';
+
+        // Broadcast refresh ke layar display agar otomatis beralih ke standby
+        try {
+            broadcast(new \App\Events\RefreshDisplay('tanding.A'));
+        } catch (\Throwable $e) {}
+
+        return redirect()->route('admin.manajemen.tanding.index')
+            ->with('success', "Partai #{$partai->no_partai} selesai! Pemenang: {$namaPemenang} (Sudut {$sudutPemenang}). Alasan: {$alasanPemenang}. Bagan lanjutan telah diperbarui.");
     }
 }

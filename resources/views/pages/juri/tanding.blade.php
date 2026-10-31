@@ -132,10 +132,10 @@
         @endphp
 
         {{-- MODAL VERIFIKASI JURI --}}
-        <div id="modal-verifikasi-juri" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md {{ $showVerifModalInit ? '' : 'hidden' }} transition-all duration-300">
-            <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl shadow-2xl border-2 border-purple-500/50 w-full max-w-lg p-5 sm:p-6 text-white text-center transform transition-all animate-in fade-in zoom-in-95">
+        <div id="modal-verifikasi-juri" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md {{ $showVerifModalInit ? '' : 'hidden' }} transition-all duration-300">
+            <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl shadow-2xl border-2 border-white w-full max-w-2xl p-4 sm:p-6 text-white text-center transform transition-all animate-in fade-in zoom-in-95 max-h-[95vh] overflow-y-auto">
                 
-                <div class="w-14 h-14 rounded-2xl bg-purple-600/30 border border-purple-400/40 text-purple-300 flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-600/30 border border-purple-400/40 text-purple-300 flex items-center justify-center text-2xl sm:text-3xl mx-auto mb-2 sm:mb-3 shadow-inner">
                     📹
                 </div>
 
@@ -143,44 +143,55 @@
                     PERMINTAAN VERIFIKASI DEWAN
                 </span>
 
-                <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight mt-2.5 mb-1 text-white">
+                <h2 class="text-lg sm:text-2xl font-black uppercase tracking-tight mt-2 mb-1 text-white">
                     PILIH KEPUTUSAN VERIFIKASI
                 </h2>
-                <p class="text-slate-400 text-xs sm:text-sm font-medium mb-5">
+                <p class="text-slate-400 text-xs sm:text-sm font-medium mb-3 sm:mb-4">
                     Juri {{ $no_juri }}, tentukan keputusan Anda untuk diverifikasi di dewan dan display pertandingan:
                 </p>
 
-                {{-- 3 Tombol Opsi: Sudut Biru, Sudut Merah, Tidak Valid --}}
-                <div class="flex flex-col gap-3">
+                {{-- 3 Tombol Opsi: Horizontal (Sudut Biru, Sudut Merah, Tidak Valid) --}}
+                <div class="grid grid-cols-3 gap-2 sm:gap-3.5 my-1 sm:my-2">
                     {{-- 1. Sudut Biru --}}
                     <button type="button" onclick="submitVerifikasiJuri('Biru')"
-                        class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 active:scale-98 text-white font-black text-base sm:text-lg uppercase tracking-wider flex items-center justify-between border-2 border-blue-400 shadow-[0_8px_20px_rgba(37,99,235,0.4)] transition-all cursor-pointer">
-                        <span class="flex items-center gap-2.5">
-                            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-lg">🔵</span>
-                            <span>SUDUT BIRU</span>
+                        class="w-full py-3.5 sm:py-5 px-1.5 sm:px-3 rounded-2xl bg-gradient-to-b from-blue-600 via-blue-700 to-blue-900 hover:from-blue-500 hover:to-blue-800 active:scale-95 text-white font-black border-2 border-blue-400 shadow-[0_8px_20px_rgba(37,99,235,0.4)] transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 group">
+                        <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-lg sm:text-2xl shadow-inner group-active:scale-110 transition-transform">
+                            🔵
+                        </div>
+                        <span class="text-xs sm:text-sm md:text-base uppercase tracking-wider font-black">
+                            SUDUT BIRU
                         </span>
-                        <span class="text-xs font-black px-2 py-0.5 rounded-full bg-white/20 border border-white/30 truncate max-w-[150px]">
+                        <span class="text-[10px] sm:text-xs font-bold text-blue-200 uppercase truncate max-w-full px-1">
                             {{ $partai->pesertaBiru->nama ?? 'BIRU' }}
                         </span>
                     </button>
 
                     {{-- 2. Sudut Merah --}}
                     <button type="button" onclick="submitVerifikasiJuri('Merah')"
-                        class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 active:scale-98 text-white font-black text-base sm:text-lg uppercase tracking-wider flex items-center justify-between border-2 border-red-400 shadow-[0_8px_20px_rgba(220,38,38,0.4)] transition-all cursor-pointer">
-                        <span class="flex items-center gap-2.5">
-                            <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-lg">🔴</span>
-                            <span>SUDUT MERAH</span>
+                        class="w-full py-3.5 sm:py-5 px-1.5 sm:px-3 rounded-2xl bg-gradient-to-b from-red-600 via-red-700 to-red-900 hover:from-red-500 hover:to-red-800 active:scale-95 text-white font-black border-2 border-red-400 shadow-[0_8px_20px_rgba(220,38,38,0.4)] transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 group">
+                        <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-lg sm:text-2xl shadow-inner group-active:scale-110 transition-transform">
+                            🔴
+                        </div>
+                        <span class="text-xs sm:text-sm md:text-base uppercase tracking-wider font-black">
+                            SUDUT MERAH
                         </span>
-                        <span class="text-xs font-black px-2 py-0.5 rounded-full bg-white/20 border border-white/30 truncate max-w-[150px]">
+                        <span class="text-[10px] sm:text-xs font-bold text-red-200 uppercase truncate max-w-full px-1">
                             {{ $partai->pesertaMerah->nama ?? 'MERAH' }}
                         </span>
                     </button>
 
                     {{-- 3. Tidak Valid --}}
                     <button type="button" onclick="submitVerifikasiJuri('Tidak Valid')"
-                        class="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-98 text-slate-300 hover:text-white font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2 border border-slate-700 shadow-md transition-all cursor-pointer">
-                        <span class="text-base">⚪</span>
-                        <span>TIDAK VALID / BATAL</span>
+                        class="w-full py-3.5 sm:py-5 px-1.5 sm:px-3 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 active:scale-95 text-slate-300 hover:text-white font-black border-2 border-slate-600 shadow-md transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 group">
+                        <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-lg sm:text-2xl shadow-inner group-active:scale-110 transition-transform">
+                            ⚪
+                        </div>
+                        <span class="text-xs sm:text-sm md:text-base uppercase tracking-wider font-black">
+                            TIDAK VALID
+                        </span>
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase truncate max-w-full px-1">
+                            BATAL
+                        </span>
                     </button>
                 </div>
 
@@ -263,48 +274,42 @@
                         </div>
                     </div>
 
-                    {{-- TOMBOL PENILAIAN BIRU (RESPONSIF TINGGI & FLEKSIBEL SESUAI SCREEN) --}}
-                    <div class="grid grid-cols-2 gap-2.5 sm:gap-3.5 my-1 sm:my-2">
-                        {{-- 1. PUKULAN BIRU (+1) --}}
+                    {{-- TOMBOL PENILAIAN BIRU: VERTIKAL (PUKUL & TENDANG) --}}
+                    <div class="flex flex-col gap-2.5 sm:gap-3.5 my-1 sm:my-2 flex-1 justify-center">
+                        {{-- 1. PUKUL BIRU (+1) --}}
                         <button type="button"
                             onclick="kirimNilaiTanding('Biru', 'Pukulan', 1, this)"
-                            class="strike-btn w-full min-h-[130px] sm:min-h-[150px] md:min-h-[170px] lg:min-h-[200px] py-4 sm:py-5 px-2 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 hover:from-blue-500 hover:to-blue-800 active:from-blue-400 text-white border-2 sm:border-3 border-blue-400/90 shadow-[0_10px_25px_rgba(37,99,235,0.45)] flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
+                            class="strike-btn w-full flex-1 min-h-[85px] sm:min-h-[105px] md:min-h-[125px] lg:min-h-[145px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-blue-900 hover:from-blue-500 hover:to-blue-800 active:from-blue-400 text-white border-2 sm:border-3 border-blue-400/90 shadow-[0_8px_20px_rgba(37,99,235,0.45)] flex items-center justify-between cursor-pointer group relative overflow-hidden">
                             
-                            {{-- Frosted Icon Capsule --}}
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-22 lg:h-22 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner mb-1.5 sm:mb-2 group-active:scale-110 transition-transform shrink-0">
-                                <span class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl drop-shadow select-none">👊</span>
+                            <div class="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
+                                {{-- Frosted Icon Capsule --}}
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner group-active:scale-110 transition-transform shrink-0">
+                                    <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow select-none">👊</span>
+                                </div>
+
+                                {{-- Label Serangan --}}
+                                <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-white">
+                                    PUKUL
+                                </span>
                             </div>
-
-                            {{-- Label Serangan --}}
-                            <span class="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-center">
-                                PUKULAN
-                            </span>
-
-                            {{-- Poin Badge --}}
-                            <span class="mt-1 sm:mt-1.5 px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full bg-white/25 text-white text-[10px] sm:text-xs md:text-sm lg:text-base font-black tracking-widest border border-white/40 shadow-sm shrink-0">
-                                +1 POIN
-                            </span>
                         </button>
 
-                        {{-- 2. TENDANGAN BIRU (+2) --}}
+                        {{-- 2. TENDANG BIRU (+2) --}}
                         <button type="button"
                             onclick="kirimNilaiTanding('Biru', 'Tendangan', 2, this)"
-                            class="strike-btn w-full min-h-[130px] sm:min-h-[150px] md:min-h-[170px] lg:min-h-[200px] py-4 sm:py-5 px-2 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-950 hover:from-indigo-500 hover:to-blue-900 active:from-indigo-400 text-white border-2 sm:border-3 border-indigo-400/90 shadow-[0_10px_25px_rgba(99,102,241,0.45)] flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
+                            class="strike-btn w-full flex-1 min-h-[85px] sm:min-h-[105px] md:min-h-[125px] lg:min-h-[145px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-950 hover:from-indigo-500 hover:to-blue-900 active:from-indigo-400 text-white border-2 sm:border-3 border-indigo-400/90 shadow-[0_8px_20px_rgba(99,102,241,0.45)] flex items-center justify-between cursor-pointer group relative overflow-hidden">
                             
-                            {{-- Frosted Icon Capsule --}}
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-22 lg:h-22 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner mb-1.5 sm:mb-2 group-active:scale-110 transition-transform shrink-0">
-                                <span class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl drop-shadow select-none">🦶</span>
+                            <div class="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
+                                {{-- Frosted Icon Capsule --}}
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner group-active:scale-110 transition-transform shrink-0">
+                                    <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow select-none">🦶</span>
+                                </div>
+
+                                {{-- Label Serangan --}}
+                                <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-white">
+                                    TENDANG
+                                </span>
                             </div>
-
-                            {{-- Label Serangan --}}
-                            <span class="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-center">
-                                TENDANGAN
-                            </span>
-
-                            {{-- Poin Badge --}}
-                            <span class="mt-1 sm:mt-1.5 px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full bg-white/25 text-white text-[10px] sm:text-xs md:text-sm lg:text-base font-black tracking-widest border border-white/40 shadow-sm shrink-0">
-                                +2 POIN
-                            </span>
                         </button>
                     </div>
 
@@ -334,48 +339,42 @@
                         </div>
                     </div>
 
-                    {{-- TOMBOL PENILAIAN MERAH (RESPONSIF TINGGI & FLEKSIBEL SESUAI SCREEN) --}}
-                    <div class="grid grid-cols-2 gap-2.5 sm:gap-3.5 my-1 sm:my-2">
-                        {{-- 1. PUKULAN MERAH (+1) --}}
+                    {{-- TOMBOL PENILAIAN MERAH: VERTIKAL (PUKUL & TENDANG) --}}
+                    <div class="flex flex-col gap-2.5 sm:gap-3.5 my-1 sm:my-2 flex-1 justify-center">
+                        {{-- 1. PUKUL MERAH (+1) --}}
                         <button type="button"
                             onclick="kirimNilaiTanding('Merah', 'Pukulan', 1, this)"
-                            class="strike-btn w-full min-h-[130px] sm:min-h-[150px] md:min-h-[170px] lg:min-h-[200px] py-4 sm:py-5 px-2 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-red-600 via-red-700 to-red-900 hover:from-red-500 hover:to-red-800 active:from-red-400 text-white border-2 sm:border-3 border-red-400/90 shadow-[0_10px_25px_rgba(220,38,38,0.45)] flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
+                            class="strike-btn w-full flex-1 min-h-[85px] sm:min-h-[105px] md:min-h-[125px] lg:min-h-[145px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-red-600 via-red-700 to-red-900 hover:from-red-500 hover:to-red-800 active:from-red-400 text-white border-2 sm:border-3 border-red-400/90 shadow-[0_8px_20px_rgba(220,38,38,0.45)] flex items-center justify-between cursor-pointer group relative overflow-hidden">
                             
-                            {{-- Frosted Icon Capsule --}}
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-22 lg:h-22 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner mb-1.5 sm:mb-2 group-active:scale-110 transition-transform shrink-0">
-                                <span class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl drop-shadow select-none">👊</span>
+                            <div class="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
+                                {{-- Frosted Icon Capsule --}}
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner group-active:scale-110 transition-transform shrink-0">
+                                    <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow select-none">👊</span>
+                                </div>
+
+                                {{-- Label Serangan --}}
+                                <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-white">
+                                    PUKUL
+                                </span>
                             </div>
-
-                            {{-- Label Serangan --}}
-                            <span class="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-center">
-                                PUKULAN
-                            </span>
-
-                            {{-- Poin Badge --}}
-                            <span class="mt-1 sm:mt-1.5 px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full bg-white/25 text-white text-[10px] sm:text-xs md:text-sm lg:text-base font-black tracking-widest border border-white/40 shadow-sm shrink-0">
-                                +1 POIN
-                            </span>
                         </button>
 
-                        {{-- 2. TENDANGAN MERAH (+2) --}}
+                        {{-- 2. TENDANG MERAH (+2) --}}
                         <button type="button"
                             onclick="kirimNilaiTanding('Merah', 'Tendangan', 2, this)"
-                            class="strike-btn w-full min-h-[130px] sm:min-h-[150px] md:min-h-[170px] lg:min-h-[200px] py-4 sm:py-5 px-2 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-rose-600 via-rose-700 to-red-950 hover:from-rose-500 hover:to-red-900 active:from-rose-400 text-white border-2 sm:border-3 border-rose-400/90 shadow-[0_10px_25px_rgba(225,29,72,0.45)] flex flex-col items-center justify-center cursor-pointer group relative overflow-hidden">
+                            class="strike-btn w-full flex-1 min-h-[85px] sm:min-h-[105px] md:min-h-[125px] lg:min-h-[145px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-rose-600 via-rose-700 to-red-950 hover:from-rose-500 hover:to-red-900 active:from-rose-400 text-white border-2 sm:border-3 border-rose-400/90 shadow-[0_8px_20px_rgba(225,29,72,0.45)] flex items-center justify-between cursor-pointer group relative overflow-hidden">
                             
-                            {{-- Frosted Icon Capsule --}}
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18 lg:w-22 lg:h-22 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner mb-1.5 sm:mb-2 group-active:scale-110 transition-transform shrink-0">
-                                <span class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl drop-shadow select-none">🦶</span>
+                            <div class="flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0">
+                                {{-- Frosted Icon Capsule --}}
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-inner group-active:scale-110 transition-transform shrink-0">
+                                    <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow select-none">🦶</span>
+                                </div>
+
+                                {{-- Label Serangan --}}
+                                <span class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-white">
+                                    TENDANG
+                                </span>
                             </div>
-
-                            {{-- Label Serangan --}}
-                            <span class="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase tracking-wider drop-shadow-md leading-tight text-center">
-                                TENDANGAN
-                            </span>
-
-                            {{-- Poin Badge --}}
-                            <span class="mt-1 sm:mt-1.5 px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full bg-white/25 text-white text-[10px] sm:text-xs md:text-sm lg:text-base font-black tracking-widest border border-white/40 shadow-sm shrink-0">
-                                +2 POIN
-                            </span>
                         </button>
                     </div>
 

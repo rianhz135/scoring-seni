@@ -290,9 +290,7 @@ Route::prefix('admin')
                 Route::get('/', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'index'])->name('index');
                 Route::post('/{id}/mulai', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'mulai'])->name('mulai');
                 Route::post('/{id}/update-babak', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'updateBabak'])->name('update-babak');
-                Route::post('/{id}/set-pemenang', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'setPemenang'])->name('set-pemenang');
                 Route::post('/{id}/selesai', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'selesai'])->name('selesai');
-                Route::post('/{id}/reset', [App\Http\Controllers\Admin\Manajemen\TandingController::class, 'resetPertandingan'])->name('reset');
             });
         });
 
@@ -312,6 +310,7 @@ Route::prefix('admin')
             Route::post('/{id}/update-babak', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'updateBabak'])->name('update-babak');
             Route::post('/{id}/input-juri', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'submitJuriInput'])->name('input-juri');
             Route::post('/refresh-display', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'triggerRefreshDisplay'])->name('refresh');
+            Route::post('/{id}/selesai-partai', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'selesaiPartai'])->name('selesai-partai');
             Route::get('/{id}/status-data', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'getStatusData'])->name('status-data');
             Route::get('/{id}/evaluasi-pemenang', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'getEvaluasiPemenang'])->name('evaluasi-pemenang');
             Route::post('/{id}/keputusan-pemenang', [App\Http\Controllers\Admin\Dewan\TandingController::class, 'hitungKeputusanPemenang'])->name('keputusan-pemenang');

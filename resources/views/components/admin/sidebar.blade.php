@@ -58,7 +58,7 @@
         </x-admin.sidebar-group>
 
         <x-admin.sidebar-link href="{{ route('admin.manajemen.kelas.index') }}" :active="request()->routeIs('admin.manajemen.kelas.*')" icon="management">
-            Data Kelas
+            Kelas Seni
         </x-admin.sidebar-link>
 
         <div class="pt-3 pb-1 px-3 sidebar-section-label">

@@ -29,26 +29,12 @@
             </div>
         </div>
 
-        {{-- Kontrol Babak & Status --}}
+        {{-- Status Pertandingan --}}
         <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-            <div class="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-                <span class="text-[10px] font-bold text-gray-400 uppercase px-1.5">Babak:</span>
-                @foreach ([1, 2, 3] as $b)
-                    <button type="button" onclick="changeBabak({{ $b }})"
-                        id="btn-babak-{{ $b }}"
-                        class="px-2.5 py-0.5 rounded-md text-xs font-black transition-all {{ ($partai->babak_aktif ?: 1) == $b ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200' }}">
-                        {{ $b }}
-                    </button>
-                @endforeach
-            </div>
-
-            <button type="button" onclick="openSelesaiModal()"
-                class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
-                <svg class="w-3.5 h-3.5 text-emerald-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-                Selesaikan Partai
-            </button>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold uppercase {{ $partai->status_pertandingan === 'Selesai' ? 'bg-gray-100 text-gray-600 border border-gray-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }} flex items-center gap-1.5 shadow-2xs">
+                <span class="w-2 h-2 rounded-full {{ $partai->status_pertandingan === 'Selesai' ? 'bg-gray-400' : 'bg-emerald-500 animate-pulse' }}"></span>
+                {{ $partai->status_pertandingan === 'Selesai' ? 'Partai Selesai' : 'Pertandingan Berlangsung' }}
+            </span>
         </div>
     </div>
 
@@ -418,78 +404,86 @@
             </div>
         </div>
 
-        {{-- KONTROL STATUS JURI (VERTIKAL DI TENGAH) --}}
-        <div class="lg:col-span-2 bg-white rounded-xl p-2.5 border border-gray-200 shadow-sm flex flex-col justify-between space-y-1.5">
-            {{-- Header Kontrol Juri --}}
-            <div class="border-b border-gray-100 pb-1.5">
-                <div class="flex items-center justify-between mb-1">
-                    <div class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+        {{-- KONTROL STATUS JURI & OPERASIONAL PERTANDINGAN (VERTIKAL DI TENGAH) --}}
+        <div class="lg:col-span-2 bg-white rounded-xl p-2.5 border border-gray-200 shadow-sm flex flex-col justify-between space-y-2">
+            {{-- 1. STATUS JURI --}}
+            <div class="space-y-1.5">
+                @php
+                    $anyJuriActive = $statusJuri->contains(fn($j) => $j->is_active);
+                @endphp
+                <div class="flex items-center justify-between pb-1 border-b border-gray-100">
+                    <div class="flex items-center gap-1.5">
+                        <span id="dot-header-status-juri" class="w-2.5 h-2.5 rounded-full {{ $anyJuriActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400' }}"></span>
                         <h3 class="text-xs font-black text-gray-900 uppercase tracking-wide">Status Juri</h3>
                     </div>
+                    <span id="text-header-status-juri" class="text-[10px] font-black uppercase {{ $anyJuriActive ? 'text-emerald-600' : 'text-gray-400' }}">
+                        {{ $anyJuriActive ? 'Aktif' : 'Jeda' }}
+                    </span>
                 </div>
-                <div class="grid grid-cols-2 gap-1">
-                    <button type="button" onclick="toggleAllJuri('active')"
-                        class="px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all text-center">
-                        Semua Aktif
-                    </button>
-                    <button type="button" onclick="toggleAllJuri('pause')"
-                        class="px-1 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all text-center">
-                        Semua Jeda
-                    </button>
-                </div>
+
+                {{-- SATU TOMBOL KONTROL UNTUK SEMUA JURI --}}
+                <button type="button" onclick="toggleAllJuri()" id="btn-toggle-all-juri"
+                    class="w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer {{ $anyJuriActive ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}">
+                    <span id="btn-toggle-all-juri-icon">
+                        @if($anyJuriActive)
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                            </svg>
+                        @else
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                            </svg>
+                        @endif
+                    </span>
+                    <span id="btn-toggle-all-juri-text">{{ $anyJuriActive ? 'Jeda Semua Juri' : 'Aktifkan Semua Juri' }}</span>
+                </button>
             </div>
 
-            {{-- 3 Kartu Juri Vertikal --}}
-            <div class="flex-1 flex flex-col justify-between gap-1.5">
-                @for ($i = 1; $i <= 3; $i++)
-                    @php
-                        $juriData = $statusJuri->firstWhere('no_juri', $i);
-                        $isActive = $juriData ? $juriData->is_active : true;
-                    @endphp
-                    <div id="card-juri-{{ $i }}"
-                        class="p-1.5 rounded-lg border transition-all flex flex-col justify-between gap-1 {{ $isActive ? 'bg-emerald-50/50 border-emerald-200' : 'bg-gray-50 border-gray-200 opacity-80' }}">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <div id="icon-juri-{{ $i }}"
-                                    class="w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] {{ $isActive ? 'bg-emerald-600 text-white shadow-sm' : 'bg-gray-300 text-gray-700' }}">
-                                    J{{ $i }}
-                                </div>
-                                <span class="text-xs font-bold text-gray-900 leading-none">Juri {{ $i }}</span>
-                            </div>
-                            <span id="status-badge-juri-{{ $i }}"
-                                class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase {{ $isActive ? 'text-emerald-700' : 'text-gray-500' }}">
-                                <span id="status-dot-juri-{{ $i }}" class="w-1.5 h-1.5 rounded-full {{ $isActive ? 'bg-emerald-500' : 'bg-gray-400' }}"></span>
-                                <span id="status-text-juri-{{ $i }}">{{ $isActive ? 'ACTIVE' : 'PAUSED' }}</span>
-                            </span>
-                        </div>
-
-                        <button type="button" onclick="toggleJuri({{ $i }})"
-                            id="btn-toggle-juri-{{ $i }}"
-                            class="w-full py-1 rounded-md text-xs font-bold transition-all shadow-sm {{ $isActive ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}">
-                            {{ $isActive ? 'Jeda Juri' : 'Aktifkan' }}
+            {{-- 2. KONTROL BABAK (VERTIKAL) --}}
+            <div class="space-y-1.5 pt-1.5 border-t border-gray-100">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-black text-gray-700 uppercase tracking-wide">Pilih Babak</span>
+                    <span id="badge-babak-aktif" class="text-[9px] font-black uppercase text-primary-700 bg-primary-50 px-1.5 py-0.2 rounded border border-primary-200">
+                        Babak {{ $partai->babak_aktif ?: 1 }}
+                    </span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    @foreach ([1, 2, 3] as $b)
+                        <button type="button" onclick="changeBabak({{ $b }})"
+                            id="btn-babak-{{ $b }}"
+                            class="w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center cursor-pointer active:scale-98 {{ ($partai->babak_aktif ?: 1) == $b ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200' }}">
+                            Babak {{ $b }}
                         </button>
-                    </div>
-                @endfor
+                    @endforeach
+                </div>
             </div>
 
-            {{-- TOMBOL VERIFIKASI JURI (VAR TANDING) --}}
-            <div class="pt-2 border-t border-gray-100 space-y-1.5">
+            {{-- 3. TOMBOL VERIFIKASI JURI (VAR TANDING) --}}
+            <div class="space-y-1.5 pt-1.5 border-t border-gray-100">
                 <button type="button" onclick="openModalVerifikasiDewan()"
-                    class="w-full py-2 px-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/25 transition-all cursor-pointer">
-                    <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    class="w-full py-1.5 px-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/20 transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                     <span>Verifikasi Juri</span>
                 </button>
 
-                {{-- TOMBOL KEPUTUSAN PEMENANG --}}
+                {{-- 4. TOMBOL KEPUTUSAN PEMENANG --}}
                 <button type="button" onclick="openModalKeputusanPemenang()"
-                    class="w-full py-2 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 transition-all cursor-pointer">
-                    <svg class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    class="w-full py-1.5 px-2 rounded-lg bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                     <span>Keputusan Pemenang</span>
+                </button>
+
+                {{-- 5. TOMBOL SELESAIKAN PERTANDINGAN --}}
+                <button type="button" onclick="openSelesaiModal()"
+                    class="w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-emerald-200 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Selesai Partai</span>
                 </button>
             </div>
         </div>
@@ -866,7 +860,7 @@
                 $isSeri = (!$isMerah && !$isBiru);
             @endphp
 
-            <form action="{{ route('admin.manajemen.tanding.set-pemenang', $partai->id) }}" method="POST">
+            <form action="{{ route('admin.dewan.tanding.selesai-partai', $partai->id) }}" method="POST">
                 @csrf
                 <input type="hidden" name="id_pemenang" id="selesai-id-pemenang" value="{{ $evaluasiPemenang['id_pemenang'] ?? '' }}">
                 <input type="hidden" name="alasan_pemenang" id="selesai-alasan-pemenang" value="{{ $evaluasiPemenang['alasan'] ?? '' }}">
@@ -1247,50 +1241,55 @@
     }
 
     // 1. KONTROL JURI ACTIVE / PAUSE
-    async function toggleJuri(noJuri) {
-        const url = `/admin/dewan/tanding/${partaiId}/toggle-juri/${noJuri}`;
-        const res = await sendPost(url);
-        if (res.success) {
-            updateJuriUI(noJuri, res.is_active);
-            showToast('success', res.message);
-        }
-    }
+    let areAllJuriActive = {{ $anyJuriActive ? 'true' : 'false' }};
 
     async function toggleAllJuri(action) {
+        const targetAction = action || (areAllJuriActive ? 'pause' : 'active');
         const url = `/admin/dewan/tanding/${partaiId}/toggle-all-juri`;
-        const res = await sendPost(url, { action: action });
+        const res = await sendPost(url, { action: targetAction });
         if (res.success) {
-            for (let i = 1; i <= 3; i++) {
-                updateJuriUI(i, res.is_active);
-            }
+            updateAllJuriStatusUI(res.is_active);
             showToast('success', res.message);
         }
     }
 
-    function updateJuriUI(noJuri, isActive) {
-        const card = document.getElementById(`card-juri-${noJuri}`);
-        const icon = document.getElementById(`icon-juri-${noJuri}`);
-        const text = document.getElementById(`status-text-juri-${noJuri}`);
-        const dot = document.getElementById(`status-dot-juri-${noJuri}`);
-        const badge = document.getElementById(`status-badge-juri-${noJuri}`);
-        const btn = document.getElementById(`btn-toggle-juri-${noJuri}`);
+    function updateAllJuriStatusUI(isActive) {
+        areAllJuriActive = isActive;
+        
+        // Update Status Dot & Teks di Header
+        const headerDot = document.getElementById('dot-header-status-juri');
+        const headerText = document.getElementById('text-header-status-juri');
 
-        if (isActive) {
-            card.className = "p-1.5 rounded-lg border transition-all flex flex-col justify-between gap-1 bg-emerald-50/50 border-emerald-200";
-            icon.className = "w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] bg-emerald-600 text-white shadow-sm";
-            text.innerText = "ACTIVE";
-            badge.className = "inline-flex items-center gap-1 text-[9px] font-extrabold uppercase text-emerald-700";
-            dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
-            btn.className = "w-full py-1 rounded-md text-xs font-bold transition-all shadow-sm bg-amber-500 hover:bg-amber-600 text-white";
-            btn.innerText = "Jeda Juri";
-        } else {
-            card.className = "p-1.5 rounded-lg border transition-all flex flex-col justify-between gap-1 bg-gray-50 border-gray-200 opacity-80";
-            icon.className = "w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] bg-gray-300 text-gray-700";
-            text.innerText = "PAUSED";
-            badge.className = "inline-flex items-center gap-1 text-[9px] font-extrabold uppercase text-gray-500";
-            dot.className = "w-1.5 h-1.5 rounded-full bg-gray-400";
-            btn.className = "w-full py-1 rounded-md text-xs font-bold transition-all shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white";
-            btn.innerText = "Aktifkan";
+        if (headerDot) {
+            headerDot.className = isActive 
+                ? "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" 
+                : "w-2.5 h-2.5 rounded-full bg-gray-400";
+        }
+        if (headerText) {
+            headerText.innerText = isActive ? "Aktif" : "Jeda";
+            headerText.className = isActive 
+                ? "text-[10px] font-black uppercase text-emerald-600" 
+                : "text-[10px] font-black uppercase text-gray-400";
+        }
+
+        // Update Tombol Kontrol
+        const btn = document.getElementById('btn-toggle-all-juri');
+        const icon = document.getElementById('btn-toggle-all-juri-icon');
+        const btnText = document.getElementById('btn-toggle-all-juri-text');
+        if (btn && btnText) {
+            if (isActive) {
+                btn.className = "w-full py-2 px-2.5 rounded-lg text-xs font-black transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white";
+                btnText.innerText = "Jeda Semua Juri";
+                if (icon) {
+                    icon.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>`;
+                }
+            } else {
+                btn.className = "w-full py-2 px-3 rounded-xl text-xs font-black transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white";
+                btnText.innerText = "Aktifkan Semua Juri";
+                if (icon) {
+                    icon.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>`;
+                }
+            }
         }
     }
 
@@ -1550,11 +1549,13 @@
         if (res.success) {
             document.querySelectorAll('[id^="btn-babak-"]').forEach((btn, idx) => {
                 if ((idx + 1) === babak) {
-                    btn.className = "px-3 py-1 rounded-lg text-xs font-black transition-all bg-primary-600 text-white shadow-sm";
+                    btn.className = "w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center cursor-pointer active:scale-98 bg-primary-600 text-white shadow-sm";
                 } else {
-                    btn.className = "px-3 py-1 rounded-lg text-xs font-black transition-all text-gray-600 hover:bg-gray-200";
+                    btn.className = "w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center cursor-pointer active:scale-98 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200";
                 }
             });
+            const badgeBabak = document.getElementById('badge-babak-aktif');
+            if (badgeBabak) badgeBabak.innerText = `Babak ${babak}`;
             document.getElementById('badge-babak-display').innerText = `BABAK ${babak}`;
             const lblBabakBiru = document.getElementById('label-babak-biru');
             if (lblBabakBiru) lblBabakBiru.innerText = `Babak ${babak}`;
@@ -1669,6 +1670,37 @@
             if (isVisible) el.classList.remove('hidden');
             else el.classList.add('hidden');
         }
+    }
+
+    // Helper Render Status Tags Pelanggaran (Binaan, Teguran, Peringatan)
+    function renderPelanggaranTagsHtml(sudutData) {
+        if (!sudutData) return '';
+        let html = '';
+
+        const binaanCount = Number(sudutData.binaan_count || 0);
+        if (binaanCount > 0) {
+            html += `<span class="px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-[9px] font-bold">Binaan: ${binaanCount}x</span>`;
+        }
+
+        const teguranList = Array.isArray(sudutData.teguran_list)
+            ? sudutData.teguran_list
+            : (sudutData.teguran_list ? Object.values(sudutData.teguran_list) : []);
+        teguranList.forEach(teg => {
+            if (teg) {
+                html += `<span class="px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200 text-[9px] font-bold">${teg}</span>`;
+            }
+        });
+
+        const peringatanList = Array.isArray(sudutData.peringatan_list)
+            ? sudutData.peringatan_list
+            : (sudutData.peringatan_list ? Object.values(sudutData.peringatan_list) : []);
+        peringatanList.forEach(per => {
+            if (per) {
+                html += `<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200 text-[9px] font-black">${per}</span>`;
+            }
+        });
+
+        return html;
     }
 
     // 7. HELPER UPDATE SKOR & STATUS UI
@@ -1852,6 +1884,17 @@
         // --- 7. MODAL SELESAI SKOR PREVIEW ---
         document.querySelectorAll('.score-preview-biru').forEach(el => el.innerText = `${scores.biru.is_disq ? 'DISQ' : scores.biru.total + ' Poin'}`);
         document.querySelectorAll('.score-preview-merah').forEach(el => el.innerText = `${scores.merah.is_disq ? 'DISQ' : scores.merah.total + ' Poin'}`);
+
+        // --- 8. STATUS TAGS PELANGGARAN (BINAAN, TEGURAN, PERINGATAN) ---
+        const tagsBiruEl = document.getElementById('pelanggaran-tags-biru');
+        if (tagsBiruEl && scores.biru) {
+            tagsBiruEl.innerHTML = renderPelanggaranTagsHtml(scores.biru);
+        }
+
+        const tagsMerahEl = document.getElementById('pelanggaran-tags-merah');
+        if (tagsMerahEl && scores.merah) {
+            tagsMerahEl.innerHTML = renderPelanggaranTagsHtml(scores.merah);
+        }
     }
 
         // Helper Expand / Collapse Rincian Juri
@@ -1926,6 +1969,12 @@
             const data = await res.json();
             if (data.success) {
                 applyScores(data.scores);
+
+                // Update Status Juri & Tombol Kontrol
+                if (data.status_juri) {
+                    const anyActive = data.status_juri.some(j => j.is_active);
+                    updateAllJuriStatusUI(anyActive);
+                }
 
                 // Render Timeline Sudut Biru & Sudut Merah
                 const tbodyBiru = document.getElementById('timeline-body-biru');
@@ -2050,28 +2099,22 @@
                 }
                 if (e.babakAktif) {
                     babakAktif = parseInt(e.babakAktif);
-                    const sel = document.getElementById('select-babak');
-                    if (sel) sel.value = babakAktif;
+                    document.querySelectorAll('[id^="btn-babak-"]').forEach((btn, idx) => {
+                        if ((idx + 1) === babakAktif) {
+                            btn.className = "w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center cursor-pointer active:scale-98 bg-primary-600 text-white shadow-sm";
+                        } else {
+                            btn.className = "w-full py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center cursor-pointer active:scale-98 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200";
+                        }
+                    });
+                    const badgeBabak = document.getElementById('badge-babak-aktif');
+                    if (badgeBabak) badgeBabak.innerText = `Babak ${babakAktif}`;
                 }
             });
 
             // 3. Realtime Status Kontrol Juri Toggle
             channel.listen('ToggleKontrolJuriTanding', function(e) {
                 console.log("Realtime Toggle Kontrol Juri:", e);
-                const btnJuri = document.getElementById(`btn-status-juri-${e.noJuri}`);
-                const dotJuri = document.getElementById(`dot-status-juri-${e.noJuri}`);
-                const textJuri = document.getElementById(`text-status-juri-${e.noJuri}`);
-                if (btnJuri && dotJuri && textJuri) {
-                    if (e.isActive) {
-                        btnJuri.className = "w-full py-1 px-1.5 rounded-lg border text-center transition-all shadow-sm flex items-center justify-between gap-1 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300";
-                        dotJuri.className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]";
-                        textJuri.innerText = "AKTIF";
-                    } else {
-                        btnJuri.className = "w-full py-1 px-1.5 rounded-lg border text-center transition-all shadow-sm flex items-center justify-between gap-1 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-300";
-                        dotJuri.className = "w-2 h-2 rounded-full bg-rose-500";
-                        textJuri.innerText = "JEDA";
-                    }
-                }
+                updateAllJuriStatusUI(e.isActive);
             });
 
             // 4. Realtime Verifikasi VAR Dewan
